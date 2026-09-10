@@ -1,26 +1,177 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand ---------------------------------------------------------------- */
+  --fg-green: #32a765;
+  --fg-green-bright: #42c074;
+  --fg-green-dark: #0a7a3b;
+  --fg-green-ink: #031e0f;
+
+  --fg-coral: #f48265;
+  --fg-coral-dark: #e06a4d;
+
+  --fg-blue: #85c5f9;
+  --fg-blue-dark: #529bd7;
+  --fg-blue-ink: #326a97;
+
+  --fg-yellow: #ffd339;
+  --fg-yellow-soft: #ffee8c;
+  --fg-yellow-ink: #c3a52a;
+
+  --fg-purple: #7546a4;
+  --fg-purple-mid: #a874db;
+  --fg-purple-soft: #e3d1f9;
+
+  --fg-pink: #f97ab3;
+
+  /* Section tints -------------------------------------------------------- */
+  --tint-green: #e0f6eb;
+  --tint-blue: #dff3ff;
+  --tint-pink: #ffe7de;
+  --tint-yellow: #fffbe8;
+  --tint-purple: #f1e7f1;
+  --tint-neutral: #f5f5f5;
+
+  /* Neutrals ------------------------------------------------------------- */
+  --ink: #090814;
+  --ink-soft: #3d3d3d;
+  --muted: #5c5c5c;
+  --muted-light: #7c7c7c;
+  --line: #ededed;
+  --line-strong: #d6d6d6;
+  --surface: #f8f8f8;
+  --nav: #f5f5f5;
+  --white: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-surface: var(--surface);
+  --color-nav: var(--nav);
+
+  --color-green: var(--fg-green);
+  --color-green-bright: var(--fg-green-bright);
+  --color-green-dark: var(--fg-green-dark);
+  --color-green-ink: var(--fg-green-ink);
+  --color-coral: var(--fg-coral);
+  --color-coral-dark: var(--fg-coral-dark);
+  --color-blue: var(--fg-blue);
+  --color-blue-dark: var(--fg-blue-dark);
+  --color-blue-ink: var(--fg-blue-ink);
+  --color-yellow: var(--fg-yellow);
+  --color-yellow-soft: var(--fg-yellow-soft);
+  --color-purple: var(--fg-purple);
+  --color-purple-mid: var(--fg-purple-mid);
+  --color-purple-soft: var(--fg-purple-soft);
+  --color-pink: var(--fg-pink);
+
+  --color-tint-green: var(--tint-green);
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-pink: var(--tint-pink);
+  --color-tint-yellow: var(--tint-yellow);
+  --color-tint-purple: var(--tint-purple);
+  --color-tint-neutral: var(--tint-neutral);
+
+  --font-sans: var(--font-manrope);
+  --font-serif: var(--font-instrument);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.serif {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Focus ------------------------------------------------------------------ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--fg-green-dark);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Scrollbars ------------------------------------------------------------- */
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #e2e2e2;
+  border-radius: 999px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Animation -------------------------------------------------------------- */
+@keyframes fg-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fade-up {
+  animation: fg-fade-up 0.28s ease-out both;
+}
+
+@keyframes fg-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.pop-in {
+  animation: fg-pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes fg-confetti-fall {
+  0% {
+    transform: translateY(-40px) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(560px) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
