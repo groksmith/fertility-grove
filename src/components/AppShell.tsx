@@ -1,153 +1,337 @@
 "use client";
 
+/* The member app's frame. Desktop (1280px and up): an open-plane labelled
+   sidebar on the page ground (mark and community at the top, nav, utilities
+   and your row at the bottom), no top bar. iPad landscape (1024 to 1279px):
+   the same sidebar as a slim icon rail, so content keeps its width. Phone: a 48px top bar, a four-item bottom nav and a
+   full-screen menu sheet for everything else. Grove Guide is not a nav item:
+   it floats bottom right on every screen except its own and a conversation. */
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
+  Bell,
   BookOpen,
-  ChevronDown,
+  Bookmark,
+  ChevronsUpDown,
   CircleHelp,
-  HandHeart,
-  LayoutGrid,
-  Menu,
+  Flower2,
+  Home,
+  LogOut,
+  Menu as MenuIcon,
   MessageCircle,
   Search,
   Settings,
-  Sparkles,
+  Sprout,
+  UserRound,
   Users,
+  UsersRound,
   X,
 } from "lucide-react";
-import { Avatar, Logo } from "./ui";
-import { useHydrated, useStore } from "@/lib/store";
-import { ONLINE_NOW } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { Logo, LogoOrange } from "@/components/Logo";
+import { HeaderBackdrop, sceneFor } from "@/components/art/Cozy";
+import { TreeGlyph } from "@/components/art/Tree";
+import { requestLeave } from "@/components/UnsavedGuard";
+import { act, sel, useStore, type State } from "@/lib/store";
+import { COMMUNITIES } from "@/lib/options";
+import { Avatar, Button, Dialog, Menu, Toaster } from "./ui";
 
-export type SectionKey =
-  | "dashboard"
-  | "community"
-  | "care"
-  | "fundraising"
-  | "learn"
-  | "messages"
-  | "settings";
+type NavItem = { href: string; label: string; icon: React.ElementType; count?: (s: State) => number };
 
-export const SECTIONS: Record<
-  SectionKey,
-  { label: string; href: string; tint: string; accent: string; icon: React.ElementType }
-> = {
-  dashboard: {
-    label: "My Dashboard",
-    href: "/dashboard",
-    tint: "#FFFFFF",
-    accent: "var(--ink)",
-    icon: LayoutGrid,
-  },
-  community: {
-    label: "Community",
-    href: "/community",
-    tint: "var(--nav)",
-    accent: "var(--fg-coral)",
-    icon: Users,
-  },
-  care: {
-    label: "Care Guide",
-    href: "/care",
-    tint: "var(--nav)",
-    accent: "var(--fg-green-dark)",
-    icon: Sparkles,
-  },
-  fundraising: {
-    label: "Fundraising",
-    href: "/fundraising",
-    tint: "var(--nav)",
-    accent: "var(--fg-blue-ink)",
-    icon: HandHeart,
-  },
-  learn: {
-    label: "Learn",
-    href: "/learn",
-    tint: "var(--nav)",
-    accent: "var(--fg-yellow-ink)",
-    icon: BookOpen,
-  },
-  messages: {
-    label: "Messages",
-    href: "/messages",
-    tint: "var(--tint-yellow)",
-    accent: "var(--fg-purple)",
-    icon: MessageCircle,
-  },
-  settings: {
-    label: "Settings",
-    href: "/settings",
-    tint: "var(--nav)",
-    accent: "var(--ink)",
-    icon: Settings,
-  },
-};
-
-const NAV_ORDER: SectionKey[] = [
-  "dashboard",
-  "community",
-  "care",
-  "fundraising",
-  "learn",
-  "messages",
+const PRIMARY: NavItem[] = [
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/groups", label: "Groups", icon: Users },
+  { href: "/stories", label: "Success stories", icon: Flower2 },
+  { href: "/learn", label: "Learn", icon: BookOpen },
+  { href: "/mentors", label: "Mentors", icon: Sprout },
+  { href: "/messages", label: "Messages", icon: MessageCircle, count: (s) => sel.unreadMessages(s) },
+  { href: "/notifications", label: "Notifications", icon: Bell, count: (s) => sel.unreadNotifications(s) },
 ];
 
-/* --------------------------------------------------------------- Left nav */
+const SECONDARY: NavItem[] = [
+  { href: "/saved", label: "Saved", icon: Bookmark },
+  { href: "/family", label: "Family space", icon: UsersRound },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/help", label: "Help", icon: CircleHelp },
+];
 
-function LeftNav({ active }: { active: SectionKey }) {
-  const [q, setQ] = useState("");
-  const router = useRouter();
+const PHONE: NavItem[] = [
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/groups", label: "Groups", icon: Users },
+  { href: "/messages", label: "Messages", icon: MessageCircle, count: (s) => sel.unreadMessages(s) },
+  { href: "/profile", label: "Me", icon: Sprout },
+];
+
+const isActive = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
+
+function NavRow({ item, path, onNavigate, rail }: { item: NavItem; path: string; onNavigate?: () => void; rail?: boolean }) {
+  const s = useStore();
+  const Icon = item.icon;
+  const on = isActive(path, item.href) || (item.href === "/groups" && path.startsWith("/posts"));
+  const n = item.count?.(s) ?? 0;
   return (
-    <aside
-      className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line lg:flex"
-      style={{ background: SECTIONS[active].tint }}
-    >
-      <div className="px-6 pt-6">
-        <Link href="/dashboard" aria-label="Fertility Grove home">
-          <Logo />
-        </Link>
-      </div>
-
-      <form
-        className="mt-6 px-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-        }}
+    <li>
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={on ? "page" : undefined}
+        title={rail ? item.label : undefined}
+        className={`nav-row press relative flex items-center gap-2.5 rounded-[10px] px-2.5 text-[14px] ${
+          rail ? "h-11 justify-center xl:h-9 xl:justify-start" : "h-12 text-[16px]"
+        } ${on ? "bg-white font-semibold text-ink ring-1 ring-line" : "text-ink-soft hover:bg-line hover:text-ink"}`}
       >
-        <div className="flex items-center gap-2.5 rounded-lg px-1 py-1.5">
-          <Search size={18} className="text-ink" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search..."
-            aria-label="Search Fertility Grove"
-            className="w-full bg-transparent text-[14px] text-ink placeholder:text-muted-light focus:outline-none"
-          />
-        </div>
-      </form>
+        <Icon size={19} strokeWidth={1.7} aria-hidden className={rail ? "xl:h-[17px] xl:w-[17px]" : ""} />
+        <span className={rail ? "sr-only xl:not-sr-only xl:flex-1" : "flex-1"}>{item.label}</span>
+        {n > 0 && (
+          <span
+            className={`tabular grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[12px] font-bold text-ink ${
+              rail ? "absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[10px] xl:static xl:h-5 xl:min-w-5 xl:px-1.5 xl:text-[12px]" : ""
+            }`}
+          >
+            {n}
+            <span className="sr-only"> unread</span>
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
 
-      <nav className="mt-6 flex-1" aria-label="Main">
-        <ul>
-          {NAV_ORDER.map((key) => {
-            const s = SECTIONS[key];
-            const Icon = s.icon;
-            const isActive = key === active;
+function SearchBox({ onDone }: { onDone?: () => void }) {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        router.push(`/people?q=${encodeURIComponent(q.trim())}`);
+        onDone?.();
+      }}
+    >
+      <label className="search-field flex h-10 items-center gap-2 rounded-full bg-raised px-3.5 text-muted focus-within:bg-white focus-within:ring-2 focus-within:ring-accent">
+        <Search size={16} aria-hidden />
+        <span className="sr-only">Find people by handle</span>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Find people by @handle"
+          enterKeyHint="search"
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="w-full bg-transparent text-[14px] text-ink placeholder:text-muted focus:outline-none"
+        />
+      </label>
+    </form>
+  );
+}
+
+function Scope() {
+  const community = useStore((s) => s.me.community);
+  return (
+    <p className="mt-2 text-[13px] text-muted">{community ? COMMUNITIES[community].name : "Fertility Grove"}</p>
+  );
+}
+
+/** Sign out, iOS style: a short confirmation first. Signing out lands on
+    the sign-in screen (the app's gate does the redirect). */
+function useSignOut() {
+  const [confirm, setConfirm] = useState(false);
+  const ask = () => requestLeave(() => setConfirm(true));
+  const ui = (
+    <Dialog
+      open={confirm}
+      onClose={() => setConfirm(false)}
+      title="Sign out of Fertility Grove?"
+      description="You can sign back in any time with your email or Google."
+    >
+      <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
+        <Button
+          variant="danger"
+          onClick={() => {
+            setConfirm(false);
+            act.auth.signOut();
+          }}
+        >
+          Sign out
+        </Button>
+        <Button variant="ghost" onClick={() => setConfirm(false)}>
+          Cancel
+        </Button>
+      </div>
+    </Dialog>
+  );
+  return { ask, ui };
+}
+
+/** Your row at the foot of the sidebar opens your account menu. */
+function AccountMenu() {
+  const s = useStore();
+  const router = useRouter();
+  const me = sel.meAsMember(s);
+  const signOut = useSignOut();
+  return (
+    <>
+      <Menu
+        label="Your account"
+        side="top"
+        align="start"
+        trigger={(p) => (
+          <button
+            {...p}
+            type="button"
+            title={sel.displayName(me)}
+            aria-label={`Your account, ${sel.displayName(me)}`}
+            className="nav-row press flex w-full items-center justify-center gap-3 rounded-[14px] p-2 text-left hover:bg-line xl:justify-start"
+          >
+            <Avatar member={me} size={36} />
+            <span className="sr-only xl:not-sr-only xl:min-w-0 xl:flex-1">
+              <span className="block truncate text-[14px] font-semibold text-ink">{sel.displayName(me)}</span>
+              <span className="flex items-center gap-1 text-[12.5px] text-muted">
+                <TreeGlyph level={me.level} size={14} />
+                {me.level} · <span className="tabular">{me.sunlight.toLocaleString()}</span> Sunlight
+              </span>
+            </span>
+            <ChevronsUpDown size={16} className="hidden shrink-0 text-muted xl:block" aria-hidden />
+          </button>
+        )}
+        items={[
+          { label: "View profile", icon: <UserRound size={16} />, onSelect: () => router.push("/profile") },
+          { label: "Settings", icon: <Settings size={16} />, onSelect: () => router.push("/settings") },
+          { label: "Help", icon: <CircleHelp size={16} />, onSelect: () => router.push("/help") },
+          "divider",
+          { label: "Sign out", icon: <LogOut size={16} />, danger: true, onSelect: signOut.ask },
+        ]}
+      />
+      {signOut.ui}
+    </>
+  );
+}
+
+function MeRow({ onNavigate }: { onNavigate?: () => void }) {
+  const s = useStore();
+  const me = sel.meAsMember(s);
+  return (
+    <Link href="/profile" onClick={onNavigate} className="nav-row press flex items-center gap-3 rounded-[14px] p-2 hover:bg-line">
+      <Avatar member={me} size={36} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14px] font-semibold text-ink">{sel.displayName(me)}</span>
+        <span className="flex items-center gap-1 text-[12.5px] text-muted">
+          <TreeGlyph level={me.level} size={14} />
+          {me.level} · <span className="tabular">{me.sunlight.toLocaleString()}</span> Sunlight
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function Sidebar() {
+  const path = usePathname();
+  return (
+    <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[76px] flex-col border-r border-line bg-chrome px-2 pt-5 pb-4 lg:flex xl:w-[248px] xl:px-3">
+      <div className="flex justify-center xl:block xl:px-2">
+        <Link href="/home" className="flex items-center gap-2" aria-label="Fertility Grove home">
+          <span className="xl:hidden">
+            <LogoOrange size={36} />
+          </span>
+          <span className="hidden xl:block">
+            <Logo height={46} priority />
+          </span>
+        </Link>
+        <div className="hidden xl:block">
+          <Scope />
+        </div>
+      </div>
+      <div className="mt-5 xl:px-1">
+        <Link href="/people" title="Find people" aria-label="Find people" className="nav-row press mx-auto grid h-11 w-11 place-items-center rounded-full bg-raised text-muted hover:bg-line hover:text-ink xl:hidden">
+          <Search size={19} aria-hidden />
+        </Link>
+        <div className="hidden xl:block">
+          <SearchBox />
+        </div>
+      </div>
+      <nav aria-label="Main" className="thin-scroll mt-4 flex-1 overflow-y-auto">
+        <ul className="space-y-0.5">
+          {PRIMARY.map((i) => (
+            <NavRow key={i.href} item={i} path={path} rail />
+          ))}
+        </ul>
+        <p className="mt-7 mb-1.5 hidden px-2.5 text-[12.5px] text-muted xl:block">Yours</p>
+        <hr className="mx-3 my-4 border-line xl:hidden" />
+        <ul className="space-y-0.5">
+          {SECONDARY.map((i) => (
+            <NavRow key={i.href} item={i} path={path} rail />
+          ))}
+        </ul>
+      </nav>
+      <AccountMenu />
+    </aside>
+  );
+}
+
+function PhoneChrome() {
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+  const s = useStore();
+  const unread = sel.unreadNotifications(s);
+  const signOut = useSignOut();
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", k);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", k);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 flex h-[calc(52px+env(safe-area-inset-top))] items-end bg-ground/80 px-2 pt-[env(safe-area-inset-top)] pb-1 shadow-[0_1px_0_var(--line)] backdrop-blur-xl backdrop-saturate-150 lg:hidden">
+        <div className="flex h-12 w-full items-center gap-1">
+          <Link href="/home" className="flex items-center gap-2 px-2" aria-label="Fertility Grove home">
+            <Logo height={34} />
+          </Link>
+          <span className="flex-1" />
+          <Link href="/notifications" aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} className="press relative grid h-11 w-11 place-items-center rounded-full text-ink">
+            <Bell size={21} strokeWidth={1.8} />
+            {unread > 0 && <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-white" />}
+          </Link>
+          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} className="press grid h-11 w-11 place-items-center rounded-full text-ink">
+            <MenuIcon size={22} strokeWidth={1.8} />
+          </button>
+        </div>
+      </header>
+
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-40 bg-panel/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_var(--line)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      >
+        <ul className="mx-auto flex max-w-lg">
+          {PHONE.map((i) => {
+            const Icon = i.icon;
+            const on = isActive(path, i.href);
+            const n = i.count?.(s) ?? 0;
             return (
-              <li key={key}>
+              <li key={i.href} className="flex-1">
                 <Link
-                  href={s.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className="flex h-14 items-center gap-3 px-6 text-[14.5px] transition"
-                  style={{
-                    background: isActive ? "#FFFFFF" : "transparent",
-                    fontWeight: isActive ? 700 : 500,
-                  }}
+                  href={i.href}
+                  aria-current={on ? "page" : undefined}
+                  className={`press relative flex h-[60px] flex-col items-center justify-center gap-0.5 text-[12px] ${on ? "font-bold text-ink" : "font-medium text-muted"}`}
                 >
-                  <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
-                  <span>{s.label}</span>
+                  <span className={`grid h-8 w-14 place-items-center rounded-full ${on ? "bg-raised" : ""}`}>
+                    <Icon size={21} strokeWidth={on ? 2.2 : 1.7} />
+                  </span>
+                  {i.label}
+                  {n > 0 && (
+                    <span className="tabular absolute top-1.5 left-[calc(50%+8px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand px-1 text-[12px] font-bold text-ink">
+                      {n}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
@@ -155,371 +339,173 @@ function LeftNav({ active }: { active: SectionKey }) {
         </ul>
       </nav>
 
-      <ul className="pb-6">
-        <li>
-          <Link
-            href="/settings"
-            className="flex h-12 items-center gap-3 px-6 text-[14.5px] font-medium transition hover:bg-white/50"
-          >
-            <Settings size={20} strokeWidth={1.8} />
-            Settings
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/help"
-            className="flex h-12 items-center gap-3 px-6 text-[14.5px] font-medium transition hover:bg-white/50"
-          >
-            <CircleHelp size={20} strokeWidth={1.8} />
-            Help
-          </Link>
-        </li>
-      </ul>
+      {signOut.ui}
+      {open && (
+        <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="scrim absolute inset-0 bg-[rgba(3,30,15,0.32)]" onClick={() => setOpen(false)} />
+          <div className="sheet-up absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[20px] bg-ground px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))]" style={{ overscrollBehavior: "contain" }}>
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line-strong" aria-hidden />
+            <div className="mb-4 flex items-center justify-between">
+              <span className="serif text-[26px]">Menu</span>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="press grid h-11 w-11 place-items-center rounded-full hover:bg-raised">
+                <X size={22} />
+              </button>
+            </div>
+            <SearchBox onDone={() => setOpen(false)} />
+            <ul className="mt-4 space-y-0.5 rounded-[20px] border border-line bg-panel p-2">
+              {PRIMARY.map((i) => (
+                <NavRow key={i.href} item={i} path={path} onNavigate={() => setOpen(false)} />
+              ))}
+            </ul>
+            <ul className="mt-3 space-y-0.5 rounded-[20px] border border-line bg-panel p-2">
+              {SECONDARY.map((i) => (
+                <NavRow key={i.href} item={i} path={path} onNavigate={() => setOpen(false)} />
+              ))}
+            </ul>
+            <div className="mt-3 rounded-[20px] border border-line bg-panel p-2">
+              <MeRow onNavigate={() => setOpen(false)} />
+            </div>
+            <button
+              type="button"
+              onClick={signOut.ask}
+              className="press mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[20px] border border-line bg-panel text-[16px] font-semibold text-danger hover:bg-raised"
+            >
+              <LogOut size={18} aria-hidden /> Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Folds the Guide's label away while you scroll down to read, and brings
+    it back as soon as you scroll up. */
+function useFoldOnScroll() {
+  const [folded, setFolded] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (Math.abs(y - last) < 8) return;
+        setFolded(y > 160 && y > last);
+        last = y;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  return folded;
+}
+
+/** The AI mark: the familiar sparkle, in the brand's orange and white. */
+function AiSparkle() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
+      <defs>
+        <linearGradient id="fg-spark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f89414" />
+          <stop offset="1" stopColor="#e97d03" />
+        </linearGradient>
+      </defs>
+      <path className="spark spark-1" fill="url(#fg-spark)" d="M13 5c.9 5.4 2.6 7.3 8.5 8.5-5.9 1.2-7.6 3.1-8.5 8.5-.9-5.4-2.6-7.3-8.5-8.5C10.4 12.3 12.1 10.4 13 5Z" />
+      <path className="spark spark-2" fill="#fff" d="M24.5 3.5c.4 2.3 1 2.9 3.3 3.3-2.3.4-2.9 1-3.3 3.3-.4-2.3-1-2.9-3.3-3.3 2.3-.4 2.9-1 3.3-3.3Z" />
+      <path className="spark spark-3" fill="#f89414" d="M24 20c.3 1.8.8 2.3 2.6 2.6-1.8.3-2.3.8-2.6 2.6-.3-1.8-.8-2.3-2.6-2.6 1.8-.3 2.3-.8 2.6-2.6Z" />
+    </svg>
+  );
+}
+
+/* Grove Guide, the AI assistant, floats bottom right: the sparkle that marks
+   AI everywhere, with an AI tag on the label. Its stars twinkle in turn, the
+   big one turns when you point at it, and the label folds away while you
+   read. */
+function GuideButton() {
+  const path = usePathname();
+  const folded = useFoldOnScroll();
+  if (isActive(path, "/guide") || /^\/messages\/./.test(path)) return null;
+  return (
+    <aside aria-label="Grove Guide">
+      <Link
+        href="/guide"
+        aria-label="Ask Grove Guide, the AI assistant"
+        data-folded={folded || undefined}
+        className="guide-fab rise press fixed right-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-50 flex h-14 items-center rounded-full bg-accent p-2 text-[15px] font-semibold text-white shadow-[0_12px_28px_-10px_rgba(3,30,15,0.5)] hover:bg-black lg:right-8 lg:bottom-8"
+      >
+        <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center">
+          <AiSparkle />
+        </span>
+        <span className="guide-label hidden sm:grid">
+          <span className="min-w-0 overflow-hidden">
+            <span className="flex items-center gap-2 pr-3 pl-1 whitespace-nowrap">
+              Grove Guide
+              <span aria-hidden className="rounded-full bg-white/10 px-1.5 py-px text-[12px] font-bold tracking-wide text-brand">AI</span>
+            </span>
+          </span>
+        </span>
+      </Link>
     </aside>
   );
 }
 
-/* ---------------------------------------------------------------- Top bar */
-
-function TopBar({
-  active,
-  title,
-  tabs,
-}: {
-  active: SectionKey;
-  title?: string;
-  tabs?: { label: string; href: string }[];
-}) {
-  const { profile } = useStore();
-  const pathname = usePathname();
-  const s = SECTIONS[active];
-  const Icon = s.icon;
-
+function UnconfirmedBanner() {
+  const me = useStore((s) => s.me);
+  const [sent, setSent] = useState(false);
+  if (me.status !== "unconfirmed") return null;
   return (
-    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur">
-      <div className="flex h-[72px] items-center gap-3 px-8">
-        <Icon size={22} strokeWidth={2} />
-        <h1 className="text-[21px] font-bold tracking-[-0.01em]">
-          {title ?? s.label}
-        </h1>
-
-        <div className="ml-auto flex items-center gap-5">
-          <span className="hidden items-center gap-1.5 text-[13.5px] text-ink md:flex">
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: "var(--fg-green-bright)" }}
-            />
-            {ONLINE_NOW} online now
-          </span>
-
-          <div className="relative hidden sm:block" key={pathname}>
-            <StatusMenu />
-          </div>
-
-          <Link href="/profile" aria-label="My profile" className="hidden sm:block">
-            <Avatar
-              name={`${profile.firstName} ${profile.lastName}`}
-              size={44}
-              status={profile.status}
-              preset={profile.avatarPreset}
-            />
-          </Link>
-
-          <MobileMenu active={active} />
-        </div>
-      </div>
-
-      {tabs && (
-        <nav className="flex gap-8 px-8" aria-label="Section">
-          {tabs.map((t) => {
-            const isActive =
-              pathname === t.href ||
-              (t.href !== SECTIONS[active].href && pathname.startsWith(t.href));
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={isActive ? "page" : undefined}
-                className={`pb-3 text-[14.5px] transition ${
-                  isActive
-                    ? "font-bold text-ink"
-                    : "font-medium text-muted hover:text-ink"
-                }`}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
-    </header>
-  );
-}
-
-function StatusMenu() {
-  const { profile, updateProfile } = useStore();
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="flex items-center gap-1.5 text-[13.5px] font-medium text-green-dark"
-      >
-        My status: {profile.status}
-        <ChevronDown size={16} />
-      </button>
-      {open && (
-        <ul
-          role="menu"
-          className="pop-in absolute right-0 top-9 w-44 overflow-hidden rounded-xl border border-line bg-white py-1 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.2)]"
+    <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[20px] border border-[var(--fg-yellow)] bg-yellow-tint px-5 py-3.5 text-[14px] text-ink">
+      <span className="flex-1">
+        <strong className="font-semibold">Confirm your email</strong> to post, comment, vote and message. We sent a link to {me.email}.
+      </span>
+      <span className="flex gap-3 font-semibold">
+        <button
+          type="button"
+          className="underline underline-offset-2"
+          onClick={() => {
+            act.auth.resendLink();
+            setSent(true);
+          }}
         >
-          {(["online", "away", "busy", "invisible"] as const).map((st) => (
-            <li key={st}>
-              <button
-                role="menuitem"
-                onClick={() => {
-                  updateProfile({ status: st });
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13.5px] capitalize hover:bg-surface"
-              >
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{
-                    background:
-                      st === "online"
-                        ? "var(--fg-green-bright)"
-                        : st === "away"
-                          ? "var(--fg-yellow)"
-                          : st === "busy"
-                            ? "#E0574F"
-                            : "#C7C7C7",
-                  }}
-                />
-                {st}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+          {sent ? "Sent again" : "Resend link"}
+        </button>
+        <Link href="/confirm-email" className="underline underline-offset-2">
+          Open link
+        </Link>
+      </span>
+    </div>
   );
 }
 
-/* ------------------------------------------------------------ Mobile menu */
-
-function MobileMenu({ active }: { active: SectionKey }) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const router = useRouter();
-  const { profile } = useStore();
-
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const path = usePathname();
+  const scene = sceneFor(path);
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Open menu"
-        aria-expanded={open}
-        className="grid h-10 w-10 place-items-center rounded-lg transition hover:bg-black/[0.04] lg:hidden"
-      >
-        <Menu size={22} />
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/25 lg:hidden"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="pop-in ml-auto flex h-full w-[86vw] max-w-[340px] flex-col bg-white p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <Logo />
-              <button onClick={() => setOpen(false)} aria-label="Close menu">
-                <X size={22} />
-              </button>
-            </div>
-
-            <form
-              className="mt-6 flex items-center gap-2.5 rounded-xl border border-line-strong px-3.5 py-2.5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!q.trim()) return;
-                setOpen(false);
-                router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-              }}
-            >
-              <Search size={17} className="text-muted" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search..."
-                aria-label="Search Fertility Grove"
-                className="w-full bg-transparent text-[14.5px] placeholder:text-muted-light focus:outline-none"
-              />
-            </form>
-
-            <nav className="mt-4 flex-1 overflow-y-auto" aria-label="All sections">
-              <ul>
-                {NAV_ORDER.map((key) => {
-                  const sec = SECTIONS[key];
-                  const Icon = sec.icon;
-                  return (
-                    <li key={key}>
-                      <Link
-                        href={sec.href}
-                        onClick={() => setOpen(false)}
-                        aria-current={key === active ? "page" : undefined}
-                        className="flex h-12 items-center gap-3 rounded-lg px-3 text-[15px]"
-                        style={{
-                          fontWeight: key === active ? 700 : 500,
-                          background: key === active ? "var(--nav)" : undefined,
-                        }}
-                      >
-                        <Icon size={20} />
-                        {sec.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <ul className="mt-4 border-t border-line pt-4">
-                <li>
-                  <Link
-                    href="/profile"
-                    onClick={() => setOpen(false)}
-                    className="flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium"
-                  >
-                    <Avatar
-                      name={`${profile.firstName} ${profile.lastName}`}
-                      size={22}
-                    />
-                    My profile
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/settings"
-                    onClick={() => setOpen(false)}
-                    className="flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium"
-                  >
-                    <Settings size={20} /> Settings
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/help"
-                    onClick={() => setOpen(false)}
-                    className="flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium"
-                  >
-                    <CircleHelp size={20} /> Help
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-/* -------------------------------------------------------------- Mobile nav */
-
-function MobileNav({ active }: { active: SectionKey }) {
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-white lg:hidden"
-      aria-label="Main"
-    >
-      {NAV_ORDER.map((key) => {
-        const s = SECTIONS[key];
-        const Icon = s.icon;
-        const isActive = key === active;
-        return (
-          <Link
-            key={key}
-            href={s.href}
-            aria-current={isActive ? "page" : undefined}
-            className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10.5px]"
-            style={{
-              color: isActive ? s.accent : "var(--muted)",
-              fontWeight: isActive ? 700 : 500,
-              background: isActive ? s.tint : undefined,
-            }}
-          >
-            <Icon size={19} />
-            {s.label.replace("My ", "")}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-/* --------------------------------------------------------------- AppShell */
-
-export function AppShell({
-  section,
-  title,
-  tabs,
-  rail,
-  children,
-  wide,
-}: {
-  section: SectionKey;
-  title?: string;
-  tabs?: { label: string; href: string }[];
-  rail?: React.ReactNode;
-  children: React.ReactNode;
-  wide?: boolean;
-}) {
-  const { signedIn } = useStore();
-  const hydrated = useHydrated();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (hydrated && !signedIn) router.replace("/signup");
-  }, [hydrated, signedIn, router]);
-
-  /* The rail is rendered once and simply reflows below the content column
-     under xl, so the page never carries two copies of the same controls. */
-  const headerHeight = tabs ? 112 : 72;
-
-  return (
-    <div className="min-h-full lg:pl-60">
-      <LeftNav active={section} />
-      <TopBar active={section} title={title} tabs={tabs} />
-      <div
-        className={`flex flex-col xl:flex-row ${
-          rail ? "" : "xl:justify-center"
+    <div className="min-h-dvh">
+      <a href="#main" className="sr-only z-[100] rounded-full bg-accent px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        Skip to content
+      </a>
+      <Sidebar />
+      <PhoneChrome />
+      <main
+        id="main"
+        tabIndex={-1}
+        className={`relative px-4 pb-[calc(148px+env(safe-area-inset-bottom))] sm:px-6 lg:ml-[76px] lg:px-10 lg:pb-28 xl:ml-[248px] ${
+          scene ? "pt-[104px] lg:pt-[132px]" : "pt-4 lg:pt-9"
         }`}
       >
-        <main
-          className={`min-w-0 flex-1 px-6 pb-10 pt-6 lg:px-8 xl:pb-28 ${
-            wide ? "" : "max-w-[1100px]"
-          }`}
-        >
+        {scene && <HeaderBackdrop scene={scene} />}
+        <div className="relative mx-auto max-w-[1160px]">
+          <UnconfirmedBanner />
           {children}
-        </main>
-        {rail && (
-          <aside
-            className={`thin-scroll w-full border-t border-line px-6 pb-28 pt-6 xl:sticky xl:w-[304px] xl:shrink-0 xl:self-start xl:overflow-y-auto xl:border-l xl:border-t-0 xl:pb-6 ${
-              tabs
-                ? "xl:max-h-[calc(100vh-112px)]"
-                : "xl:max-h-[calc(100vh-72px)]"
-            }`}
-            style={{ top: headerHeight }}
-          >
-            {rail}
-          </aside>
-        )}
-      </div>
-      <MobileNav active={section} />
+        </div>
+      </main>
+      <GuideButton />
+      <Toaster />
     </div>
   );
 }

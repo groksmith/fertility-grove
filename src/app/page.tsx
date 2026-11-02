@@ -1,24 +1,12 @@
-"use client";
+import type { Metadata } from "next";
+import { Landing } from "@/components/landing/Landing";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useHydrated, useStore } from "@/lib/store";
+export const metadata: Metadata = {
+  title: "Fertility Grove: a private community for infertility, and partners",
+  description:
+    "A private, invite-only community for people going through infertility, and their partners. Matched groups, a clinician-reviewed library, mentors and the Grove Guide.",
+};
 
-export default function Home() {
-  const { signedIn, onboarded } = useStore();
-  const hydrated = useHydrated();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (signedIn && onboarded) router.replace("/dashboard");
-    else if (signedIn) router.replace("/onboarding");
-    else router.replace("/signup");
-  }, [hydrated, signedIn, onboarded, router]);
-
-  return (
-    <div className="grid min-h-screen place-items-center">
-      <p className="serif text-[22px] text-muted">Fertility Grove</p>
-    </div>
-  );
+export default function Page() {
+  return <Landing />;
 }

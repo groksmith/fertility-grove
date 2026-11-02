@@ -1,199 +1,154 @@
 "use client";
 
+/* A post in a list. Type chip, group, author with their tree, title, a body
+   preview, source label, votes, comment count, save and the post menu. Items
+   at −5 or below collapse behind "Show hidden content". */
+
+import Link from "next/link";
+import { Bookmark, MessageSquare, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
-import { Bookmark, Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
-import { Avatar, fieldWidth, Tag } from "./ui";
-import { useStore } from "@/lib/store";
+import { act, sel, useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
+import { ReportDialog, useResult } from "./Safety";
+import { Avatar, Menu, Name, Panel, SourceLabel, TagChip, TypeChip, VoteControl, toast, useCopy } from "./ui";
 
-const TYPE_TONE: Record<string, "green" | "coral" | "blue" | "yellow" | "purple"> = {
-  Question: "blue",
-  "Seeking Input": "green",
-  "Support Needed": "coral",
-  "Just Venting": "purple",
-  "Just Sharing": "yellow",
-};
+export function PostCard({ post, matched, showGroup = true }: { post: Post; matched?: string; showGroup?: boolean }) {
+  const s = useStore();
+  const author = sel.person(s, post.authorId);
+  const group = s.groups.find((g) => g.id === post.groupId);
+  const [reveal, setReveal] = useState(false);
+  const [report, setReport] = useState(false);
+  const [, copy] = useCopy();
+  const { handle, ui } = useResult();
+  if (!author || !group) return null;
 
-export function displayName(author: Post["author"]) {
-  return author.anonymous ? author.handle : author.name;
-}
+  const comments = sel.commentCount(s, post.id);
+  const mine = post.authorId === "me";
+  const hidden = sel.collapsed(post) && !reveal;
 
-export function PostCard({
-  post,
-  showSource = true,
-}: {
-  post: Post;
-  showSource?: boolean;
-}) {
-  const { toggleLike, toggleSave, addComment, profile } = useStore();
-  const [comment, setComment] = useState("");
-  const [openComments, setOpenComments] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [reported, setReported] = useState(false);
+  if (post.status === "deleted") {
+    return (
+      <Panel as="article" className="px-5 py-4 text-[14px] text-muted">
+        This post was deleted.{" "}
+        {comments > 0 && (
+          <Link href={`/posts/${post.id}`} className="font-semibold text-ink underline">
+            Read the comments
+          </Link>
+        )}
+      </Panel>
+    );
+  }
 
   return (
-    <article className="border-b border-line pb-7">
-      {showSource && (
-        <p className="text-[13.5px] text-muted">
-          from <span className="text-ink">{post.community}</span> community
+    <Panel as="article" className="relative p-5 sm:p-6">
+      {matched && <p className="mb-3 text-[13px] font-semibold text-green-ink">{matched}</p>}
+      {post.status === "held" && (
+        <p className="mb-3 rounded-[10px] bg-yellow-tint px-3 py-2 text-[13px] text-[var(--yellow-700)]">
+          Held for a moment while our team checks in. Only you can see it.
         </p>
       )}
-
-      <h3 className="mt-1 text-[17.5px] font-bold leading-snug">{post.title}</h3>
-
-      <div className="mt-2 flex items-center gap-2.5">
-        <Avatar name={displayName(post.author)} size={26} />
-        <span className="text-[13.5px] font-medium">{displayName(post.author)}</span>
-        <span className="text-[13px] text-muted-light">•</span>
-        <span className="text-[13px] text-muted">{post.createdAt}</span>
-        <div className="relative ml-auto">
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            className="text-muted-light transition hover:text-ink"
-            aria-label={`More options for ${post.title}`}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-          >
-            <MoreHorizontal size={18} />
-          </button>
-          {menuOpen && (
-            <ul
-              role="menu"
-              className="pop-in absolute right-0 top-7 z-10 w-44 rounded-xl border border-line bg-white py-1 shadow-lg"
-            >
-              <li>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    toggleSave(post.id);
-                    setMenuOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-[13.5px] hover:bg-surface"
-                >
-                  {post.saved ? "Remove from saved" : "Save this post"}
-                </button>
-              </li>
-              <li>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setReported(true);
-                  }}
-                  className="w-full px-4 py-2 text-left text-[13.5px] hover:bg-surface"
-                >
-                  Report this post
-                </button>
-              </li>
-            </ul>
+      <header className="flex items-start gap-3">
+        {author.badges.includes("team") ? (
+          <Avatar member={author} size={40} />
+        ) : (
+          <Link href={author.id === "me" ? "/profile" : `/u/${author.handle}`} aria-hidden tabIndex={-1} className="shrink-0">
+            <Avatar member={author} size={40} />
+          </Link>
+        )}
+        <div className="min-w-0 flex-1 text-[14px]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Name member={author} pronouns={false} />
+            <span className="text-muted">· {sel.timeAgo(post.minutesAgo)}</span>
+            {post.edited && <span className="text-muted">· Edited</span>}
+          </div>
+          {showGroup && (
+            <Link href={`/groups/${group.id}`} className="text-[13px] text-muted hover:text-ink hover:underline">
+              {group.name}
+            </Link>
           )}
         </div>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Tag tone={TYPE_TONE[post.type] ?? "gray"} outlined>
-          {post.type}
-        </Tag>
-        {post.tags.map((t) => (
-          <Tag key={t}>{t}</Tag>
-        ))}
-      </div>
-
-      <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-ink">
-        {post.body}
-      </p>
-
-      <div className="mt-4 flex items-center gap-6">
-        <button
-          onClick={() => toggleLike(post.id)}
-          aria-pressed={!!post.liked}
-          className="flex items-center gap-2 text-[14px] transition"
-          style={{ color: post.liked ? "var(--fg-coral-dark)" : "var(--ink)" }}
-        >
-          <Heart size={17} fill={post.liked ? "currentColor" : "none"} />
-          {post.liked ? "Liked" : "Like"}
-          {post.likes > 0 && (
-            <span className="text-muted">· {post.likes}</span>
+        <Menu
+          label="Post options"
+          trigger={(p) => (
+            <button {...p} type="button" aria-label="Post options" className="press -mt-1 -mr-2 grid h-10 w-10 place-items-center rounded-full text-muted hover:bg-raised hover:text-ink">
+              <MoreHorizontal size={20} />
+            </button>
           )}
-        </button>
-        <button
-          onClick={() => toggleSave(post.id)}
-          aria-pressed={!!post.saved}
-          className="flex items-center gap-2 text-[14px] transition"
-          style={{ color: post.saved ? "var(--fg-green-dark)" : "var(--ink)" }}
-        >
-          <Bookmark size={17} fill={post.saved ? "currentColor" : "none"} />
-          {post.saved ? "Saved" : "Save"}
-        </button>
-        <button
-          onClick={() => setOpenComments((v) => !v)}
-          className="flex items-center gap-2 text-[14px]"
-        >
-          <MessageCircle size={17} />
-          {post.comments.length === 0
-            ? "Comments"
-            : `${post.comments.length} ${
-                post.comments.length === 1 ? "comment" : "comments"
-              }`}
-        </button>
-      </div>
+          items={[
+            {
+              label: "Copy link",
+              onSelect: () => {
+                copy(`${location.origin}/posts/${post.id}`);
+                toast("Link copied");
+              },
+            },
+            post.allowSharing && {
+              label: "Copy public link",
+              onSelect: () => {
+                copy(`${location.origin}/p/${post.id}`);
+                toast("Public link copied");
+              },
+            },
+            { label: post.saved ? "Remove from saved" : "Save", onSelect: () => act.posts.toggleSave(post.id) },
+            ...(mine
+              ? [{ label: "Delete post", danger: true, onSelect: () => act.posts.remove(post.id) }]
+              : [
+                  "divider" as const,
+                  { label: "Report post", onSelect: () => setReport(true) },
+                  { label: `Block ${sel.displayName(author)}`, danger: true, onSelect: () => { act.social.block(author.id); toast("Blocked. You won't see their posts."); } },
+                ]),
+          ]}
+        />
+      </header>
 
-      {openComments && post.comments.length > 0 && (
-        <ul className="mt-4 space-y-4 border-l-2 border-line pl-4">
-          {post.comments.map((c) => (
-            <li key={c.id} className="flex gap-3">
-              <Avatar name={displayName(c.author)} size={28} />
-              <div>
-                <p className="text-[13.5px]">
-                  <span className="font-semibold">{displayName(c.author)}</span>{" "}
-                  <span className="text-muted-light">· {c.createdAt}</span>
-                </p>
-                <p className="mt-1 text-[14px] leading-relaxed">{c.body}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+      {hidden ? (
+        <div className="mt-4 rounded-[10px] bg-raised px-4 py-3 text-[14px] text-muted">
+          Hidden because members voted it down.{" "}
+          <button type="button" onClick={() => setReveal(true)} className="font-semibold text-ink underline">
+            Show hidden content
+          </button>
+        </div>
+      ) : (
+        <Link href={`/posts/${post.id}`} className="group mt-4 block">
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <TypeChip type={post.type} />
+            {post.tags.slice(0, 3).map((t) => (
+              <TagChip key={t}>{t}</TagChip>
+            ))}
+          </div>
+          <h2 className="text-[18px] leading-snug font-semibold text-ink group-hover:underline">{post.title}</h2>
+          <p className="mt-1.5 line-clamp-3 text-[15px] leading-relaxed text-ink-soft">{post.body}</p>
+        </Link>
       )}
 
-      <form
-        className={`mt-4 flex ${fieldWidth} items-center gap-2 rounded-[10px] bg-surface px-4 py-1`}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!comment.trim()) return;
-          addComment(post.id, comment.trim());
-          setComment("");
-          setOpenComments(true);
-        }}
-      >
-        <input
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Comment..."
-          aria-label={`Comment on ${post.title}`}
-          className="w-full bg-transparent py-2.5 text-[14px] placeholder:text-muted focus:outline-none"
+      <footer className="mt-4 flex flex-wrap items-center gap-2">
+        <VoteControl
+          up={post.up}
+          down={post.down}
+          my={post.myVote}
+          allowDown={sel.allowsDownvote(post)}
+          disabled={mine}
+          onVote={(v) => handle(act.posts.vote(post.id, v))}
         />
+        <Link href={`/posts/${post.id}#comments`} className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-raised px-3 text-[14px] font-semibold text-ink-soft hover:text-ink">
+          <MessageSquare size={16} />
+          <span className="tabular">{comments}</span>
+          <span className="sr-only">comments</span>
+        </Link>
         <button
-          type="submit"
-          disabled={!comment.trim()}
-          aria-label="Post comment"
-          className="text-muted transition enabled:hover:text-green-dark disabled:opacity-30"
+          type="button"
+          onClick={() => act.posts.toggleSave(post.id)}
+          aria-pressed={post.saved}
+          aria-label={post.saved ? "Saved" : "Save"}
+          className={`press grid h-9 w-9 place-items-center rounded-full bg-raised ${post.saved ? "text-accent" : "text-muted hover:text-ink"}`}
         >
-          <Send size={17} />
+          <Bookmark size={16} fill={post.saved ? "currentColor" : "none"} />
         </button>
-        <Avatar
-          name={`${profile.firstName} ${profile.lastName}`}
-          size={26}
-          preset={profile.avatarPreset}
-        />
-      </form>
-      {reported && (
-        <p
-          role="status"
-          className="mt-3 rounded-lg bg-tint-green px-4 py-2.5 text-[13px] text-green-dark"
-        >
-          Reported. A moderator will take a look.
-        </p>
-      )}
-    </article>
+        <span className="flex-1" />
+        <SourceLabel source={post.source} link={post.sourceLink} />
+      </footer>
+      <ReportDialog open={report} onClose={() => setReport(false)} target={post.id} what="post" authorId={author.id} />
+      {ui}
+    </Panel>
   );
 }

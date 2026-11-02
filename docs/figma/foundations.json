@@ -1,0 +1,180 @@
+{
+  "colors": {
+    "Brand": {
+      "brand-orange": "#f89414",
+      "brand-orange-deep": "#e97d03",
+      "brand-leaf": "#6c9e3b",
+      "site-ink": "#222222"
+    },
+    "Neutral": {
+      "white": "#ffffff",
+      "surface": "#f8f8f8",
+      "site-grey": "#f3f3f3",
+      "nav": "#f5f5f5",
+      "tint-neutral": "#f5f5f5",
+      "line-grey": "#ededed",
+      "site-line": "#e6e6e6",
+      "site-line-strong": "#d8d8d8",
+      "line-grey-strong": "#d6d6d6",
+      "muted-light": "#7c7c7c",
+      "site-muted": "#666666",
+      "muted-grey": "#5c5c5c",
+      "ink-soft": "#3d3d3d",
+      "ink": "#090814"
+    },
+    "Green": {
+      "fg-green-bright": "#42c074",
+      "fg-green": "#32a765",
+      "fg-green-dark": "#0a7a3b",
+      "fg-green-ink": "#031e0f",
+      "tint-green": "#e0f6eb"
+    },
+    "Coral": {
+      "fg-coral": "#f48265",
+      "fg-coral-dark": "#e06a4d",
+      "tint-pink": "#ffe7de",
+      "tag-coral-ink": "#c24a28"
+    },
+    "Blue": {
+      "fg-blue": "#85c5f9",
+      "fg-blue-dark": "#529bd7",
+      "fg-blue-ink": "#326a97",
+      "tint-blue": "#dff3ff"
+    },
+    "Yellow": {
+      "fg-yellow": "#ffd339",
+      "fg-yellow-soft": "#ffee8c",
+      "fg-yellow-ink": "#c3a52a",
+      "tint-yellow": "#fffbe8",
+      "tag-yellow-ink": "#8a6d12"
+    },
+    "Purple": {
+      "fg-purple": "#7546a4",
+      "fg-purple-mid": "#a874db",
+      "fg-purple-soft": "#e3d1f9",
+      "tint-purple": "#f1e7f1"
+    },
+    "Pink": {
+      "fg-pink": "#f97ab3",
+      "tag-pink-bg": "#ffe8f3",
+      "tag-pink-ink": "#c94c88"
+    },
+    "Feedback": {
+      "error": "#c0392b"
+    }
+  },
+  "type": {
+    "font_display": "Instrument Serif (Regular)",
+    "font_ui": "Instrument Sans",
+    "styles": [
+      {
+        "name": "Display / Hero",
+        "font": "Instrument Serif",
+        "size": 56,
+        "line": 1.04,
+        "tracking": -0.01
+      },
+      {
+        "name": "Display / Section",
+        "font": "Instrument Serif",
+        "size": 56,
+        "line": 1.0
+      },
+      {
+        "name": "Display / Page title",
+        "font": "Instrument Serif",
+        "size": 32,
+        "line": 1.1
+      },
+      {
+        "name": "Display / Page title phone",
+        "font": "Instrument Serif",
+        "size": 28,
+        "line": 1.1
+      },
+      {
+        "name": "Heading / Section",
+        "font": "Instrument Sans",
+        "weight": 600,
+        "size": 24,
+        "line": 1.25
+      },
+      {
+        "name": "Heading / Card",
+        "font": "Instrument Sans",
+        "weight": 600,
+        "size": 20,
+        "line": 1.3
+      },
+      {
+        "name": "Heading / Small",
+        "font": "Instrument Sans",
+        "weight": 600,
+        "size": 16,
+        "line": 1.4
+      },
+      {
+        "name": "Body / Large",
+        "font": "Instrument Sans",
+        "size": 17,
+        "line": 1.6
+      },
+      {
+        "name": "Body",
+        "font": "Instrument Sans",
+        "size": 15,
+        "line": 1.6
+      },
+      {
+        "name": "Body / Small",
+        "font": "Instrument Sans",
+        "size": 14,
+        "line": 1.5
+      },
+      {
+        "name": "Caption",
+        "font": "Instrument Sans",
+        "size": 13,
+        "line": 1.45
+      },
+      {
+        "name": "Label / Chip",
+        "font": "Instrument Sans",
+        "weight": 600,
+        "size": 12,
+        "line": 1.3
+      }
+    ]
+  },
+  "radius": {
+    "chip": 999,
+    "control": 10,
+    "row": 14,
+    "card": 20,
+    "sheet": 20
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    96
+  ],
+  "shadow": {
+    "floating": "0 12px 28px -10px rgba(3,30,15,0.5)",
+    "menu": "0 12px 32px -8px rgba(3,30,15,0.28)"
+  },
+  "breakpoints": {
+    "phone": 390,
+    "tablet": 768,
+    "ipad_landscape": 1024,
+    "desktop": 1280,
+    "frame_desktop": 1440
+  }
+}
