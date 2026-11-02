@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
+/* Tokens run in three layers: primitives are the brand's raw values, semantic
+   roles say what a value is for, and component tokens pin the few values a
+   component owns. Components reference the semantic and component layers only. */
+
 :root {
-  /* Brand ---------------------------------------------------------------- */
+  /* Brand palette: the Fertility Grove palette exactly as approved (v1
+     prototype / Figma). These values are fixed. Never change, re-tint or
+     extend them; everything below only points at them. */
   --fg-green: #32a765;
   --fg-green-bright: #42c074;
   --fg-green-dark: #0a7a3b;
@@ -24,7 +30,6 @@
 
   --fg-pink: #f97ab3;
 
-  /* Section tints -------------------------------------------------------- */
   --tint-green: #e0f6eb;
   --tint-blue: #dff3ff;
   --tint-pink: #ffe7de;
@@ -32,52 +37,168 @@
   --tint-purple: #f1e7f1;
   --tint-neutral: #f5f5f5;
 
-  /* Neutrals ------------------------------------------------------------- */
   --ink: #090814;
   --ink-soft: #3d3d3d;
-  --muted: #5c5c5c;
+  --muted-grey: #5c5c5c;
   --muted-light: #7c7c7c;
-  --line: #ededed;
-  --line-strong: #d6d6d6;
+  --line-grey: #ededed;
+  --line-grey-strong: #d6d6d6;
   --surface: #f8f8f8;
   --nav: #f5f5f5;
   --white: #ffffff;
+
+  /* From the live brand (fertilitygrove.com): the logo orange and leaf, the
+     near-black button, and the light greys of the site. Also fixed. */
+  --brand-orange: #f89414;
+  --brand-orange-deep: #e97d03;
+  --brand-leaf: #6c9e3b;
+  --site-ink: #222222;
+  --site-grey: #f3f3f3;
+  --site-line: #e6e6e6;
+  --site-line-strong: #d8d8d8;
+  --site-muted: #666666;
+
+  /* Tag inks from the approved v1 components (readable text on each tint). */
+  --tag-coral-ink: #c24a28;
+  --tag-yellow-ink: #8a6d12;
+  --tag-pink-bg: #ffe8f3;
+  --tag-pink-ink: #c94c88;
+  --error: #c0392b;
+
+  /* Aliases used by components. Each one points at a brand value above. */
+  --green-50: var(--tint-green);
+  --green-300: var(--fg-green-bright);
+  --green-500: var(--fg-green);
+  --green-700: var(--fg-green-dark);
+  --green-900: var(--fg-green-ink);
+  --green-950: var(--fg-green-ink);
+
+  --coral-50: var(--tint-pink);
+  --coral-300: var(--fg-coral);
+  --coral-700: var(--tag-coral-ink);
+
+  --yellow-50: var(--tint-yellow);
+  --yellow-300: var(--fg-yellow);
+  --yellow-700: var(--tag-yellow-ink);
+
+  --blue-50: var(--tint-blue);
+  --blue-300: var(--fg-blue);
+  --blue-700: var(--fg-blue-ink);
+
+  --pink-50: var(--tag-pink-bg);
+  --pink-300: var(--fg-pink);
+  --pink-700: var(--tag-pink-ink);
+
+  --purple-50: var(--tint-purple);
+  --purple-300: var(--fg-purple-mid);
+  --purple-700: var(--fg-purple);
+
+  /* Illustration roles, drawn from the palette only. */
+  --bark-600: var(--muted-grey);
+  --bark-800: var(--ink-soft);
+  --orange-400: var(--fg-coral);
+  --soil-100: var(--line-grey);
+  --stone-100: var(--tint-neutral);
+
+  --ink-950: var(--ink);
+  --grey-700: var(--ink-soft);
+  --grey-600: var(--muted-grey);
+  --grey-300: var(--line-grey-strong);
+  --grey-200: var(--line-grey);
+  --grey-100: var(--tint-neutral);
+  --grey-50: var(--surface);
+  --red-700: var(--error);
+  --red-50: var(--tint-pink);
+
+  /* Semantic: what each value is for. White and light, like the live site:
+     white canvas, light-grey chrome, hairline-separated white cards, the
+     near-black pill for the one primary action, brand orange for the tree. */
+  --ground: var(--white);
+  --panel: var(--white);
+  --raised: var(--site-grey);
+  --chrome: var(--surface);
+  --line: var(--site-line);
+  --line-strong: var(--site-line-strong);
+  --text: var(--ink);
+  --text-soft: var(--ink-soft);
+  --muted: var(--site-muted);
+  --accent: var(--site-ink);
+  --accent-ink: var(--white);
+  --accent-soft: var(--site-grey);
+  --brand: var(--brand-orange);
+  --positive: var(--fg-green-dark);
+  --danger: var(--error);
+  --danger-soft: var(--tint-pink);
+  --focus: var(--site-ink);
+  --grove: var(--fg-green-ink);
+  --grove-deep: var(--fg-green-ink);
+
+  /* Component: one large radius stepping down inside (20 / 10 / 8 / 5). */
+  --r-card: 20px;
+  --r-control: 10px;
+  --r-inner: 8px;
+  --r-chip: 5px;
+  --control-h: 44px;
+
+  /* Motion: strong ease-out for anything entering or responding, an iOS-like
+     curve for sheets. Durations stay under 300ms for UI. */
+  --e-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --e-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --e-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @theme inline {
-  --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-muted: var(--muted);
-  --color-muted-light: var(--muted-light);
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
-  --color-surface: var(--surface);
-  --color-nav: var(--nav);
+  --color-ink: var(--text);
+  --color-ink-soft: var(--text-soft);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-orange-deep);
+  --color-leaf: var(--brand-leaf);
+  --color-positive: var(--positive);
+  --color-chrome: var(--chrome);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-grove: var(--grove);
+  --color-grove-deep: var(--grove-deep);
 
-  --color-green: var(--fg-green);
-  --color-green-bright: var(--fg-green-bright);
-  --color-green-dark: var(--fg-green-dark);
-  --color-green-ink: var(--fg-green-ink);
-  --color-coral: var(--fg-coral);
-  --color-coral-dark: var(--fg-coral-dark);
-  --color-blue: var(--fg-blue);
-  --color-blue-dark: var(--fg-blue-dark);
-  --color-blue-ink: var(--fg-blue-ink);
-  --color-yellow: var(--fg-yellow);
-  --color-yellow-soft: var(--fg-yellow-soft);
-  --color-purple: var(--fg-purple);
-  --color-purple-mid: var(--fg-purple-mid);
-  --color-purple-soft: var(--fg-purple-soft);
-  --color-pink: var(--fg-pink);
+  --color-green-tint: var(--green-50);
+  --color-green: var(--green-300);
+  --color-green-ink: var(--green-700);
+  --color-coral-tint: var(--coral-50);
+  --color-coral: var(--coral-300);
+  --color-coral-ink: var(--coral-700);
+  --color-yellow-tint: var(--yellow-50);
+  --color-yellow: var(--yellow-300);
+  --color-yellow-ink: var(--yellow-700);
+  --color-blue-tint: var(--blue-50);
+  --color-blue: var(--blue-300);
+  --color-blue-ink: var(--blue-700);
+  --color-pink-tint: var(--pink-50);
+  --color-pink: var(--pink-300);
+  --color-pink-ink: var(--pink-700);
+  --color-purple-tint: var(--purple-50);
+  --color-purple: var(--purple-300);
+  --color-purple-ink: var(--purple-700);
+  --color-bark: var(--bark-600);
+  --color-orange: var(--orange-400);
 
-  --color-tint-green: var(--tint-green);
-  --color-tint-blue: var(--tint-blue);
-  --color-tint-pink: var(--tint-pink);
-  --color-tint-yellow: var(--tint-yellow);
-  --color-tint-purple: var(--tint-purple);
-  --color-tint-neutral: var(--tint-neutral);
+  --radius-card: var(--r-card);
+  --radius-control: var(--r-control);
+  --radius-inner: var(--r-inner);
+  --radius-chip: var(--r-chip);
 
-  --font-sans: var(--font-manrope);
+  --ease-out: var(--e-out);
+  --ease-in-out: var(--e-in-out);
+  --ease-drawer: var(--e-drawer);
+
+  --font-sans: var(--font-sans-brand);
   --font-serif: var(--font-instrument);
 }
 
@@ -85,88 +206,620 @@
   box-sizing: border-box;
 }
 
-html,
-body {
-  height: 100%;
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button,
+a,
+[role="button"],
+[role="tab"],
+[role="switch"] {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+[role="tab"],
+[role="switch"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Anything you can click shows the pointer: links, buttons, every control
+   role, labels that toggle a box, clickable cards (.press) and the scrims
+   that close sheets. In the base layer, so a utility like cursor-not-allowed
+   on one element still wins. Disabled controls say so. */
+@layer base {
+  a[href],
+  button,
+  summary,
+  select,
+  label[for],
+  label:has(input[type="checkbox"], input[type="radio"], input[type="file"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="range"],
+  input[type="color"],
+  input[type="submit"],
+  input[type="button"],
+  [role="button"],
+  [role="tab"],
+  [role="switch"],
+  [role="menuitem"],
+  [role="option"],
+  [role="radio"],
+  [role="checkbox"],
+  .press,
+  .scrim {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled="true"],
+  label:has(:disabled) {
+    cursor: not-allowed;
+  }
 }
 
 body {
-  background: var(--white);
-  color: var(--ink);
-  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-sans-brand), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "tnum" 0;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .serif {
   font-family: var(--font-instrument), ui-serif, Georgia, serif;
   font-weight: 400;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
-/* Focus ------------------------------------------------------------------ */
-:where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid var(--fg-green-dark);
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Browser surfaces carry the design too. */
+::selection {
+  background: var(--fg-yellow-soft);
+  color: var(--ink);
+}
+
+input,
+textarea {
+  caret-color: var(--brand-orange-deep);
+}
+
+/* iOS zooms any field under 16px; keep every field at 16px on touch. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+a {
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* Scrollbars ------------------------------------------------------------- */
-.thin-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.thin-scroll::-webkit-scrollbar-thumb {
-  background: #e2e2e2;
-  border-radius: 999px;
-}
-.thin-scroll::-webkit-scrollbar-track {
-  background: transparent;
+/* A search pill draws the ring on itself (focus-within), so its input doesn't. */
+.search-field input:focus-visible {
+  outline: none;
 }
 
-/* Animation -------------------------------------------------------------- */
-@keyframes fg-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.fade-up {
-  animation: fg-fade-up 0.28s ease-out both;
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
-@keyframes fg-pop {
-  0% {
+/* Pressable things answer the press. Gated so touch doesn't get sticky hover. */
+.press {
+  transition: transform 140ms var(--e-out), background-color 160ms ease,
+    color 160ms ease, border-color 160ms ease;
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Sidebar rows: the hover fill is the hairline grey (#e6e6e6), which reads on
+   the #f8f8f8 sidebar where the band grey (#f3f3f3) didn't. It fades in fast
+   and leaves a touch slower, so moving down the list feels continuous. */
+.nav-row {
+  transition:
+    background-color 90ms ease,
+    color 90ms ease,
+    transform 140ms var(--e-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-row:not(:hover) {
+    transition-duration: 180ms, 180ms, 140ms;
+  }
+}
+
+/* Popovers and sheets enter with @starting-style so they need no mount effect. */
+.pop {
+  transition: opacity 160ms var(--e-out), transform 160ms var(--e-out);
+  @starting-style {
     opacity: 0;
     transform: scale(0.96);
   }
+}
+.rise {
+  transition: opacity 220ms var(--e-out), transform 220ms var(--e-out);
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.toast[data-leaving] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition-duration: 180ms;
+}
+.sheet-up {
+  transition: transform 320ms var(--e-drawer);
+  @starting-style {
+    transform: translateY(100%);
+  }
+}
+.dialog-panel {
+  transition: transform 320ms var(--e-drawer), opacity 200ms ease;
+  @starting-style {
+    transform: translateY(100%);
+  }
+}
+@media (min-width: 640px) {
+  .dialog-panel {
+    transition: transform 200ms var(--e-out), opacity 200ms var(--e-out);
+    @starting-style {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+  }
+}
+.scrim {
+  transition: opacity 200ms ease;
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+/* The tree grows: each part of a tree drawing scales up from its base. */
+@keyframes fg-grow {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.grow-part {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: fg-grow 520ms var(--e-out) both;
+}
+
+@keyframes fg-sun {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Landing entrances: parts rise into place once as their section enters.
+   The hidden start only applies after script runs, so nothing stays hidden. */
+.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms var(--e-out), transform 600ms var(--e-out);
+}
+.reveal-ready [data-reveal][data-in] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Library covers settle from a slight zoom as their card rises in. */
+.reveal-ready [data-reveal] .cover-settle {
+  transform: scale(1.08);
+  transition: transform 1100ms var(--e-out);
+}
+.reveal-ready [data-reveal][data-in] .cover-settle {
+  transform: none;
+}
+
+/* Saved: an item you remove folds away (fades, then its row closes up), and
+   a bookmark gives a small pop when pressed. */
+.fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 240ms var(--e-out),
+    opacity 160ms ease,
+    transform 160ms var(--e-out);
+}
+.fold-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.fold.is-leaving {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: scale(0.98);
+}
+.bookmark-pop svg {
+  transition: transform 160ms var(--e-out);
+}
+.bookmark-pop:active svg {
+  transform: scale(0.82);
+}
+
+/* One moving picture: a slow drift on a photograph. */
+@keyframes fg-drift {
+  from {
+    transform: scale(1.04) translate3d(-1%, 0, 0);
+  }
+  to {
+    transform: scale(1.1) translate3d(1%, -1%, 0);
+  }
+}
+.drift {
+  animation: fg-drift 18s ease-in-out infinite alternate;
+}
+
+/* The cosy layer (components/art/Cozy.tsx): a painted wash behind headers,
+   fading into the white page, with painted elements hanging in from the edge. */
+.wash-fade {
+  mask-image: linear-gradient(to bottom, #000 28%, transparent 96%);
+}
+.fade-down {
+  mask-image: linear-gradient(to bottom, #000 50%, transparent 98%);
+}
+
+/* Ambient loops run only while their backdrop is on screen. */
+.ambient {
+  animation-play-state: paused;
+}
+[data-ambient="on"] .ambient {
+  animation-play-state: running;
+}
+
+/* A hanging element is three layers on co-prime periods: it sways from
+   where it's tied, its tips flex, and it bobs. easeInOutSine, because a
+   branch eases evenly through each swing rather than snapping. */
+@keyframes fg-sway {
+  from {
+    transform: rotate(-1.1deg);
+  }
+  to {
+    transform: rotate(1.1deg);
+  }
+}
+@keyframes fg-bend-top {
+  from {
+    transform: skewX(-1.8deg);
+  }
+  to {
+    transform: skewX(1.8deg);
+  }
+}
+@keyframes fg-bend-right {
+  from {
+    transform: skewY(-1.5deg);
+  }
+  to {
+    transform: skewY(1.5deg);
+  }
+}
+@keyframes fg-bob {
+  from {
+    transform: translateY(-1.5px);
+  }
+  to {
+    transform: translateY(1.5px);
+  }
+}
+.sway {
+  animation: fg-sway 7.3s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+.sway-top,
+.bend-top {
+  transform-origin: 50% 0;
+}
+.sway-right,
+.bend-right {
+  transform-origin: 100% 50%;
+}
+.bend-top {
+  animation: fg-bend-top 4.9s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+.bend-right {
+  animation: fg-bend-right 4.9s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+.bob {
+  animation: fg-bob 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+
+/* The Learn window: a breeze nudges each shutter on its hinge (they sit
+   behind the frame), on different beats, and the lamp inside breathes. */
+.window-stage {
+  perspective: 700px;
+}
+@keyframes fg-shutter-l {
+  0%,
   100% {
+    transform: rotateY(0deg);
+  }
+  45% {
+    transform: rotateY(9deg);
+  }
+  60% {
+    transform: rotateY(6deg);
+  }
+  75% {
+    transform: rotateY(8deg);
+  }
+}
+@keyframes fg-shutter-r {
+  0%,
+  100% {
+    transform: rotateY(0deg);
+  }
+  40% {
+    transform: rotateY(-8deg);
+  }
+  58% {
+    transform: rotateY(-5deg);
+  }
+  72% {
+    transform: rotateY(-9deg);
+  }
+}
+.shutter-l {
+  transform-origin: 100% 50%;
+  animation: fg-shutter-l 6.7s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+.shutter-r {
+  transform-origin: 0% 50%;
+  animation: fg-shutter-r 8.3s cubic-bezier(0.37, 0, 0.63, 1) -2.1s infinite;
+}
+@keyframes fg-lamp {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.lamp {
+  mix-blend-mode: screen;
+  animation: fg-lamp 5.9s ease-in-out infinite;
+}
+
+/* The landing's privacy promises: painted symbols that lift a little under
+   a mouse pointer. */
+.promise-art {
+  transition: transform 260ms var(--e-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .promise:hover .promise-art {
+    transform: translateY(-4px) rotate(-1deg);
+  }
+}
+
+/* The Grove Guide button (AppShell): its sparkle's stars twinkle in turn,
+   the big star turns a quarter under a mouse pointer, and the label folds
+   away while you scroll down to read. */
+@keyframes fg-twinkle {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.8);
+  }
+  50% {
     opacity: 1;
     transform: scale(1);
   }
 }
-.pop-in {
-  animation: fg-pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+@keyframes fg-spark-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+@keyframes fg-spark-turn {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  60% {
+    transform: rotate(80deg) scale(1.08);
+  }
+  to {
+    transform: rotate(90deg) scale(1);
+  }
+}
+.spark {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.spark-1 {
+  animation: fg-spark-breathe 3.2s ease-in-out infinite;
+}
+.spark-2 {
+  animation: fg-twinkle 2.4s ease-in-out -0.6s infinite;
+}
+.spark-3 {
+  animation: fg-twinkle 2.4s ease-in-out -1.8s infinite;
+}
+@media (hover: hover) and (pointer: fine) {
+  .guide-fab:hover .spark-1 {
+    animation: fg-spark-turn 600ms var(--e-out);
+  }
+}
+.guide-label {
+  grid-template-columns: 1fr;
+  transition:
+    grid-template-columns 260ms var(--e-out),
+    opacity 180ms var(--e-out);
+}
+.guide-fab[data-folded] .guide-label {
+  grid-template-columns: 0fr;
+  opacity: 0;
 }
 
-@keyframes fg-confetti-fall {
+/* Notifications' bell rings once from its bow: a few damped swings. */
+@keyframes fg-bell-ring {
   0% {
-    transform: translateY(-40px) rotate(0deg);
-    opacity: 0;
+    transform: rotate(0deg);
   }
   12% {
+    transform: rotate(11deg);
+  }
+  28% {
+    transform: rotate(-9deg);
+  }
+  44% {
+    transform: rotate(6deg);
+  }
+  60% {
+    transform: rotate(-4deg);
+  }
+  76% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+.bell-ring {
+  transform-origin: 50% 4%;
+}
+.bell-ring.is-ringing {
+  animation: fg-bell-ring 1400ms cubic-bezier(0.37, 0, 0.63, 1) 600ms both;
+}
+
+/* Settings' watering can lets a drop fall from its spout now and then. */
+@keyframes fg-drip {
+  0%,
+  55% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6, 0.6);
+  }
+  62% {
+    opacity: 0.9;
+    transform: translate(-50%, 0) scale(1, 1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 46px) scale(0.85, 1.3);
+  }
+}
+.drip {
+  position: absolute;
+  width: 5px;
+  height: 7px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: rgb(150 196 224 / 0.9);
+  pointer-events: none;
+  animation: fg-drip 3.4s cubic-bezier(0.55, 0, 0.75, 0.4) infinite;
+}
+
+/* Café bulbs and the lantern breathe, each on its own beat. */
+@keyframes fg-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgb(255 222 150 / 0.95), rgb(255 196 110 / 0.35) 38%, transparent 70%);
+  mix-blend-mode: screen;
+  transform: translate(-50%, -50%);
+  animation: fg-glow 3.4s ease-in-out infinite;
+}
+
+/* A petal or loose leaf lets go and drifts down its area (the column is the
+   area's full height, so translateY(-100%) starts it above the top), while
+   fluttering side to side. */
+@keyframes fg-fall {
+  0% {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+  10%,
+  80% {
     opacity: 1;
   }
   100% {
-    transform: translateY(560px) rotate(540deg);
+    transform: translate3d(var(--dx), 0, 0);
     opacity: 0;
   }
 }
+@keyframes fg-flutter {
+  from {
+    transform: translateX(-14px) rotate(calc(var(--spin) * -0.15));
+  }
+  to {
+    transform: translateX(14px) rotate(calc(var(--spin) * 0.15));
+  }
+}
+.drift-fall {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 100%;
+  opacity: 0;
+  animation: fg-fall var(--t) linear var(--d) infinite;
+}
+.drift-flutter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: block;
+  animation: fg-flutter 2.6s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+.petal {
+  display: block;
+  width: var(--s);
+  height: calc(var(--s) * 0.62);
+  border-radius: 60% 40% 60% 40% / 70% 50% 50% 30%;
+  background: #fffaf4;
+  box-shadow: inset -1px -1px 0 rgb(236 196 196 / 0.7);
+}
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal-ready [data-reveal] {
+    transform: none;
+  }
+
   *,
   *::before,
   *::after {

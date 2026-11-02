@@ -1,0 +1,239 @@
+{
+ "schemaVersion": 2,
+ "generatedAt": "2026-10-26T19:51:26.523443+00:00",
+ "title": "Design System: Fertility Grove",
+ "extensions": {
+  "colorMeta": {
+   "site-ink": {
+    "role": "primary",
+    "displayName": "Site Ink",
+    "canonical": "#222222"
+   },
+   "brand-orange": {
+    "role": "primary",
+    "displayName": "Brand Orange",
+    "canonical": "#f89414"
+   },
+   "brand-leaf": {
+    "role": "primary",
+    "displayName": "Brand Leaf",
+    "canonical": "#6c9e3b"
+   },
+   "white": {
+    "role": "neutral",
+    "displayName": "White",
+    "canonical": "#ffffff"
+   },
+   "site-grey": {
+    "role": "neutral",
+    "displayName": "Site Grey",
+    "canonical": "#f3f3f3"
+   },
+   "site-line": {
+    "role": "neutral",
+    "displayName": "Site Line",
+    "canonical": "#e6e6e6"
+   },
+   "tint-pink": {
+    "role": "secondary",
+    "displayName": "Coral tint",
+    "canonical": "#ffe7de"
+   },
+   "tint-blue": {
+    "role": "secondary",
+    "displayName": "Blue tint",
+    "canonical": "#dff3ff"
+   },
+   "tint-yellow": {
+    "role": "secondary",
+    "displayName": "Yellow tint",
+    "canonical": "#fffbe8"
+   },
+   "tint-purple": {
+    "role": "secondary",
+    "displayName": "Purple tint",
+    "canonical": "#f1e7f1"
+   }
+  },
+  "typographyMeta": {
+   "display": {
+    "displayName": "Display",
+    "purpose": "Landing headline (Instrument Serif)."
+   },
+   "headline": {
+    "displayName": "Page title",
+    "purpose": "App h1, Instrument Serif 32px."
+   },
+   "title": {
+    "displayName": "Title",
+    "purpose": "Instrument Sans 600."
+   },
+   "body": {
+    "displayName": "Body",
+    "purpose": "Instrument Sans."
+   },
+   "label": {
+    "displayName": "Label",
+    "purpose": "Sentence case, never tracked caps."
+   }
+  },
+  "shadows": [
+   {
+    "name": "dialog",
+    "value": "0 24px 64px -16px rgba(3,30,15,0.35)",
+    "purpose": "Dialogs and bottom sheets."
+   },
+   {
+    "name": "menu",
+    "value": "0 12px 32px -8px rgba(3,30,15,0.28)",
+    "purpose": "Popover menus."
+   },
+   {
+    "name": "toast",
+    "value": "0 12px 28px -10px rgba(3,30,15,0.5)",
+    "purpose": "Toasts."
+   },
+   {
+    "name": "focus-glow",
+    "value": "0 0 0 3px #e0f6eb",
+    "purpose": "Focused inputs."
+   }
+  ],
+  "motion": [
+   {
+    "name": "ease-out",
+    "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+    "purpose": "Press, menus, toasts, anything entering or responding."
+   },
+   {
+    "name": "ease-in-out",
+    "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "purpose": "On-screen movement."
+   },
+   {
+    "name": "ease-drawer",
+    "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+    "purpose": "Bottom sheets on phones (320ms)."
+   },
+   {
+    "name": "press",
+    "value": "transform: scale(0.97), 140ms",
+    "purpose": "Every pressable control."
+   },
+   {
+    "name": "grow",
+    "value": "scale 0.6→1 from the base, 520ms, 90ms stagger",
+    "purpose": "Tree level-ups and the onboarding grove."
+   }
+  ],
+  "breakpoints": [
+   {
+    "name": "sm",
+    "value": "640px"
+   },
+   {
+    "name": "lg",
+    "value": "1024px"
+   }
+  ]
+ },
+ "components": [
+  {
+   "name": "Logo",
+   "kind": "custom",
+   "description": "The brand logo from fertilitygrove.com: orange with leaf beside 'fertility GROVE'.",
+   "html": "<img class=\"ds-logo\" src=\"/brand/logo.png\" alt=\"Fertility Grove\">",
+   "css": ".ds-logo{height:46px;width:auto}"
+  },
+  {
+   "name": "Primary Button",
+   "kind": "button",
+   "refersTo": "button-primary",
+   "description": "The one action per screen.",
+   "html": "<button class=\"ds-btn-primary\">Write a post</button>",
+   "css": ".ds-btn-primary{background:#222222;color:#fff;height:44px;padding:0 20px;border:0;border-radius:9999px;font:600 15px/1 'Instrument Sans',system-ui,sans-serif;transition:transform 140ms cubic-bezier(.23,1,.32,1),background-color 160ms ease}.ds-btn-primary:hover{background:#000}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #222;outline-offset:2px}"
+  },
+  {
+   "name": "Secondary Button",
+   "kind": "button",
+   "refersTo": "button-secondary",
+   "description": "Secondary actions beside the primary.",
+   "html": "<button class=\"ds-btn-secondary\">Follow</button>",
+   "css": ".ds-btn-secondary{background:#fff;color:#090814;height:44px;padding:0 20px;border:1px solid #d8d8d8;border-radius:9999px;font:600 15px/1 'Instrument Sans',system-ui,sans-serif}.ds-btn-secondary:hover{border-color:#090814}.ds-btn-secondary:focus-visible{outline:2px solid #222;outline-offset:2px}"
+  },
+  {
+   "name": "Text Field",
+   "kind": "input",
+   "refersTo": "input",
+   "description": "Every field, with a visible label above.",
+   "html": "<label class=\"ds-field\"><span>Handle</span><input class=\"ds-input\" value=\"annie_grows\"></label>",
+   "css": ".ds-field{display:grid;gap:8px;font:600 14px 'Instrument Sans',system-ui,sans-serif;color:#090814}.ds-input{height:44px;padding:0 14px;border:1px solid #d8d8d8;border-radius:10px;background:#fff;font:400 15px 'Instrument Sans',system-ui,sans-serif;color:#090814}.ds-input:focus{outline:none;border-color:#222;box-shadow:0 0 0 3px #e6e6e6}"
+  },
+  {
+   "name": "Post type chip",
+   "kind": "chip",
+   "refersTo": "chip-type-question",
+   "description": "Pale tint in its own ink.",
+   "html": "<span class=\"ds-chip\">Question</span>",
+   "css": ".ds-chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:9999px;background:#dff3ff;color:#326a97;font:600 12px Manrope,system-ui,sans-serif}"
+  },
+  {
+   "name": "Panel",
+   "kind": "card",
+   "refersTo": "panel",
+   "description": "White panel on the ground; no border, no shadow.",
+   "html": "<div class=\"ds-panel\"><h3>People on your path</h3><p>Matched on endometriosis and IVF</p></div>",
+   "css": ".ds-panel{background:#fff;border:1px solid #e6e6e6;border-radius:20px;padding:24px;font-family:'Instrument Sans',system-ui,sans-serif}.ds-panel h3{margin:0;font-size:16px;font-weight:600;color:#090814}.ds-panel p{margin:6px 0 0;font-size:13px;color:#666}"
+  },
+  {
+   "name": "Sidebar nav item",
+   "kind": "nav",
+   "refersTo": "nav-item-active",
+   "description": "Neutral grey pill marks the active row.",
+   "html": "<nav class=\"ds-nav\"><a class=\"is-active\">Home</a><a>Groups</a><a>Grove Guide</a></nav>",
+   "css": ".ds-nav{display:grid;gap:2px;width:220px;padding:8px;background:#f8f8f8;font:14px 'Instrument Sans',system-ui,sans-serif}.ds-nav a{display:flex;align-items:center;height:36px;padding:0 10px;border-radius:10px;color:#3d3d3d}.ds-nav a:hover{background:#f3f3f3;color:#090814}.ds-nav a.is-active{background:#fff;box-shadow:inset 0 0 0 1px #e6e6e6;color:#090814;font-weight:600}"
+  }
+ ],
+ "narrative": {
+  "northStar": "The Tended Grove",
+  "overview": "Fertility Grove looks like fertilitygrove.com: a calm white page, the orange logo, watercolour orange trees and a near-black pill. Colour is reserved for what is alive: the brand orange on your tree and Sunlight, category tints on groups and posts, and the watercolour art. All artwork is the brand's own watercolour orange tree, taken from the growth film on the live site; the Blossom Tree carries white orange blossoms.",
+  "keyCharacteristics": [
+   "A white canvas with light-grey chrome (#f8f8f8 sidebar, #f3f3f3 bands), and white cards with a hairline (#e6e6e6).",
+   "The near-black pill (#222) for the one primary action, as on the live site.",
+   "Brand orange (#f89414) for the tree, Sunlight and counts that need you.",
+   "Instrument Serif for titles and Instrument Sans for everything a member reads or taps (the live site's faces).",
+   "Watercolour artwork only, never flat vector illustration."
+  ],
+  "rules": [
+   {
+    "name": "The Fixed Palette Rule",
+    "body": "These values are the brand's. Design tools change layout, components, motion and illustration, never these colours.",
+    "section": "colors"
+   },
+   {
+    "name": "The Readable Tint Rule",
+    "body": "Text on a tint must reach 4.5:1. Coral and pink inks don't on their own tints, so text there is Ink Soft and the tint plus a hue outline carry the colour.",
+    "section": "colors"
+   },
+   {
+    "name": "The Distinct State Rule",
+    "body": "Selected, active and on states are never pale-on-pale. They use Site Ink; counts use Brand Orange.",
+    "section": "colors"
+   }
+  ],
+  "dos": [
+   "Do use the real logo (Logo) and the brand's watercolour art for every picture.",
+   "Do keep pages white and light, with the near-black pill for the one primary action.",
+   "Do make every text and tint pair reach 4.5:1, and every touch target at least 24px (44px for primary controls).",
+   "Do show selected states with Site Ink, never pale-on-pale.",
+   "Do use the PRD's exact copy for errors and empty states."
+  ],
+  "donts": [
+   "Don't change the logo, its colours or any palette value, or add a colour that isn't in the palette.",
+   "Don't fill large areas with green; the brand is white with orange and watercolour.",
+   "Don't draw flat vector scenes or icons in tinted squares; use the watercolour art.",
+   "Don't put a shadow on anything at rest, or an eyebrow label above a heading.",
+   "Don't colour orange blossoms anything but white."
+  ]
+ }
+}

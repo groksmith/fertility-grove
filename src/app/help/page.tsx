@@ -1,70 +1,133 @@
 "use client";
 
+/* Help (PRD §4). Crisis resources first, short answers, then a way to reach
+   the team. Members see it inside the app like any other page; signed out
+   and during onboarding it stands alone as a reading page. */
+
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { LinkButton } from "@/components/ui";
-import { COMMUNITY_GUIDELINES } from "@/lib/data";
+import { ReadingFrame } from "@/components/AuthFrame";
+import { Button, CrisisCard, Field, Input, PageHeader, Panel, Textarea, Counter } from "@/components/ui";
+import { useHydrated, useStore } from "@/lib/store";
+import { checks } from "@/lib/rules/validation";
 
 const FAQ = [
   {
-    q: "Is Fertility Grove a medical provider?",
-    a: "No. Nothing here is medical advice. Learn articles are written or reviewed by clinicians, but they are general information — your own doctor knows your case.",
+    q: "How do I get an invite?",
+    a: "Fertility Grove is invite-only during the beta. Any member can share their personal invite link from their profile, and some clinics share links with their patients. If you don't know a member, leave your email on the sign-up page and we'll write when sign-ups open.",
   },
   {
-    q: "Can I use the platform without my real name?",
-    a: "Yes. Pick a handle during onboarding, or switch at any time in Settings. Your display identity is applied consistently everywhere — board, groups, messages, campaigns, and reviews.",
+    q: "Do people see my real name?",
+    a: "Not unless you choose to. You post under a handle by default. If you switch to your real name, others see your first name and last initial, like “Annie M.” Your age range, ZIP code and gender are never shown to anyone.",
   },
   {
-    q: "How do providers get into the Care Guide?",
-    a: "Members recommend them. A provider becomes searchable once three different members have recommended them — nobody can pay to be listed.",
+    q: "Who can see my diagnosis and treatment?",
+    a: "Only you, unless you turn on “Show my diagnosis, stage and path” in Settings. We use your answers to match you with groups and people, and we never sell health data or use ad trackers.",
   },
   {
-    q: "Who sees my records?",
-    a: "Only you. Documents you upload are private and never surface in community or search.",
+    q: "Can my partner join?",
+    a: "Yes. Invite them from your profile or the last onboarding screen. They get their own private account, and you can share appointment lists, notes and saved articles in your family space. Neither of you ever sees the other's posts or messages.",
   },
   {
-    q: "What happens to my support campaign when it ends?",
-    a: "It stops accepting donations at the end date and the page stays viewable. You can also close it early, or extend it while it is live.",
+    q: "What are Grove Guide credits?",
+    a: "The Grove Guide answers questions from our clinician-reviewed library. Each answer uses credits. You get free credits every month on the day you signed up, and you can buy a pack if you run out. Crisis replies never cost anything.",
+  },
+  {
+    q: "How do I delete my account?",
+    a: "Go to Settings, then Delete my account. You have 14 days to change your mind by signing back in. After that your data is removed and your handle is retired. You can download all your data first.",
   },
 ];
 
+const LEDE = "Short answers to the questions people ask most, and a way to reach a real person on our team.";
+
 export default function HelpPage() {
+  const hydrated = useHydrated();
+  const member = useStore((s) => s.signedIn && s.step >= 9 && !s.suspension && !s.deletion);
+  const myEmail = useStore((s) => s.me.email);
+  // Wait for the saved session so a member never sees the signed-out frame flash.
+  if (!hydrated) return <div className="min-h-dvh bg-ground" aria-busy="true" />;
+  if (member) {
+    return (
+      <AppShell>
+        <PageHeader title="Help" lede={LEDE} />
+        <div className="max-w-[760px]">
+          <HelpBody email={myEmail} />
+        </div>
+      </AppShell>
+    );
+  }
   return (
-    <AppShell section="settings" title="Help">
-      <h2 className="serif text-[30px]">Help &amp; guidelines</h2>
+    <ReadingFrame title="Help" lede={LEDE}>
+      <HelpBody />
+    </ReadingFrame>
+  );
+}
 
-      <section className="mt-8 max-w-[720px]">
-        <h3 className="text-[16px] font-bold">Community guidelines</h3>
-        <ul className="mt-4 space-y-4">
-          {COMMUNITY_GUIDELINES.map((g) => (
-            <li key={g.title} className="rounded-xl bg-surface px-5 py-4">
-              <p className="text-[15px] font-semibold">{g.title}</p>
-              <p className="mt-1 text-[14px] leading-relaxed text-muted">{g.body}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+/** Members' contact form starts with their own email filled in. */
+function HelpBody({ email: known = "" }: { email?: string }) {
+  const [email, setEmail] = useState(known);
+  const [message, setMessage] = useState("");
+  const [errs, setErrs] = useState<{ email?: string; message?: string }>({});
+  const [sent, setSent] = useState(false);
 
-      <section className="mt-10 max-w-[720px]">
-        <h3 className="text-[16px] font-bold">Common questions</h3>
-        <dl className="mt-4 divide-y divide-line rounded-xl border border-line">
+  return (
+    <>
+      <CrisisCard intro="If you're thinking about ending your life or are in danger, please reach out now." />
+
+      <section aria-labelledby="faq-h" className="mt-14">
+        <h2 id="faq-h" className="text-[24px] font-semibold text-ink">Common questions</h2>
+        <div className="mt-5 space-y-2">
           {FAQ.map((f) => (
-            <div key={f.q} className="px-5 py-4">
-              <dt className="text-[15px] font-semibold">{f.q}</dt>
-              <dd className="mt-1.5 text-[14px] leading-relaxed text-muted">{f.a}</dd>
-            </div>
+            <details key={f.q} className="group rounded-[20px] border border-line bg-panel px-5 py-4 open:pb-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-raised text-[18px] text-muted transition-transform duration-200 group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-ink-soft">{f.a}</p>
+            </details>
           ))}
-        </dl>
+        </div>
       </section>
 
-      <section className="mt-10 max-w-[720px] rounded-2xl bg-tint-green p-7">
-        <h3 className="serif text-[22px]">Still stuck?</h3>
-        <p className="mt-2 text-[14.5px] leading-relaxed">
-          Reach a real person on the team. We answer within one business day.
-        </p>
-        <LinkButton href="/messages" variant="green" className="mt-4">
-          Contact support
-        </LinkButton>
+      <section aria-labelledby="contact-h" className="mt-14">
+        <h2 id="contact-h" className="text-[24px] font-semibold text-ink">Contact support</h2>
+        <p className="mt-2 text-[15px] text-ink-soft">We reply within two working days. We don&apos;t monitor this inbox around the clock, so for anything urgent use the resources above.</p>
+        <Panel className="mt-5 p-5 sm:p-7">
+          {sent ? (
+            <div role="status">
+              <p className="text-[17px] font-semibold text-ink">Thanks, we have your message.</p>
+              <p className="mt-1 text-[15px] text-ink-soft">We&apos;ll reply to {email} soon.</p>
+              <Button className="mt-5" variant="secondary" onClick={() => { setSent(false); setMessage(""); }}>
+                Send another message
+              </Button>
+            </div>
+          ) : (
+            <form
+              noValidate
+              className="space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const next = {
+                  email: checks.email(email),
+                  message: message.trim() ? undefined : "Tell us how we can help.",
+                };
+                setErrs(next);
+                if (!next.email && !next.message) setSent(true);
+              }}
+            >
+              <Field label="Your email" error={errs.email}>
+                <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => email && setErrs((x) => ({ ...x, email: checks.email(email) }))} />
+              </Field>
+              <Field label="How can we help?" error={errs.message} counter={<Counter value={message} max={2000} />}>
+                <Textarea value={message} onChange={(e) => setMessage(e.target.value)} max={2000} hardStop rows={5} />
+              </Field>
+              <Button type="submit">Send message</Button>
+            </form>
+          )}
+        </Panel>
       </section>
-    </AppShell>
+    </>
   );
 }

@@ -1,11 +1,12 @@
-# Fertility Grove — front-end prototype
+# Fertility Grove: front-end prototype (PRD v2.0)
 
-A clickable, front-end-only prototype of the Fertility Grove member platform, built
-from the Figma high-fidelity screens and the v1.2 PRD.
+A clickable, front-end-only prototype of the Fertility Grove MVP, built from
+`docs/Fertility-Grove-MVP-PRD-v2.0.docx`. It covers the member app only; the
+moderator and admin panel (PRD §19–20) is out of this prototype.
 
-**There is no backend.** All data is mocked in `src/lib/data.ts` and everything you
-change (posts, likes, to-dos, saved vendors, your campaign, donations) is kept in
-the browser's `localStorage`. Reset it any time from **Settings → Reset demo data**.
+**There is no backend.** All data is mocked under `src/lib/data/` and every change
+you make is kept in this browser's `localStorage`. Reset any time from
+**Settings → Prototype tools → Reset demo data**.
 
 ## Run it
 
@@ -13,107 +14,131 @@ the browser's `localStorage`. Reset it any time from **Settings → Reset demo d
 npm install && npm run dev
 ```
 
-Then open http://localhost:3000.
+Open http://localhost:3000 for the landing page, or http://localhost:3000/demo to
+pick a persona:
 
-To skip sign-up and land straight in the product, open http://localhost:3000/demo
-(there is also an "Explore the prototype" link on the sign-up screen).
+| Persona | What it shows |
+|---|---|
+| New member | The invite-only sign-up, email confirmation and the 8-screen onboarding |
+| Annie (established) | A Tree-level member with groups, posts, a mentor and messages |
+| Invited partner | The partner invite page and onboarding with partner presets |
+| Mentor at Blossom Tree | Mentoring unlocked, with an incoming mentor request |
 
-## Screens
+Demo sign-in: `annie.m@grove.test` / `sunlight-demo`.
 
-| Route | Screen | Figma |
+## What's built (PRD v2.0)
+
+| Area | Routes | PRD |
 |---|---|---|
-| `/signup` | Create a free account | 1 |
-| `/login` | Log in | — |
-| `/onboarding` | 9-step onboarding wizard | 2–6 |
-| `/dashboard` | My Dashboard | 7 |
-| `/profile` | My Profile | 8 |
-| `/community` | Community board (sort, filter, like, save, comment) | 9 |
-| `/community/new` | Create a post + success modal | 10, 11 |
-| `/community/groups` | Group directory | — |
-| `/community/groups/[id]` | Group detail | 12 |
-| `/care` | Care Guide — browse + search results | 13, 14 |
-| `/care?category=Acupuncture` | Deep link into a category search | 14 |
-| `/care/network` | My care network & saved vendors | — |
-| `/fundraising` | Browse campaigns + How It Works | 15 |
-| `/fundraising/new` | 8-step campaign builder | 16, 17, 18 |
-| `/fundraising/mine` | My campaign | — |
-| `/fundraising/[slug]` | Public campaign page (no app chrome, donate flow) | — |
-| `/learn` | Infertility 101 | 19 |
-| `/learn/[slug]` | Article with clinician review + disclaimer | — |
-| `/messages` | Messages | 20 |
-| `/search?q=` | Global search across posts, groups, care, Learn | — |
-| `/settings`, `/help` | Settings and guidelines / FAQ | — |
+| Landing, Help, Terms, Privacy | `/`, `/help`, `/terms`, `/privacy` | §4 |
+| Sign-up (invite gate, paused state, Google or email), sign-in (lockout), reset, confirm email | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/invite/[code]` | §4 |
+| Onboarding, 8 screens, consent, matching on screen 8 | `/onboarding/1` … `/onboarding/8` (`?preview=1` to view when already onboarded) | §5, §11 |
+| Home feed (For you / Following, sort, filters, matched posts, Complete your profile) | `/home` | §3, §8, §11 |
+| Groups and group pages (join, mute, leave, members-only, archived) | `/groups`, `/groups/[id]` | §8 |
+| Posts, comments, votes, source tags, one-level replies, collapse at −5 | `/posts/new`, `/posts/[id]` | §9 |
+| Success stories | `/stories`, `/stories/new` | §10 |
+| People search, member profiles, follow, message, request mentoring | `/people`, `/u/[handle]` | §6, §10, §12 |
+| Your profile, Sunlight history, How others see me | `/profile` | §6, §13 |
+| Learn library (6 articles) | `/learn`, `/learn/[slug]` | §16 |
+| Grove Guide AI, appointment questions | `/guide`, `/guide/appointments` | §17 |
+| AI credits and demo checkout | `/credits`, `/credits/checkout` | §18 |
+| Mentors: find, request, accept, end, feedback, setup | `/mentors`, `/mentors/setup` | §12 |
+| Direct messages, requests, mentoring threads, block, report | `/messages`, `/messages/[id]` | §14 |
+| Notifications | `/notifications` | §15 |
+| Partner invite and family space (share, notes, versions, activity) | `/partner-invite/[token]`, `/family`, `/family/notes/[id]` | §7, §7a |
+| Settings, consent withdrawal, data download, delete with 14-day restore | `/settings`, `/restore`, `/suspended` | §6, §19, §21 |
+| Public shared post (noindex) | `/p/[id]` | §10 |
+| Saved | `/saved` | §9 |
 
-## What actually works
+Removed from the v1 prototype because PRD v2.0 §27 moves them out of the MVP:
+the Care Guide directory (Phase 2), fundraising and wishlists (Phase 3), to-dos,
+records and the daily quote. The v1 source is archived at
+`../fertility-grove-v1-prototype-backup.tar.gz`.
 
-- **Onboarding** — all 9 steps with real validation; the profile you enter is used
-  everywhere afterwards.
-- **Community** — create a post (post type, tags, and validation per the PRD, including
-  the "add at least one tag" error), like, save, comment, sort, filter, join/leave groups.
-- **Care Guide** — category browse, search by term + zip, distance / diagnosis /
-  delivery filters as removable chips, empty state with "widen to 50 miles",
-  recommend-a-provider (with the 3-recommendation threshold explained), care quiz,
-  bookmark, add to care network.
-- **Fundraising** — the 8-step builder writes a real campaign, which then appears on
-  the browse grid, on "My campaign", and on its own public page where donations
-  update the total and supporter list.
-- **Learn** — full-text search, personalized ordering by the diagnoses picked during
-  onboarding, cross-links into the Care Guide.
-- **Messages** — 1:1 threads with day separators, send, block, report.
-- **Anonymity** — switching to a handle in Settings changes your display identity
-  consistently across posts, comments, and messages.
+## Rules the prototype enforces
 
-## Design fidelity
+All field rules and error messages come word for word from the PRD (see
+`src/lib/rules/validation.ts`). Some highlights you can try:
 
-The Figma file was not reachable through the Figma MCP (no edit access on
-`j2aop5jdVRDsRysjfE6G7i`), so the designs were recovered by parsing the local
-`.fig` export directly. Two things came out of that and are used here:
+- Unconfirmed members can browse, onboard and join groups, but posting,
+  commenting, voting, messaging, requesting a mentor and buying credits ask them
+  to confirm their email first.
+- **Votes:** members can't downvote Support needed or Just venting posts, and
+  anything at −5 or below collapses behind "Show hidden content".
+- **Sunlight and levels:** levels never drop. Reaching Blossom Tree (750
+  Sunlight) unlocks mentoring.
+- **Mentor requests:** a member can have one open request and two mentors at a
+  time.
+- **Messages:** a first message goes as a request unless the recipient follows
+  you or accepts messages from anyone.
+- **Crisis detection** (a mock phrase list) shows the 988 resources at once and
+  holds high-confidence posts. The Grove Guide's crisis reply is free and works
+  at a zero balance.
+- **Grove Guide:** it answers only from the six reviewed articles and cites them.
+  It refuses to diagnose or advise on doses, and sends emergencies to the clinic
+  or 911.
 
-- **Artwork is the real thing.** Every Care Guide tile, the onboarding
-  illustrations, the Learn section art and the post-published graphic in
-  `public/illustrations/` are exported verbatim from the Figma vectors rather
-  than redrawn. Campaign cover photos in `public/photos/` come from the same
-  file.
-- **The Learn page has six sections**, not two — the reference render was
-  cropped at 1024px. Diagnoses, Treatments, Lifestyle and Holistic Approaches,
-  Emotional and Mental Wellbeing, FAQs, and Glossary & Resources are all built.
+## Prototype tools
 
-**One deliberate deviation from the PRD.** §11 of the PRD says the left nav
-tints to the active section's brand colour. The approved Figma frames don't do
-that — every sidebar is `#F5F5F5` with the active row as a solid white cut-out,
-except Messages, which tints the whole nav pale yellow. The build follows the
-Figma. If you'd rather have the PRD behaviour, it's the `tint` values in
-`src/components/AppShell.tsx`.
+**Settings → Prototype tools** simulates what a backend would do:
+- confirm or unconfirm the email
+- pause sign-ups, turn the invite off, expire links
+- add Sunlight to trigger level-ups
+- have a mentor accept, decline or let a request expire
+- have your partner accept the invite
+- receive a suspension
+- reset everything
 
-## Design system
+## Sample values to confirm
 
-- **Type** — Instrument Serif for headlines and quotes, Manrope for UI and body copy
-  (both loaded via `next/font`).
-- **Section colour** — each section keeps its accent (Community coral, Care Guide
-  green, Fundraising blue, Learn yellow, Messages purple) on buttons, tags and
-  cards; the sidebar itself stays neutral, as the Figma frames have it. Tokens
-  live in `src/app/globals.css`.
-- **Layout** — designed at 1440px and responsive down to 390px. The right rail
-  collapses beneath the content column below 1280px, and primary actions that
-  live in the rail (Create post, Join group) surface inline above it so they
-  stay reachable. Below 1024px a bottom nav carries the six sections and a
-  slide-over menu in the top bar carries search, profile, Settings and Help.
-  Messages switches to one pane at a time with a back control.
+The PRD leaves these open (§18, §27), so the prototype uses labelled samples:
 
-## Deliberate gaps
+- **Credits:** 20 free credits a month; a Guide question costs 1, an
+  appointment list costs 3; the low-balance warning is at 3; at most 5 packs a
+  day.
+- **Packs:** Sprout 25 credits for $4.99, Grove 60 for $9.99, Orchard 150 for
+  $19.99, tax included.
+- **Names:** points are called "Sunlight" and level 2 is "Bush".
+- **Groups:** the launch group list is taken from the PRD's examples.
+- **Learn articles:** the six articles are plain-language samples, and their
+  reviewer, "Dr. Lena Ortiz", is fictional.
+- **Members:** every member is fictional.
 
-These come from the PRD and were built to match the design language rather than copied
-from a Figma frame, because those frames were not in the export:
+## Design
 
-- Onboarding steps 2 (about me), 5 (diagnoses), 6 (anonymity), 7 (notifications).
-- Campaign builder steps 1–2 (story, title), 5–7 (timeline, wishlist, review).
+- **Brand, from fertilitygrove.com:**
+  - The orange logo (`public/brand/`, `src/components/Logo.tsx`).
+  - The white and light look, with the near-black pill button.
+  - Instrument Serif + Instrument Sans.
+  - The site's colours plus the approved v1 palette (tokens in `src/app/globals.css`).
+  - The logo and palette are fixed.
+- **Artwork:** the brand's own watercolour orange tree, taken from the growth film on the live site (`public/brand/art/`, made by a small script from `tree-grow.mp4`). It is used for:
+  - the five tree levels (the Blossom Tree has white orange blossoms);
+  - the onboarding grove, which grows one stage per answer;
+  - empty-state pictures and group covers.
+  - The full sheet is at `/art`.
+- **Landing page:** follows the live site's hero, with the growth film playing once beside the headline.
+- **Imagery:** photographs from the Fertility Grove design files (`public/photos/`), and the botanical plate *Citrus limonum* by Rungiah (1851), public domain via Wikimedia Commons (`public/plates/credits.json`).
+- **Accessibility:** axe-core (WCAG 2.2 AA) reports no violations on any of the 41 routes checked, at desktop and phone widths.
 
-Controls that are intentionally inert in the prototype (file uploads, "New
-message") are visibly disabled and carry a tooltip saying so, rather than
-looking live and doing nothing.
+### Design skills used
 
-Nothing here is medical advice, no payments are processed, and no data leaves the browser.
+| Skill | How it was used |
+|---|---|
+| `design-taste-frontend` | Page run for the landing page (direction "one motif", seed 1576100232) and the app-screen run (style "pastel-consumer", seed 657692864); inspector and lint gates |
+| `impeccable` | PRODUCT.md, surface briefs with direction contracts, craft floor, detector |
+| `ui-ux-pro-max` | Form, error and touch-target rules; its generic style suggestion was set aside for the brand |
+| `design-system` | Primitive → semantic → component tokens |
+| `emil-design-eng`, `mobile-native`, `find-animation-opportunities` | Press feedback, origin-aware menus, sheets, safe areas, 16px inputs, motion audit |
+
+Skipped as not applicable:
+- `imagegen-*`, `image-to-code`: no image-generation tool is available.
+- `animate-expo`, `write-swift`: they target native apps.
+- `slides`, `banner-design`, `brandkit`: they produce decks and marketing assets.
+- `ask-sonner`: there is no toast library; toasts are hand-built.
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · lucide-react
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · lucide-react.
+Nothing is medical advice, no payments are processed, and no data leaves the
+browser.

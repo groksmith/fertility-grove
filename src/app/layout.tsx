@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { Instrument_Serif, Manrope } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import { StoreProvider } from "@/lib/store";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
+/* The live site's faces: Instrument Serif for headlines, Instrument Sans for text. */
+const sans = Instrument_Sans({
+  variable: "--font-sans-brand",
   subsets: ["latin"],
   display: "swap",
 });
@@ -18,23 +18,24 @@ const instrument = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "Fertility Grove",
+  openGraph: { images: ["/brand/og.png"] },
   description:
-    "One place for the whole fertility journey — community, care, learning, and support.",
+    "A private community for people going through infertility, and their partners.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: "#ffffff",
+  colorScheme: "light",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${instrument.variable} h-full`}
-    >
-      <body className="min-h-full">
-        <StoreProvider>{children}</StoreProvider>
-      </body>
+    <html lang="en" className={`${sans.variable} ${instrument.variable}`}>
+      <body className="min-h-dvh">{children}</body>
     </html>
   );
 }
