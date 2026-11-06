@@ -431,11 +431,11 @@ function Specimens() {
 
 /* The live thing: pick where you are, see where you'd land. */
 const STAGES = [
-  { stage: "Trying to conceive", photo: "/brand/landing/stage-trying.webp", alt: "A sunlit path winding up through an orange grove", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
-  { stage: "Waiting on tests", photo: "/brand/landing/stage-waiting.webp", alt: "A garden bench under an orange tree, beside a path to a closed gate", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
-  { stage: "In treatment", photo: "/brand/landing/stage-treatment.webp", alt: "An orange branch in white blossom, a small green fruit just forming", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
-  { stage: "Taking a break", photo: "/brand/landing/stage-break.webp", alt: "A hammock in dappled shade at the edge of a still lake", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
-  { stage: "I'm a partner", photo: "/brand/landing/stage-partner.webp", alt: "Two chairs side by side facing a lake under an orange tree", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
+  { stage: "Trying to conceive", line: "Months of trying, and wondering what's next.", photo: "/brand/landing/stage-trying.webp", alt: "A sunlit path winding up through an orange grove", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
+  { stage: "Waiting on tests", line: "Appointments booked, answers not back yet.", photo: "/brand/landing/stage-waiting.webp", alt: "A garden bench under an orange tree, beside a path to a closed gate", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
+  { stage: "In treatment", line: "IUI, IVF or surgery, and everything in between.", photo: "/brand/landing/stage-treatment.webp", alt: "An orange branch in white blossom, a small green fruit just forming", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
+  { stage: "Taking a break", line: "Stepping back for a while, without stepping away.", photo: "/brand/landing/stage-break.webp", alt: "A hammock in dappled shade at the edge of a still lake", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
+  { stage: "I'm a partner", line: "Supporting someone you love, and needing support too.", photo: "/brand/landing/stage-partner.webp", alt: "Two chairs side by side facing a lake under an orange tree", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
 ];
 
 function WhereAreYou() {
@@ -458,11 +458,13 @@ function WhereAreYou() {
                   onClick={() => setI(k)}
                   onMouseEnter={() => setI(k)}
                   onFocus={() => setI(k)}
-                  className={`press flex shrink-0 items-center gap-3 rounded-full px-4 py-2.5 text-left lg:w-full text-[18px] font-semibold transition-colors duration-200 lg:text-[22px] ${
+                  className={`press flex shrink-0 flex-col items-start rounded-[18px] px-4 py-2.5 text-left lg:w-full transition-colors duration-200 ${
                     k === i ? "bg-accent text-white" : "text-ink-soft hover:bg-white hover:text-ink"
                   }`}
                 >
-                  {s.stage}
+                  <span className="text-[18px] font-semibold lg:text-[22px]">{s.stage}</span>
+                  {/* Phones show the line only on the chosen stage, so the chips stay small. */}
+                  <span className={`mt-0.5 text-[14px] leading-snug lg:text-[15px] ${k === i ? "text-white/80" : "hidden text-muted lg:block"}`}>{s.line}</span>
                 </button>
             ))}
           </div>
