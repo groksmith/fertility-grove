@@ -101,9 +101,11 @@ function plant(): Tree[] {
 }
 const TREES = plant();
 
-export function Grove({ films }: { films: React.ReactNode[] }) {
+export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?: React.Ref<HTMLDivElement> }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* Scrolling out of the hero moves this layer (see useLeaveHero), not the frame that clips it. */}
+      <div ref={sceneRef} className="absolute inset-0 origin-[50%_55%]">
       {/* The painting's own box: as wide as the screen, and tall enough that the horizon sits a little over halfway down. */}
       <div className="grove-box absolute top-0 left-1/2 aspect-[2752/1536] w-[max(100%,calc(var(--hero-h)*2.12))] -translate-x-1/2">
         <Image src="/brand/landing/grove-land.webp" alt="" fill priority sizes="(min-width: 1440px) 2000px, 140vw" quality={88} className="object-cover" />
@@ -156,6 +158,7 @@ export function Grove({ films }: { films: React.ReactNode[] }) {
             </span>
           );
         })}
+      </div>
       </div>
     </div>
   );

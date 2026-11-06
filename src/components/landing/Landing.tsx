@@ -116,6 +116,41 @@ function useGrowTogether() {
   return [left, right] as const;
 }
 
+/** Leaving the hero is walking down the path: as you scroll, the grove moves
+ *  slower than the page and eases further forward, and the words rise and fade
+ *  a little faster, so the text clears first. The band's painted edge scrolls
+ *  with the page, so the scene slides under the paint. One scroll listener,
+ *  one frame at a time, transform and opacity only; off under reduced motion. */
+function useLeaveHero() {
+  const hero = useRef<HTMLDivElement>(null);
+  const scene = useRef<HTMLDivElement>(null);
+  const copy = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const h = hero.current?.offsetHeight || 1;
+      const p = Math.min(1, Math.max(0, window.scrollY / h));
+      if (scene.current) scene.current.style.transform = `translate3d(0, ${(p * h * 0.32).toFixed(1)}px, 0) scale(${(1 + p * 0.07).toFixed(4)})`;
+      if (copy.current) {
+        copy.current.style.transform = `translate3d(0, ${(-p * 90).toFixed(1)}px, 0)`;
+        copy.current.style.opacity = String(Math.max(0, 1 - p * 1.5));
+      }
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  return [hero, scene, copy] as const;
+}
+
 /* ------------------------------------------------------------- Navbar */
 
 const NAV = [
@@ -276,10 +311,12 @@ function SiteNav() {
 
 function Hero() {
   const [leftTree, rightTree] = useGrowTogether();
+  const [heroBox, scene, copy] = useLeaveHero();
   return (
     <header className="relative overflow-hidden bg-white">
-      <div className="relative h-[var(--hero-h)]" style={{ "--hero-h": "clamp(700px, 100svh, 980px)" } as React.CSSProperties}>
+      <div ref={heroBox} className="relative h-[var(--hero-h)]" style={{ "--hero-h": "clamp(700px, 100svh, 980px)" } as React.CSSProperties}>
         <Grove
+          sceneRef={scene}
           films={[
             <GrowingTree key="l" ref={leftTree} className="h-full w-full object-cover object-bottom" />,
             <GrowingTree key="r" ref={rightTree} className="h-full w-full object-cover object-bottom" />,
@@ -288,7 +325,7 @@ function Hero() {
         <Backdrop kind="hero" />
 
         {/* The words sit in the sky, above the horizon, with the path leading up to them. */}
-        <div className="absolute inset-x-0 top-20 bottom-[45%] z-10 flex items-center justify-center px-5 sm:px-8">
+        <div ref={copy} className="absolute inset-x-0 top-20 bottom-[45%] z-10 flex items-center justify-center px-5 sm:px-8">
           <div className="text-center">
             <h1 className="serif mx-auto max-w-[24ch] text-[30px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] xl:text-[clamp(44px,3.6vw,56px)]">
               The first purpose built platform for the fertility community.
@@ -305,16 +342,22 @@ function Hero() {
             <p className="mt-3 text-[14px] text-ink-soft">Invite-only during the beta. Ask a member for their invite link.</p>
           </div>
         </div>
+
+        {/* The band below is brushed over the bottom of the scene in its own grey, a dry-brush edge rather than a ruled line. */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 -bottom-px z-[5] h-[clamp(80px,11vw,170px)] bg-[url(/brand/landing/brush-edge.webp)] bg-[length:100%_100%]" />
       </div>
 
       <div className="bg-raised">
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12 lg:py-16">
           <h2 className="text-[20px] font-semibold text-ink">Private by default</h2>
           <ul className="grid grid-cols-1 gap-x-8 gap-y-4 text-[16px] leading-snug text-ink sm:grid-cols-2 lg:grid-cols-4">
-            {PRIVACY.map(({ text, art }) => (
-              <li key={text} className="promise flex items-center gap-4">
+            {PRIVACY.map(({ text, art }, i) => (
+              <li key={text} className="promise flex items-center gap-4" data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
                 <span aria-hidden className="promise-art relative block h-20 w-20 shrink-0 lg:h-[104px] lg:w-[104px]">
-                  <Image src={art} alt="" fill sizes="(min-width: 1024px) 104px, 80px" quality={90} className="object-contain" />
+                  {/* Each symbol grows up out of the band as it arrives. */}
+                  <span className="promise-grow absolute inset-0 block" style={{ transitionDelay: `${i * 90 + 120}ms` }}>
+                    <Image src={art} alt="" fill sizes="(min-width: 1024px) 104px, 80px" quality={90} className="object-contain" />
+                  </span>
                 </span>
                 <span className="text-balance">{text}</span>
               </li>
