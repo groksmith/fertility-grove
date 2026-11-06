@@ -49,7 +49,6 @@ const lines = (items) => Col({ name: "points", w: "fill", gap: 10 }, items.map((
 const panel = (w, h, step) =>
   F({ name: "Grove panel", width: w, height: h, radius: 20, fill: C.white, clip: true, w: "fill", h: "fill" }, [
     Img(WASH, w, h, { name: "wash", x: 0, y: 0, scaleMode: "FILL" }),
-    Img("brand/cozy/e-blossom-hang.webp", 260, Math.round((260 * 2220) / 1472), { name: "blossom", x: w - 260 - 32, y: -48, scaleMode: "FIT" }),
     Img(`brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
   ]);
 

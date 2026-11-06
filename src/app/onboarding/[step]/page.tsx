@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, CircleHelp, Copy, Lock, LogOut, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { GroupCover } from "@/components/art/Brand";
 import { Backdrop } from "@/components/art/Cozy";
@@ -29,6 +29,7 @@ import {
   Textarea,
   Toggle,
   toast,
+  useCopy,
 } from "@/components/ui";
 import { ARTICLES } from "@/lib/data/articles";
 import { GUIDE_STARTERS } from "@/lib/data/social";
@@ -44,6 +45,7 @@ import {
   PRONOUNS,
   TREATMENTS,
 } from "@/lib/options";
+import { POINTS } from "@/lib/rules/sunlight";
 import { MSG, checks } from "@/lib/rules/validation";
 import { act, get, sel, useHydrated, useStore, type Me } from "@/lib/store";
 import type { CommunityId, MessagePolicy } from "@/lib/types";
@@ -137,7 +139,8 @@ function initialDraft(): Draft {
     ageRange: me.ageRange,
     zip: me.zip,
     lookingFor: me.lookingFor.length ? me.lookingFor : partner ? ["Support as a partner, or for my partner"] : [],
-    connectStyle: me.connectStyle,
+    // Saved before this was multi-select: a single answer becomes a one-item list.
+    connectStyle: Array.isArray(me.connectStyle) ? me.connectStyle : me.connectStyle ? [me.connectStyle] : [],
     community: me.community || (partner ? "partners" : ""),
     firstName: me.firstName,
     lastName: me.lastName,
@@ -323,7 +326,7 @@ function Step4({ d, set, errs }: StepProps) {
   return (
     <div className="space-y-7">
       <Choices legend="I'm looking for" multi options={LOOKING_FOR} value={d.lookingFor} onChange={(lookingFor) => set({ lookingFor })} error={errs.lookingFor} />
-      <Choices legend="How I like to connect" options={CONNECT_STYLES} value={d.connectStyle ? [d.connectStyle] : []} onChange={([connectStyle]) => set({ connectStyle })} hint="Optional." />
+      <Choices legend="How I like to connect" multi options={CONNECT_STYLES} value={d.connectStyle} onChange={(connectStyle) => set({ connectStyle })} hint="Optional." />
     </div>
   );
 }
@@ -504,16 +507,35 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   const [inviteErr, setInviteErr] = useState<string>();
   const [invited, setInvited] = useState(false);
   const showInvite = !s.invitedBy && !s.partner.linked;
+  const [copied, copy] = useCopy();
+  const inviteLink = `${typeof window === "undefined" ? "https://fertilitygrove.com" : window.location.origin}/invite/${s.me.handle}`;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 overflow-hidden rounded-[20px] border border-line bg-white p-5">
-        <TreeArt level="Seed" size={104} animate title="Seed" />
-        <div>
-          <p className="text-[17px] font-semibold text-ink">You&apos;ve planted your Seed.</p>
+      <div className="overflow-hidden rounded-[20px] border border-line bg-white p-5">
+        <div className="flex items-center gap-4">
+          <TreeArt level="Seed" size={104} animate title="Seed" />
+          <div>
+            <p className="text-[17px] font-semibold text-ink">You&apos;ve planted your Seed in Fertility Grove.</p>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+              Your tree grows with Sunlight, each time another member finds you helpful: Seed, Bush, Tree, Blossom Tree, Orange Tree.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 border-t border-line pt-4">
+          <p className="text-[15px] font-semibold text-ink">Refer a friend to start growing your tree</p>
           <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-            Your tree grows with Sunlight, each time another member finds you helpful: Seed, Bush, Tree, Blossom Tree, Orange Tree.
+            Know someone going through this too? When they join with your link, your tree gets {POINTS.referral} Sunlight.
           </p>
+          <div className="mt-3 flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate rounded-[10px] bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft" title={inviteLink}>
+              {inviteLink.replace(/^https?:\/\//, "")}
+            </p>
+            <Button size="sm" variant="secondary" onClick={() => copy(inviteLink)}>
+              {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
+              {copied ? "Copied" : "Copy link"}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -580,7 +602,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
       )}
 
       <Panel className="p-5 sm:p-6" aria-labelledby="r8">
-        <h2 id="r8" className="text-[16px] font-semibold">Read first</h2>
+        <h2 id="r8" className="text-[16px] font-semibold">Suggested readings</h2>
         <ul className="mt-3 space-y-3">
           {articles.map((a) => {
             const saved = s.savedArticles.includes(a.slug);
@@ -609,7 +631,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
         <h2 id="q8" className="flex items-center gap-2 text-[16px] font-semibold">
           <Sparkles size={17} className="text-blue-ink" aria-hidden /> Ask the Grove Guide
         </h2>
-        <p className="mt-1 text-[14px] text-muted">Answers come from our clinician-reviewed library.</p>
+        <p className="mt-1 text-[14px] leading-relaxed text-muted">Answers come from our clinician-reviewed library. You can also ask about information you upload, like test results or a letter from your clinic.</p>
         <ul className="mt-3 space-y-2">
           {starters.map((q) => (
             <li key={q}>
@@ -743,15 +765,19 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
           <div className="flex h-14 items-center justify-between gap-4">
           <Logo height={38} priority />
           <div className="flex items-center gap-4 text-[14px] font-semibold text-ink-soft">
-            <Link href="/help" className="hover:text-ink">Help</Link>
+            <Link href="/help" className="inline-flex items-center gap-1.5 hover:text-ink">
+              <CircleHelp size={16} aria-hidden />
+              Help
+            </Link>
             <button
               type="button"
-              className="hover:text-ink"
+              className="inline-flex items-center gap-1.5 text-danger hover:underline hover:underline-offset-4"
               onClick={() => {
                 act.auth.signOut();
                 router.push("/");
               }}
             >
+              <LogOut size={16} aria-hidden />
               Sign out
             </button>
           </div>

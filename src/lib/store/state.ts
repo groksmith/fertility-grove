@@ -71,7 +71,7 @@ export interface Me {
   otherDiagnosis: string;
   paths: string[];
   lookingFor: string[];
-  connectStyle: string;
+  connectStyle: string[];
   healthConsent: boolean;
   suggestMe: boolean;
   messagePolicy: MessagePolicy;
@@ -183,7 +183,7 @@ export const EMPTY_ME: Me = {
   otherDiagnosis: "",
   paths: [],
   lookingFor: [],
-  connectStyle: "",
+  connectStyle: [],
   healthConsent: false,
   suggestMe: true,
   messagePolicy: "following",
@@ -236,7 +236,7 @@ const ANNIE: Me = {
     "A mentor who has been through it",
     "Help preparing for doctor visits",
   ],
-  connectStyle: "A mix of everything",
+  connectStyle: ["Reading and learning first", "One-to-one conversations"],
   healthConsent: true,
   wantMentor: true,
   sunlight: DEMO_SUNLIGHT,

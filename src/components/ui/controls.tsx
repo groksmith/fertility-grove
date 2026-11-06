@@ -124,8 +124,11 @@ export function Field({
   );
 }
 
+/* Focus is one 2px border: the 1px border turns ink and an inset 1px ring
+   doubles it, so the field doesn't shift. The global outline is off for
+   .field-input (globals.css). */
 export const inputBase =
-  "w-full rounded-[10px] border bg-white px-3.5 text-[15px] text-ink placeholder:text-[var(--grey-600)] transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--site-line)]";
+  "field-input w-full rounded-[10px] border bg-white px-3.5 text-[15px] text-ink placeholder:text-[var(--grey-600)] transition-[border-color,box-shadow] duration-150 focus:border-accent focus:shadow-[inset_0_0_0_1px_var(--color-accent)]";
 
 function fieldProps(ctx: ReturnType<typeof useField>, invalidProp?: boolean) {
   const invalid = invalidProp ?? ctx?.invalid;

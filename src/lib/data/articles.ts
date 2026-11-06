@@ -305,5 +305,5 @@ export const ARTICLES: Article[] = [
 
 export const articleBySlug = (slug: string) => ARTICLES.find((a) => a.slug === slug);
 
-/** Each article's painted cover: an open book with its topic beside it, on its tint. */
-export const articleCover = (slug: string) => `/brand/learn/${slug}.webp`;
+/** Each article's painted cover: its topic as one painted subject, on its tint. */
+export const articleCover = (slug: string) => `/brand/learn/${slug}-topic.webp`;

@@ -12,8 +12,8 @@ import Link from "next/link";
 import { Menu as MenuIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LogoOrange, Logo } from "@/components/Logo";
+import { Grove } from "./Grove";
 import { Backdrop } from "@/components/art/Cozy";
-import { Spot, type SpotKind } from "@/components/art/Scenes";
 import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
 import { ARTICLES, articleCover } from "@/lib/data/articles";
 import { hueInk } from "@/lib/hue";
@@ -76,13 +76,15 @@ const PRIVACY: { text: string; art: string }[] = [
   { text: "Download or delete everything, any time", art: "/brand/cozy/q-download.webp" },
 ];
 
-/** The brand's growth film plays once, then rests on the tree in fruit. */
+/** The brand's growth film plays once, then rests on the tree in fruit. It is
+ *  keyed to transparency (the paper is gone), so the tree stands solid in
+ *  front of the grove: HEVC with alpha for Safari, VP9 with alpha for the rest. */
 function GrowingTree({ ref, className = "" }: { ref: React.Ref<HTMLVideoElement>; className?: string }) {
   return (
-    <video ref={ref} className={className} poster="/brand/tree-grow-poster.jpg" muted playsInline preload="auto" aria-hidden>
+    <video ref={ref} className={className} poster="/brand/tree-grow-first.webp" muted playsInline preload="auto" aria-hidden>
       {/* Cut from the site's original at full resolution: 1024² square pixels. */}
-      <source src="/brand/tree-grow.webm" type="video/webm" />
-      <source src="/brand/tree-grow.mp4" type="video/mp4" />
+      <source src="/brand/tree-grow-alpha.mov" type='video/quicktime; codecs="hvc1"' />
+      <source src="/brand/tree-grow-alpha.webm" type="video/webm" />
     </video>
   );
 }
@@ -93,7 +95,11 @@ function useGrowTogether() {
   const left = useRef<HTMLVideoElement>(null);
   const right = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // No growing: show the tree already in fruit.
+      [left.current, right.current].forEach((v) => v && (v.poster = "/brand/tree-grow-last.webp"));
+      return;
+    }
     const films = [left.current, right.current].filter((v): v is HTMLVideoElement => !!v && v.offsetParent !== null);
     const start = () => {
       if (!films.every((v) => v.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA)) return;
@@ -107,6 +113,41 @@ function useGrowTogether() {
     return () => films.forEach((v) => v.removeEventListener("canplaythrough", start));
   }, []);
   return [left, right] as const;
+}
+
+/** Leaving the hero is walking down the path: as you scroll, the grove moves
+ *  slower than the page and eases further forward, and the words rise and fade
+ *  a little faster, so the text clears first. The band's painted edge scrolls
+ *  with the page, so the scene slides under the paint. One scroll listener,
+ *  one frame at a time, transform and opacity only; off under reduced motion. */
+function useLeaveHero() {
+  const hero = useRef<HTMLDivElement>(null);
+  const scene = useRef<HTMLDivElement>(null);
+  const copy = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const h = hero.current?.offsetHeight || 1;
+      const p = Math.min(1, Math.max(0, window.scrollY / h));
+      if (scene.current) scene.current.style.transform = `translate3d(0, ${(p * h * 0.32).toFixed(1)}px, 0) scale(${(1 + p * 0.07).toFixed(4)})`;
+      if (copy.current) {
+        copy.current.style.transform = `translate3d(0, ${(-p * 90).toFixed(1)}px, 0)`;
+        copy.current.style.opacity = String(Math.max(0, 1 - p * 1.5));
+      }
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  return [hero, scene, copy] as const;
 }
 
 /* ------------------------------------------------------------- Navbar */
@@ -269,48 +310,59 @@ function SiteNav() {
 
 function Hero() {
   const [leftTree, rightTree] = useGrowTogether();
+  const [heroBox, scene, copy] = useLeaveHero();
   return (
     <header className="relative overflow-hidden bg-white">
-      <div className="relative">
-        <Backdrop kind="hero" wash />
-        <div aria-hidden className="h-20" />
+      {/* The field fills the screen; the painting runs on below the fold, under the band's brushed edge. */}
+      <div
+        ref={heroBox}
+        className="relative h-[var(--hero-h)]"
+        style={{ "--hero-h": "max(700px, 100svh)", "--edge": "clamp(80px, 11vw, 170px)" } as React.CSSProperties}
+      >
+        <Grove
+          sceneRef={scene}
+          films={[
+            <GrowingTree key="l" ref={leftTree} className="h-full w-full object-cover object-bottom" />,
+            <GrowingTree key="r" ref={rightTree} className="h-full w-full object-cover object-bottom" />,
+          ]}
+        />
+        <Backdrop kind="hero" />
 
-        <div className="relative mx-auto grid max-w-[1440px] grid-cols-1 items-center px-5 pt-10 pb-16 sm:px-8 xl:min-h-[min(820px,calc(100svh-80px))] xl:grid-cols-[minmax(0,min(460px,32vw))_minmax(0,1fr)_minmax(0,min(460px,32vw))] xl:gap-x-6 xl:pt-0 xl:pb-0">
-          <div className="pointer-events-none relative mx-auto aspect-square w-[64%] max-w-[300px] xl:w-full xl:max-w-none">
-            <GrowingTree ref={leftTree} className="h-full w-full object-cover object-bottom mix-blend-multiply" />
-          </div>
-
-          <div className="relative z-10 text-center">
-            <h1 className="serif mx-auto max-w-[24ch] text-[28px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] lg:text-[56px] xl:text-[clamp(44px,3.6vw,52px)]">
+        {/* The words sit in the sky, above the horizon, with the path leading up to them. */}
+        <div ref={copy} className="absolute inset-x-0 top-20 bottom-[45%] z-10 flex items-center justify-center px-5 sm:px-8">
+          <div className="text-center">
+            <h1 className="serif mx-auto max-w-[24ch] text-[30px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] xl:text-[clamp(44px,3.6vw,56px)]">
               The first purpose built platform for the fertility community.
             </h1>
-            <p className="mx-auto mt-5 max-w-[42ch] text-[20px] leading-relaxed text-muted">
+            <p className="mx-auto mt-4 max-w-[46ch] text-[18px] leading-relaxed text-pretty text-ink-soft sm:text-[20px]">
               A private community for people going through infertility, and their partners.
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <PillButton href="/signup">Create account</PillButton>
               <PillButton href="/login" tone="light">
                 Sign in
               </PillButton>
             </div>
-            <p className="mt-4 text-[14px] text-muted">Invite-only during the beta. Ask a member for their invite link.</p>
-          </div>
-
-          <div className="pointer-events-none relative hidden aspect-square w-full xl:block">
-            <GrowingTree ref={rightTree} className="h-full w-full object-cover object-bottom mix-blend-multiply" />
+            <p className="mt-3 text-[14px] text-ink-soft">Invite-only during the beta. Ask a member for their invite link.</p>
           </div>
         </div>
 
+        {/* Just below the fold, the band is brushed over the scene in its own grey: a dry-brush edge rather than a ruled line, met only once you scroll. */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-full z-[5] h-[var(--edge)] bg-[url(/brand/landing/brush-edge.webp)] bg-[length:100%_100%]" />
       </div>
+      <div aria-hidden className="h-[clamp(80px,11vw,170px)] bg-raised" />
 
       <div className="bg-raised">
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12 lg:py-16">
           <h2 className="text-[20px] font-semibold text-ink">Private by default</h2>
           <ul className="grid grid-cols-1 gap-x-8 gap-y-4 text-[16px] leading-snug text-ink sm:grid-cols-2 lg:grid-cols-4">
-            {PRIVACY.map(({ text, art }) => (
-              <li key={text} className="promise flex items-center gap-4">
+            {PRIVACY.map(({ text, art }, i) => (
+              <li key={text} className="promise flex items-center gap-4" data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
                 <span aria-hidden className="promise-art relative block h-20 w-20 shrink-0 lg:h-[104px] lg:w-[104px]">
-                  <Image src={art} alt="" fill sizes="(min-width: 1024px) 104px, 80px" quality={90} className="object-contain" />
+                  {/* Each symbol grows up out of the band as it arrives. */}
+                  <span className="promise-grow absolute inset-0 block" style={{ transitionDelay: `${i * 90 + 120}ms` }}>
+                    <Image src={art} alt="" fill sizes="(min-width: 1024px) 104px, 80px" quality={90} className="object-contain" />
+                  </span>
                 </span>
                 <span className="text-balance">{text}</span>
               </li>
@@ -322,10 +374,10 @@ function Hero() {
   );
 }
 
-function Thumb({ src, alt }: { src: string; alt: string }) {
+function Thumb({ src, alt, bg }: { src: string; alt: string; bg?: string }) {
   return (
-    <span className="relative mx-[0.12em] inline-block h-[0.9em] w-[0.9em] overflow-hidden rounded-full align-[-0.1em]">
-      <Image src={src} alt={alt} fill sizes="60px" className="object-cover" />
+    <span className="relative mx-[0.12em] inline-block h-[0.9em] w-[0.9em] overflow-hidden rounded-full align-[-0.1em]" style={bg ? { background: bg } : undefined}>
+      <Image src={src} alt={alt} fill sizes="60px" className={bg ? "object-contain p-[8%]" : "object-cover"} />
     </span>
   );
 }
@@ -335,20 +387,26 @@ function Statement() {
     <section aria-label="What you get" className="relative px-5 py-24 sm:px-8 lg:py-36">
       <Backdrop kind="statement" />
       <p data-reveal className="relative mx-auto max-w-[30ch] text-left text-[22px] leading-[1.25] font-semibold tracking-[-0.01em] text-ink sm:max-w-[38ch] sm:text-center sm:text-[28px] lg:max-w-[34ch] lg:text-[36px]">
-        Tell us where you are once. Meet people on your <Thumb src="/photos/forest.jpg" alt="A forest path" /> path, answers a clinician
-        <Thumb src={articleCover("pcos")} alt="An open book from the library" /> reviewed, and someone who&apos;s been there
-        <Thumb src="/photos/orange-tree.jpg" alt="An orange tree in fruit" />.
+        Tell us where you are once. Meet people on your <Thumb src="/brand/landing/stage-trying.webp" alt="A path through an orange grove" /> path, answers a clinician
+        <Thumb src={articleCover("male-factor")} alt="A microscope from the library" /> reviewed, and someone who&apos;s been there
+        <Thumb src="/brand/art/tree-orange.webp" alt="An orange tree in fruit" bg="var(--tint-green)" />.
       </p>
     </section>
   );
 }
 
-const SPECIMENS: { name: string; fact: string; art: SpotKind | "tree"; bg: string; wide?: boolean }[] = [
-  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "shelter", bg: "var(--tint-purple)", wide: true },
-  { name: "Matched groups", fact: "Join up to five groups chosen for your diagnosis and stage, each with the reason why.", art: "canopy", bg: "var(--tint-pink)" },
-  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "lantern", bg: "var(--tint-blue)" },
-  { name: "Success stories, kept apart", fact: "Hope when you want it. Pregnancy news stays in its own space.", art: "blossom", bg: "var(--tag-pink-bg)", wide: true },
-  { name: "A family space", fact: "Share a question list or a note with your partner, only when you choose.", art: "roots", bg: "var(--tint-neutral)" },
+/* Each way in has its own painted subject (public/brand/landing/way-*.webp,
+   prompts in scripts/art/prompts-ways/): an old tree reaching over a staked
+   sapling (mentors), saplings gathered close (groups), a lantern on an open
+   book (the Guide, which answers from reviewed articles), a ripe orange under
+   a glass cloche (success stories, kept in their own space), two trees
+   entwined in one pot (family), and the brand's own tree (your tree). */
+const SPECIMENS: { name: string; fact: string; art: string; bg: string; wide?: boolean }[] = [
+  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "/brand/landing/way-mentors.webp", bg: "var(--tint-purple)", wide: true },
+  { name: "Matched groups", fact: "Join up to five groups chosen for your diagnosis and stage, each with the reason why.", art: "/brand/landing/way-groups.webp", bg: "var(--tint-pink)" },
+  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "/brand/landing/way-guide.webp", bg: "var(--tint-blue)" },
+  { name: "Success stories, kept apart", fact: "Hope when you want it. Pregnancy news stays in its own space.", art: "/brand/landing/way-stories.webp", bg: "var(--tag-pink-bg)", wide: true },
+  { name: "A family space", fact: "Share a question list or a note with your partner, only when you choose.", art: "/brand/landing/way-family.webp", bg: "var(--tint-neutral)" },
   { name: "Your tree", fact: "Grow from Seed to Orange Tree each time someone finds you helpful.", art: "tree", bg: "var(--tint-green)" },
 ];
 
@@ -365,7 +423,13 @@ function Specimens() {
         {SPECIMENS.map((s, i) => (
           <li key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={s.wide ? "col-span-2" : ""}>
             <div className={`grid place-items-center overflow-hidden rounded-[20px] px-4 pt-6 ${s.wide ? "aspect-[8/5]" : "aspect-[4/5]"}`} style={{ background: s.bg }}>
-              {s.art === "tree" ? <TreeArt level="Orange Tree" size={170} /> : <Spot kind={s.art} size={s.wide ? 260 : 170} />}
+              {s.art === "tree" ? (
+                <TreeArt level="Orange Tree" size={170} />
+              ) : (
+                <span className={`relative block ${s.wide ? "h-[74%] w-[60%]" : "h-[66%] w-[84%]"}`}>
+                  <Image src={s.art} alt="" fill sizes={s.wide ? "(min-width: 1024px) 320px, 60vw" : "(min-width: 1024px) 200px, 40vw"} quality={90} className="object-contain" />
+                </span>
+              )}
             </div>
             <h3 className="mt-3 text-[20px] font-semibold">{s.name}</h3>
             <p className="mt-1 text-[16px] leading-relaxed text-ink-soft">{s.fact}</p>
@@ -378,12 +442,11 @@ function Specimens() {
 
 /* The live thing: pick where you are, see where you'd land. */
 const STAGES = [
-  { stage: "Trying to conceive", photo: "/photos/forest.jpg", alt: "A path through a pine forest", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
-  { stage: "Waiting on tests", photo: "/photos/garden-path.jpg", alt: "A garden path between rose beds", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
-  { stage: "In treatment", photo: "/photos/blossom.jpg", alt: "White blossom on a fruit tree", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
-  { stage: "Taking a break", photo: "/photos/redwood.jpg", alt: "Sunlight through redwood trees", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
-  { stage: "I'm a partner", photo: "/photos/together.jpg", alt: "Two people sitting on a rock by a mountain lake", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
-  { stage: "Pregnant after infertility", photo: "/photos/orange-tree.jpg", alt: "An orange tree heavy with fruit", disc: "var(--tint-neutral)", groups: ["g-pai", "g-endo", "g-dor"], article: "diminished-ovarian-reserve" },
+  { stage: "Trying to conceive", line: "Months of trying, and wondering what's next.", photo: "/brand/landing/stage-trying.webp", alt: "A sunlit path winding up through an orange grove", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
+  { stage: "Waiting on tests", line: "Appointments booked, answers not back yet.", photo: "/brand/landing/stage-waiting.webp", alt: "A garden bench under an orange tree, beside a path to a closed gate", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
+  { stage: "In treatment", line: "IUI, IVF or surgery, and everything in between.", photo: "/brand/landing/stage-treatment.webp", alt: "An orange branch in white blossom, a small green fruit just forming", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
+  { stage: "Taking a break", line: "Stepping back for a while, without stepping away.", photo: "/brand/landing/stage-break.webp", alt: "A hammock in dappled shade at the edge of a still lake", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
+  { stage: "I'm a partner", line: "Supporting someone you love, and needing support too.", photo: "/brand/landing/stage-partner.webp", alt: "Two chairs side by side facing a lake under an orange tree", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
 ];
 
 function WhereAreYou() {
@@ -406,11 +469,13 @@ function WhereAreYou() {
                   onClick={() => setI(k)}
                   onMouseEnter={() => setI(k)}
                   onFocus={() => setI(k)}
-                  className={`press flex shrink-0 items-center gap-3 rounded-full px-4 py-2.5 text-left lg:w-full text-[18px] font-semibold transition-colors duration-200 lg:text-[22px] ${
+                  className={`press flex shrink-0 flex-col items-start rounded-[18px] px-4 py-2.5 text-left lg:w-full transition-colors duration-200 ${
                     k === i ? "bg-accent text-white" : "text-ink-soft hover:bg-white hover:text-ink"
                   }`}
                 >
-                  {s.stage}
+                  <span className="text-[18px] font-semibold lg:text-[22px]">{s.stage}</span>
+                  {/* Phones show the line only on the chosen stage, so the chips stay small. */}
+                  <span className={`mt-0.5 text-[14px] leading-snug lg:text-[15px] ${k === i ? "text-white/80" : "hidden text-muted lg:block"}`}>{s.line}</span>
                 </button>
             ))}
           </div>
@@ -422,9 +487,10 @@ function WhereAreYou() {
             <div
               key={s.stage}
               aria-hidden={k !== i}
-              className={`absolute inset-[9%] overflow-hidden rounded-full transition-[opacity,transform] duration-300 ease-[var(--e-out)] ${k === i ? "opacity-100" : "scale-[0.97] opacity-0"}`}
+              className={`absolute inset-[9%] overflow-hidden rounded-full transition-[opacity,transform] duration-500 ease-[var(--e-out)] ${k === i ? "opacity-100" : "scale-[1.04] opacity-0"}`}
             >
-              <Image src={s.photo} alt={s.alt} fill sizes="(min-width: 1024px) 40vw, 90vw" className="object-cover" priority={k === 0} />
+              {/* The chosen painting settles in from a slight zoom while the last one fades; each drifts slowly, like a view through a window. */}
+              <Image src={s.photo} alt={s.alt} fill sizes="(min-width: 1024px) 40vw, 90vw" quality={90} className="drift object-cover" priority={k === 0} />
             </div>
           ))}
           <span className="absolute right-[4%] bottom-[6%]">
@@ -450,15 +516,15 @@ function WhereAreYou() {
   );
 }
 
-/* The library as a shelf: each article's painted cover (an open book with
-   its topic beside it) on its diagnosis's tint. Covers settle into place as
+/* The library as a shelf: each article's painted cover (its topic as one
+   painted subject) on its diagnosis's tint. Covers settle into place as
    the section enters. */
 function LearnList() {
   return (
     <section id="learn" aria-labelledby="learn-h" className="scroll-mt-20 mx-auto max-w-[1440px] px-5 py-24 sm:px-8 lg:py-36">
       <div className="flex items-baseline justify-between gap-4" data-reveal>
         <h2 id="learn-h" className="serif text-[44px] leading-[1] lg:text-[56px]">Clinician-reviewed library</h2>
-        <span className="text-[16px] text-muted">6 articles</span>
+        <span className="shrink-0 text-[16px] whitespace-nowrap text-muted">6 articles</span>
       </div>
       <p className="mt-3 max-w-[60ch] text-[16px] leading-relaxed text-ink-soft" data-reveal>
         One for each of six diagnoses, each reviewed by a clinician before it&apos;s published. Read the summaries now; the full articles open when you join.
@@ -522,7 +588,7 @@ function Partners() {
       <Backdrop kind="partners" />
       <div className="relative mx-auto grid max-w-[1376px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
         <div className="relative mx-auto aspect-square w-full max-w-[520px] overflow-hidden rounded-full" data-reveal>
-          <Image src="/photos/together.jpg" alt="Two people sitting together on a rock above a mountain lake" fill sizes="(min-width: 1024px) 40vw, 90vw" className="drift object-cover" />
+          <Image src="/brand/landing/partners.webp" alt="Two young orange trees on a hill above a lake, their branches reaching toward each other" fill sizes="(min-width: 1024px) 40vw, 90vw" quality={90} className="drift object-cover" />
         </div>
         <div>
           <h2 id="partners-h" className="serif text-[44px] leading-[1] lg:text-[56px]" data-reveal>

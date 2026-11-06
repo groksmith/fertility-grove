@@ -95,7 +95,7 @@ const twoUp = (v, a, b) => (v.sm ? Row({ name: "pair", w: "fill", gap: 20, align
 
 const avatar = (key, size, tint, ring) =>
   F({ name: `avatar ${key}`, width: size, height: size, radius: 999, fill: tint, clip: true, stroke: ring, strokeWeight: ring ? 2 : undefined }, [
-    Img(`brand/avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
+    Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
   ]);
 const initial = (letter, size, tint, ink) => Row({ name: "avatar initial", width: size, height: size, w: "fixed", h: "fixed", justify: "center", radius: 999, fill: tint }, [T(letter, "h3", { size: Math.round(size * 0.4), color: ink, free: true })]);
 
@@ -195,7 +195,7 @@ const SCREENS = [
     body: (v) => {
       const display = (title, body, on) =>
         Col({ name: title, w: "fill", grow: true, padding: 16, gap: 2, radius: 14, fill: C.white, stroke: on ? C.accent : undefined, strokeWeight: on ? 2 : undefined }, [T(title, "body", { style: "SemiBold" }), T(body, "small", { color: C.muted })]);
-      const AV = ["orange", "blossom", "sprout", "bluebird", "bee", "ladybird", "snail", "butterfly", "hedgehog", "owl", "fox", "sunflower"];
+      const AV = ["orange", "olive", "fern", "swallow", "mountain", "wave", "pinecone", "moon", "oak", "owl", "fox", "sunflower"];
       const swatches = [TINT.green, TINT.coral, TINT.yellow, TINT.blue, TINT.pink, TINT.purple];
       const aboutMe = "33, stage III endo, starting IVF this winter. Here for people who get it and for the questions I'm scared to ask out loud.";
       return [
@@ -329,7 +329,6 @@ const SCREENS = [
 const panelArt = (w, h, step) =>
   F({ name: "Grove panel", width: w, height: h, radius: 20, fill: C.white, clip: true }, [
     Img(WASH, w, h, { name: "wash", x: 0, y: 0, scaleMode: "FILL" }),
-    Img("brand/cozy/e-blossom-hang.webp", 260, Math.round((260 * 2220) / 1472), { name: "blossom", x: w - 260 - 32, y: -48, scaleMode: "FIT" }),
     Img(`brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
   ]);
 

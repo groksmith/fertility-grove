@@ -1,27 +1,18 @@
-/* Scenes and spot art, all from the brand's own watercolour orange tree.
-   The onboarding scene is the growth film one frame per answer: by screen 8
-   the seed you planted is a tree in fruit. Spots compose the growth stages
-   (and the orange from the logo) into small pictures for headers and empty
-   states. */
+/* Scenes and spot art. The onboarding scene is the gifted orange tree
+   (GiftTree): a blossom opens per answer, bees come to visit, and the first
+   orange forms on the last screen. Spots compose the brand's watercolour
+   growth stages (and the orange from the logo) into small pictures for
+   headers and empty states. */
 
 import Image from "next/image";
+import { GiftTree } from "./GiftTree";
 import { TREE_SRC } from "./Tree";
 
+/** The sign-up and onboarding panel: the gifted orange tree (see GiftTree). */
 export function OnboardingScene({ step, className = "" }: { step: number; className?: string }) {
   return (
     <div className={`relative overflow-hidden ${className}`} aria-hidden>
-      {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-        <Image
-          key={n}
-          src={`/brand/art/grow-${n}.webp`}
-          alt=""
-          fill
-          sizes="(min-width: 1024px) 45vw, 100vw"
-          priority={n === step}
-          className="object-contain object-bottom transition-opacity duration-500 ease-[var(--e-out)]"
-          style={{ opacity: n === Math.min(8, Math.max(1, step)) ? 1 : 0 }}
-        />
-      ))}
+      <GiftTree step={step} />
     </div>
   );
 }

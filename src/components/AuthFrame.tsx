@@ -5,6 +5,7 @@
    phone. */
 
 import Link from "next/link";
+import { CircleHelp } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Backdrop } from "@/components/art/Cozy";
 import { OnboardingScene } from "@/components/art/Scenes";
@@ -13,7 +14,7 @@ export function AuthFrame({
   title,
   lede,
   children,
-  step = 8,
+  step = 0,
   footer,
 }: {
   title: string;
@@ -29,11 +30,12 @@ export function AuthFrame({
           <Link href="/" aria-label="Fertility Grove home" className="text-ink">
             <Logo height={40} priority />
           </Link>
-          <Link href="/help" className="text-[14px] font-semibold text-ink-soft hover:text-ink">
+          <Link href="/help" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-ink-soft hover:text-ink">
+            <CircleHelp size={16} aria-hidden />
             Help
           </Link>
         </header>
-        <div className="mx-auto -mx-4 mt-2 h-36 overflow-hidden sm:-mx-8 lg:hidden" aria-hidden>
+        <div className="-mx-4 mt-2 h-36 self-stretch overflow-hidden sm:-mx-8 lg:hidden" aria-hidden>
           <OnboardingScene step={step} className="h-full w-full" />
         </div>
         <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-8 lg:py-12">
@@ -74,7 +76,10 @@ export function ReadingFrame({ title, lede, children }: { title: string; lede?: 
           <Logo height={40} priority />
         </Link>
         <nav className="flex gap-5 text-[14px] font-semibold text-ink-soft">
-          <Link href="/help" className="hover:text-ink">Help</Link>
+          <Link href="/help" className="inline-flex items-center gap-1.5 hover:text-ink">
+            <CircleHelp size={16} aria-hidden />
+            Help
+          </Link>
           <Link href="/login" className="hover:text-ink">Sign in</Link>
         </nav>
       </header>

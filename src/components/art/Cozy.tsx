@@ -2,7 +2,7 @@
 
 /* The cosy layer: background atmosphere painted in gouache for Fertility
    Grove. A soft plaster-and-sky wash sits behind a page's header and fades
-   into white; one or two painted elements (a hanging orange branch, blossom,
+   into white; one or two painted elements (a hanging orange branch,
    the café awning's lights, a lantern, shutters, rooftops) hang in from the
    edge. The brand's own pictures stay in front; this is only the backdrop.
 
@@ -18,7 +18,7 @@ import { useStore } from "@/lib/store";
 
 const DIR = "/brand/cozy";
 
-type ElementKey = "awning" | "basket" | "birdhouse" | "birds" | "blossom" | "branch" | "branchSide" | "lantern" | "rooftops" | "swing" | "wateringCan";
+type ElementKey = "awning" | "basket" | "birdhouse" | "birds" | "branch" | "branchSide" | "lantern" | "rooftops" | "swing" | "wateringCan";
 type Glow = { x: number; y: number; r: number; d?: number };
 
 /* Pixel sizes of the cut-outs, and lights as % of each picture. */
@@ -42,7 +42,6 @@ const ELEMENTS: Record<ElementKey, { src: string; w: number; h: number; glows?: 
   basket: { src: `${DIR}/e-basket.webp`, w: 1400, h: 1769 },
   birdhouse: { src: `${DIR}/e-birdhouse.webp`, w: 1400, h: 1594 },
   birds: { src: `${DIR}/e-birds.webp`, w: 1560, h: 1049 },
-  blossom: { src: `${DIR}/e-blossom-hang.webp`, w: 1472, h: 2220 },
   branch: { src: `${DIR}/e-branch-hang.webp`, w: 1600, h: 2005 },
   branchSide: { src: `${DIR}/e-branch-side.webp`, w: 1600, h: 885 },
   lantern: { src: `${DIR}/e-lantern.webp`, w: 1600, h: 1855, glows: [{ x: 48.2, y: 82.7, r: 16 }] },
@@ -247,17 +246,7 @@ const HEADER: Record<SceneKey, React.ReactNode> = {
       className="-top-6 -right-10 w-[250px] lg:-top-[84px] lg:-right-10 lg:w-[360px] min-[110rem]:-top-12 min-[110rem]:-right-14 min-[110rem]:w-[460px]"
     />
   ),
-  stories: (
-    <>
-      <Element
-        el="blossom"
-        hang="top"
-        sizes={HS}
-        className="-top-16 -right-4 w-[130px] lg:-top-[150px] lg:right-6 lg:w-[230px] min-[110rem]:-top-24 min-[110rem]:right-4 min-[110rem]:w-[270px]"
-      />
-      <Drift leaves={false} className="inset-y-0 right-0 w-[45%]" />
-    </>
-  ),
+  stories: <Drift leaves={false} className="inset-y-0 right-0 w-[45%]" />,
   learn: (
     <>
       <LivelyWindow
@@ -392,24 +381,14 @@ export function Backdrop({ kind, wash }: { kind: "hero" | "statement" | "partner
       {kind === "statement" && (
         <Element el="branchSide" hang="right" sizes="(min-width: 1024px) 560px, 260px" className="-top-4 -right-12 w-[180px] lg:-top-8 lg:-right-36 lg:w-[420px]" />
       )}
-      {kind === "partners" && (
-        <>
-          <Element el="blossom" hang="top" phase={1.5} sizes={HS} className="-top-20 right-2 w-[120px] lg:-top-24 lg:right-10 lg:w-[250px]" />
-          <Drift leaves={false} className="inset-y-0 right-0 w-[40%]" />
-        </>
-      )}
+      {kind === "partners" && <Drift leaves={false} className="inset-y-0 right-0 w-[40%]" />}
       {kind === "join" && (
         <>
           <Element el="branch" hang="top" phase={2.5} sizes={HS} className="-top-[72px] right-3 w-[90px] lg:right-auto lg:-top-20 lg:left-10 lg:w-[280px]" />
           <Drift petals={false} className="inset-y-0 right-0 w-[40%] lg:right-auto lg:left-0" />
         </>
       )}
-      {kind === "auth" && (
-        <>
-          <Element el="blossom" hang="top" sizes={HS} className="-top-10 -right-4 w-[120px] lg:-top-12 lg:right-8 lg:w-[260px]" />
-          <Drift className="inset-0" />
-        </>
-      )}
+      {kind === "auth" && <Drift className="inset-0" />}
     </div>
   );
 }
