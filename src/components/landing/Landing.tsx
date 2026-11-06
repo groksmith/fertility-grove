@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Menu as MenuIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LogoOrange, Logo } from "@/components/Logo";
+import { Grove } from "./Grove";
 import { Backdrop } from "@/components/art/Cozy";
 import { Spot, type SpotKind } from "@/components/art/Scenes";
 import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
@@ -271,36 +272,33 @@ function Hero() {
   const [leftTree, rightTree] = useGrowTogether();
   return (
     <header className="relative overflow-hidden bg-white">
-      <div className="relative">
-        <Backdrop kind="hero" wash />
-        <div aria-hidden className="h-20" />
+      <div className="relative h-[var(--hero-h)]" style={{ "--hero-h": "clamp(700px, 100svh, 980px)" } as React.CSSProperties}>
+        <Grove
+          films={[
+            <GrowingTree key="l" ref={leftTree} className="h-full w-full object-cover object-bottom" />,
+            <GrowingTree key="r" ref={rightTree} className="h-full w-full object-cover object-bottom" />,
+          ]}
+        />
+        <Backdrop kind="hero" />
 
-        <div className="relative mx-auto grid max-w-[1440px] grid-cols-1 items-center px-5 pt-10 pb-16 sm:px-8 xl:min-h-[min(820px,calc(100svh-80px))] xl:grid-cols-[minmax(0,min(460px,32vw))_minmax(0,1fr)_minmax(0,min(460px,32vw))] xl:gap-x-6 xl:pt-0 xl:pb-0">
-          <div className="pointer-events-none relative mx-auto aspect-square w-[64%] max-w-[300px] xl:w-full xl:max-w-none">
-            <GrowingTree ref={leftTree} className="h-full w-full object-cover object-bottom mix-blend-multiply" />
-          </div>
-
-          <div className="relative z-10 text-center">
-            <h1 className="serif mx-auto max-w-[24ch] text-[28px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] lg:text-[56px] xl:text-[clamp(44px,3.6vw,52px)]">
+        {/* The words sit in the sky, above the horizon, with the path leading up to them. */}
+        <div className="absolute inset-x-0 top-20 bottom-[45%] z-10 flex items-center justify-center px-5 sm:px-8">
+          <div className="text-center">
+            <h1 className="serif mx-auto max-w-[24ch] text-[30px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] xl:text-[clamp(44px,3.6vw,56px)]">
               The first purpose built platform for the fertility community.
             </h1>
-            <p className="mx-auto mt-5 max-w-[42ch] text-[20px] leading-relaxed text-muted">
+            <p className="mx-auto mt-4 max-w-[46ch] text-[18px] leading-relaxed text-pretty text-ink-soft sm:text-[20px]">
               A private community for people going through infertility, and their partners.
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <PillButton href="/signup">Create account</PillButton>
               <PillButton href="/login" tone="light">
                 Sign in
               </PillButton>
             </div>
-            <p className="mt-4 text-[14px] text-muted">Invite-only during the beta. Ask a member for their invite link.</p>
-          </div>
-
-          <div className="pointer-events-none relative hidden aspect-square w-full xl:block">
-            <GrowingTree ref={rightTree} className="h-full w-full object-cover object-bottom mix-blend-multiply" />
+            <p className="mt-3 text-[14px] text-ink-soft">Invite-only during the beta. Ask a member for their invite link.</p>
           </div>
         </div>
-
       </div>
 
       <div className="bg-raised">

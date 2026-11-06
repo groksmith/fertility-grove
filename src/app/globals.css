@@ -437,6 +437,60 @@ a {
   transform: none;
 }
 
+/* The landing grove (components/landing/Grove.tsx). The view eases forward as
+   if you'd stepped onto the path; each tree rises a little as it appears and
+   grows through its five stages, the next fading in before the last fades out
+   so it never thins mid-change. Delays come from each tree's depth (--a, --in,
+   --out), so the grove grows in a wave from near to far. */
+.grove-box {
+  transform-origin: 50% 49.5%;
+  animation: grove-dolly 7000ms var(--e-out) 200ms both;
+}
+@keyframes grove-dolly {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.035);
+  }
+}
+.grove-tree {
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  animation: grove-rise 900ms var(--e-out) var(--a) both;
+}
+@keyframes grove-rise {
+  from {
+    transform: scale(0.82);
+  }
+  to {
+    transform: none;
+  }
+}
+.grove-stage {
+  opacity: 0;
+  animation: grove-in 480ms var(--e-out) var(--in) both, grove-out 480ms var(--e-out) var(--out) forwards;
+}
+.grove-stage[data-last] {
+  animation: grove-in 480ms var(--e-out) var(--in) both;
+}
+@keyframes grove-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes grove-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* Avatar picker: the emblem you choose settles in with a small pop; under a
    mouse the one you point at lifts a touch. Avatars elsewhere never move. */
 .avatar-pick[data-on] .avatar-art > * {
@@ -894,5 +948,11 @@ a {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+  /* The grove is simply grown: no waiting on its wave of delays. */
+  .grove-box,
+  .grove-tree,
+  .grove-stage {
+    animation-delay: 0ms !important;
   }
 }
