@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import { LogoOrange, Logo } from "@/components/Logo";
 import { Grove } from "./Grove";
 import { Backdrop } from "@/components/art/Cozy";
-import { Spot, type SpotKind } from "@/components/art/Scenes";
 import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
 import { ARTICLES, articleCover } from "@/lib/data/articles";
 import { hueInk } from "@/lib/hue";
@@ -396,12 +395,18 @@ function Statement() {
   );
 }
 
-const SPECIMENS: { name: string; fact: string; art: SpotKind | "tree"; bg: string; wide?: boolean }[] = [
-  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "shelter", bg: "var(--tint-purple)", wide: true },
-  { name: "Matched groups", fact: "Join up to five groups chosen for your diagnosis and stage, each with the reason why.", art: "canopy", bg: "var(--tint-pink)" },
-  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "lantern", bg: "var(--tint-blue)" },
-  { name: "Success stories, kept apart", fact: "Hope when you want it. Pregnancy news stays in its own space.", art: "blossom", bg: "var(--tag-pink-bg)", wide: true },
-  { name: "A family space", fact: "Share a question list or a note with your partner, only when you choose.", art: "roots", bg: "var(--tint-neutral)" },
+/* Each way in has its own painted subject (public/brand/landing/way-*.webp,
+   prompts in scripts/art/prompts-ways/): an old tree reaching over a staked
+   sapling (mentors), saplings gathered close (groups), a lantern on an open
+   book (the Guide, which answers from reviewed articles), a ripe orange under
+   a glass cloche (success stories, kept in their own space), two trees
+   entwined in one pot (family), and the brand's own tree (your tree). */
+const SPECIMENS: { name: string; fact: string; art: string; bg: string; wide?: boolean }[] = [
+  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "/brand/landing/way-mentors.webp", bg: "var(--tint-purple)", wide: true },
+  { name: "Matched groups", fact: "Join up to five groups chosen for your diagnosis and stage, each with the reason why.", art: "/brand/landing/way-groups.webp", bg: "var(--tint-pink)" },
+  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "/brand/landing/way-guide.webp", bg: "var(--tint-blue)" },
+  { name: "Success stories, kept apart", fact: "Hope when you want it. Pregnancy news stays in its own space.", art: "/brand/landing/way-stories.webp", bg: "var(--tag-pink-bg)", wide: true },
+  { name: "A family space", fact: "Share a question list or a note with your partner, only when you choose.", art: "/brand/landing/way-family.webp", bg: "var(--tint-neutral)" },
   { name: "Your tree", fact: "Grow from Seed to Orange Tree each time someone finds you helpful.", art: "tree", bg: "var(--tint-green)" },
 ];
 
@@ -418,7 +423,13 @@ function Specimens() {
         {SPECIMENS.map((s, i) => (
           <li key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={s.wide ? "col-span-2" : ""}>
             <div className={`grid place-items-center overflow-hidden rounded-[20px] px-4 pt-6 ${s.wide ? "aspect-[8/5]" : "aspect-[4/5]"}`} style={{ background: s.bg }}>
-              {s.art === "tree" ? <TreeArt level="Orange Tree" size={170} /> : <Spot kind={s.art} size={s.wide ? 260 : 170} />}
+              {s.art === "tree" ? (
+                <TreeArt level="Orange Tree" size={170} />
+              ) : (
+                <span className={`relative block ${s.wide ? "h-[74%] w-[60%]" : "h-[66%] w-[84%]"}`}>
+                  <Image src={s.art} alt="" fill sizes={s.wide ? "(min-width: 1024px) 320px, 60vw" : "(min-width: 1024px) 200px, 40vw"} quality={90} className="object-contain" />
+                </span>
+              )}
             </div>
             <h3 className="mt-3 text-[20px] font-semibold">{s.name}</h3>
             <p className="mt-1 text-[16px] leading-relaxed text-ink-soft">{s.fact}</p>
