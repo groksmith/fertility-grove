@@ -4,8 +4,8 @@
    feet to the horizon, and a whole grove grows along it. The two near trees
    play the brand's growth film; behind them the grove grows in a wave, nearest
    first and out to the far rows, each tree through the same five painted
-   painted stages (bush, tree, blossom, oranges) the film is made from, so it
-   is one orchard. Further trees are smaller, closer to the path and paler in the
+   painted stages the film is made from, so it is one orchard, and they finish
+   four ways: green, in flower, in flower and fruit, or full of oranges. Further trees are smaller, closer to the path and paler in the
    haze. The view eases forward a little as it grows, as if you'd stepped onto
    the path.
 
@@ -21,7 +21,6 @@
 
 import Image from "next/image";
 import { STAGE_SRC } from "@/components/art/Tree";
-import type { TreeLevel } from "@/lib/types";
 
 const HORIZON = 49.5; // % of the painting's height
 const SIZE = 63; // a tree's height at depth 1, as % of the painting's height
@@ -37,16 +36,36 @@ const ROWS = [0.28, 0.44, 0.64, 0.92, 1.3, 1.85]; // the first just clear of the
 const FILM_D = 0.64;
 const FILM_X = 0.36;
 
-type Tree = { key: string; d: number; x: number; row: number; delay: number; scale: number; stages: TreeLevel[] };
+type Tree = { key: string; d: number; x: number; row: number; delay: number; scale: number; stages: string[] };
 
 /* Grove trees start as small bushes (a seed reads as a stone at this size; the
-   near trees still grow from a sprout in the film). Near ones grow through four
-   stages, far ones through three, and about a third finish in white blossom
-   rather than fruit, as a real orchard does. */
-const stagesFor = (d: number, blossom: boolean): TreeLevel[] => {
-  const end: TreeLevel = blossom ? "Blossom Tree" : "Orange Tree";
-  if (d < 0.2) return ["Bush", "Tree", end];
-  return blossom ? ["Bush", "Tree", "Blossom Tree"] : ["Bush", "Tree", "Blossom Tree", "Orange Tree"];
+   near trees still grow from a sprout in the film) and finish four ways, like
+   a real orchard: green only, in flower, in flower and fruit at once
+   (stage-mixed.webp, the blossom tree with half the oranges set into it), or
+   full of oranges. Far trees skip a stage. */
+const SRC = { ...STAGE_SRC, Mixed: "/brand/art/stage-mixed.webp" };
+type Finish = "green" | "flowers" | "mixed" | "oranges";
+const FINISHES: [Finish, number][] = [
+  ["green", 0.2],
+  ["flowers", 0.25],
+  ["mixed", 0.25],
+  ["oranges", 0.3],
+];
+const PATHS: Record<Finish, (keyof typeof SRC)[]> = {
+  green: ["Bush", "Tree"],
+  flowers: ["Bush", "Tree", "Blossom Tree"],
+  mixed: ["Bush", "Tree", "Blossom Tree", "Mixed"],
+  oranges: ["Bush", "Tree", "Blossom Tree", "Orange Tree"],
+};
+const stagesFor = (d: number, finish: Finish) => {
+  const path = PATHS[finish];
+  const keep = d < 0.2 && path.length > 3 ? [path[0], path[1], path[path.length - 1]] : path;
+  return keep.map((k) => SRC[k]);
+};
+const pickFinish = (r: number): Finish => {
+  let acc = 0;
+  for (const [f, w] of FINISHES) if (r < (acc += w)) return f;
+  return "oranges";
 };
 
 function plant(): Tree[] {
@@ -58,9 +77,9 @@ function plant(): Tree[] {
       let d = Math.min(0.5, 0.5 - row * 0.03) - (side > 0 ? 0.02 : 0);
       while (d > 0.045) {
         const x = side * (rx + (rand() - 0.5) * 0.02);
-        const nearFilm = d > 0.42 && Math.abs(Math.abs(x) - FILM_X) < 0.12;
+        const scale = 0.88 + rand() * 0.24;
         const { left } = ground(d, x);
-        if (!nearFilm && left > -4 && left < 104) {
+        if (left > -4 && left < 104) {
           // Nearest grow first, then the wave runs out to the far rows.
           const delay = 300 + (1 - d / 0.5) * 2600 + Math.min(row, 4) * 120 + rand() * 180;
           trees.push({
@@ -69,8 +88,8 @@ function plant(): Tree[] {
             x,
             row,
             delay: Math.round(delay),
-            scale: 0.88 + rand() * 0.24,
-            stages: stagesFor(d, rand() < 0.32),
+            scale,
+            stages: stagesFor(d, pickFinish(rand())),
           });
         }
         d *= 0.71;
@@ -108,9 +127,9 @@ export function Grove({ films }: { films: React.ReactNode[] }) {
                 } as React.CSSProperties
               }
             >
-              {t.stages.map((s, i) => (
+              {t.stages.map((src, i) => (
                 <span
-                  key={s}
+                  key={src}
                   className="grove-stage absolute inset-0"
                   style={
                     {
@@ -120,7 +139,7 @@ export function Grove({ films }: { films: React.ReactNode[] }) {
                   }
                   data-last={i === t.stages.length - 1 ? "" : undefined}
                 >
-                  <Image src={STAGE_SRC[s]} alt="" fill sizes={`${Math.max(3, Math.round(t.d * 45))}vw`} className="object-contain object-bottom" />
+                  <Image src={src} alt="" fill sizes={`${Math.max(3, Math.round(t.d * 45))}vw`} className="object-contain object-bottom" />
                 </span>
               ))}
             </span>
@@ -132,7 +151,7 @@ export function Grove({ films }: { films: React.ReactNode[] }) {
           const { left, top } = ground(FILM_D, (i === 0 ? -1 : 1) * FILM_X);
           const h = SIZE * FILM_D;
           return (
-            <span key={i} className="absolute block -translate-x-1/2 mix-blend-multiply" style={{ left: `${left}%`, top: `${top - h * 0.97}%`, height: `${h}%`, aspectRatio: "1" }}>
+            <span key={i} className="absolute block -translate-x-1/2" style={{ left: `${left}%`, top: `${top - h * 0.97}%`, height: `${h}%`, aspectRatio: "1" }}>
               {film}
             </span>
           );

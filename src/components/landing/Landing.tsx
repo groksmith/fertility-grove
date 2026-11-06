@@ -77,13 +77,15 @@ const PRIVACY: { text: string; art: string }[] = [
   { text: "Download or delete everything, any time", art: "/brand/cozy/q-download.webp" },
 ];
 
-/** The brand's growth film plays once, then rests on the tree in fruit. */
+/** The brand's growth film plays once, then rests on the tree in fruit. It is
+ *  keyed to transparency (the paper is gone), so the tree stands solid in
+ *  front of the grove: HEVC with alpha for Safari, VP9 with alpha for the rest. */
 function GrowingTree({ ref, className = "" }: { ref: React.Ref<HTMLVideoElement>; className?: string }) {
   return (
-    <video ref={ref} className={className} poster="/brand/tree-grow-poster.jpg" muted playsInline preload="auto" aria-hidden>
+    <video ref={ref} className={className} poster="/brand/tree-grow-first.webp" muted playsInline preload="auto" aria-hidden>
       {/* Cut from the site's original at full resolution: 1024² square pixels. */}
-      <source src="/brand/tree-grow.webm" type="video/webm" />
-      <source src="/brand/tree-grow.mp4" type="video/mp4" />
+      <source src="/brand/tree-grow-alpha.mov" type='video/quicktime; codecs="hvc1"' />
+      <source src="/brand/tree-grow-alpha.webm" type="video/webm" />
     </video>
   );
 }
@@ -94,7 +96,11 @@ function useGrowTogether() {
   const left = useRef<HTMLVideoElement>(null);
   const right = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // No growing: show the tree already in fruit.
+      [left.current, right.current].forEach((v) => v && (v.poster = "/brand/tree-grow-last.webp"));
+      return;
+    }
     const films = [left.current, right.current].filter((v): v is HTMLVideoElement => !!v && v.offsetParent !== null);
     const start = () => {
       if (!films.every((v) => v.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA)) return;
