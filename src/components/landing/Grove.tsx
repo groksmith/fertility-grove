@@ -108,7 +108,7 @@ export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?
       <div ref={sceneRef} className="absolute inset-0 origin-[50%_55%]">
       {/* The painting's own box: as wide as the screen, and tall enough that the horizon sits a little over halfway down. */}
       <div className="grove-box absolute top-0 left-1/2 aspect-[2752/1536] w-[max(100%,calc(var(--hero-h)*2.12))] -translate-x-1/2">
-        <Image src="/brand/landing/grove-land.webp" alt="" fill priority sizes="(min-width: 1440px) 2000px, 140vw" quality={88} className="object-cover" />
+        <Image src="/brand/landing/grove-land.webp" alt="" fill priority sizes="(min-width: 1440px) 2000px, 140vw" quality={90} className="object-cover" />
 
         {TREES.map((t) => {
           const { left, top } = ground(t.d, t.x);
@@ -141,7 +141,9 @@ export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?
                   }
                   data-last={i === t.stages.length - 1 ? "" : undefined}
                 >
-                  <Image src={src} alt="" fill sizes={`${Math.max(3, Math.round(t.d * 45))}vw`} className="object-contain object-bottom" />
+                  {/* Served as they are, not through the image optimiser: a grove would ask it for
+                      dozens of resizes at once. Near trees get the 640px stage, far ones a 256px copy. */}
+                  <Image src={t.d >= 0.22 ? src : src.replace(".webp", "-sm.webp")} alt="" fill unoptimized className="object-contain object-bottom" />
                 </span>
               ))}
             </span>
