@@ -315,8 +315,10 @@ a {
   border-radius: 6px;
 }
 
-/* A search pill draws the ring on itself (focus-within), so its input doesn't. */
-.search-field input:focus-visible {
+/* A search pill draws the ring on itself (focus-within), so its input doesn't.
+   Form fields draw their own 2px border on focus (inputBase), so no outline. */
+.search-field input:focus-visible,
+.field-input:focus-visible {
   outline: none;
 }
 
@@ -433,6 +435,72 @@ a {
 .reveal-ready [data-reveal][data-in] {
   opacity: 1;
   transform: none;
+}
+
+/* Avatar picker: the emblem you choose settles in with a small pop; under a
+   mouse the one you point at lifts a touch. Avatars elsewhere never move. */
+.avatar-pick[data-on] .avatar-art > * {
+  animation: fg-pick 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes fg-pick {
+  from {
+    transform: scale(0.88);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .avatar-pick .avatar-art > * {
+    transition: transform 200ms var(--e-out);
+  }
+  .avatar-pick:hover .avatar-art > * {
+    transform: scale(1.06);
+  }
+}
+
+/* The gift tree (components/art/GiftTree.tsx). A bud gives way as its blossom
+   opens with a small overshoot, as if unfolding; fruit swells in as its blossom
+   fades, grows with each step (--fruit-scale) and ripens by cross-fading its
+   green, greenish and ripe paintings. At the harvest each orange and its
+   blossom share a delay (set inline), so flowers turn into fruit in turn.
+   Transitions, so fast clicking through onboarding retargets instead of
+   restarting. */
+.gift-bud {
+  display: block;
+  transform-origin: 50% 100%;
+  transition: opacity 400ms var(--e-out), transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* A bud sets (none -> bud), then gives way as its blossom opens (gone). */
+.gift-bud[data-state="none"] {
+  opacity: 0;
+  transform: scale(0.4);
+}
+.gift-bud[data-state="gone"] {
+  opacity: 0;
+  transform: scale(0.7);
+}
+.gift-bloom {
+  opacity: 0;
+  transform: scale(0.55) rotate(-28deg);
+  transition: opacity 320ms var(--e-out), transform 760ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.gift-bloom[data-open] {
+  opacity: 1;
+  transform: none;
+}
+.gift-fruit {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  transform-origin: 50% 20%;
+  transition: opacity 500ms var(--e-out) 200ms, transform 1000ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms;
+}
+.gift-fruit[data-open] {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(var(--fruit-scale));
+}
+.gift-ripen {
+  transition: opacity 900ms var(--e-out);
 }
 
 /* Library covers settle from a slight zoom as their card rises in. */

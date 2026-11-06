@@ -123,7 +123,7 @@ function privacy(v) {
 function statement(v) {
   const size = v.desk ? 36 : v.phone ? 22 : 28;
   const words = "Tell us where you are once. Meet people on your | forest | path, answers a clinician | pcos | reviewed, and someone who's been there | orange | .";
-  const thumbs = { forest: "photos/forest.jpg", pcos: "brand/learn/pcos.webp", orange: "photos/orange-tree.jpg" };
+  const thumbs = { forest: "brand/landing/stage-trying.webp", pcos: "brand/learn/pcos-topic.webp", orange: "brand/art/tree-orange.webp" };
   const parts = words.split(" | ").flatMap((chunk) =>
     thumbs[chunk]
       ? [Img(thumbs[chunk], Math.round(size * 0.9), Math.round(size * 0.9), { name: `thumb ${chunk}`, radius: 999 })]
@@ -186,7 +186,7 @@ function whereAreYou(v) {
   const o = 64;
   const disc = F({ name: "Disc", width: D, height: D }, [
     { type: "ellipse", width: D, height: D, fill: TINT.green, name: "Tint", x: 0, y: 0 },
-    Img("photos/forest.jpg", D - inset * 2, D - inset * 2, { name: "A path through a pine forest", radius: 999, x: inset, y: inset }),
+    Img("brand/landing/stage-trying.webp", D - inset * 2, D - inset * 2, { name: "A path through an orange grove", radius: 999, x: inset, y: inset }),
     orange(o, { x: Math.round(D * 0.96) - o, y: Math.round(D * 0.94) - Math.round((o * 322) / 297) }),
   ]);
   const dot = (t) => Row({ name: t, gap: 10 }, [{ type: "ellipse", width: 10, height: 10, fill: C.orange, name: "dot" }, T(t, "body", { size: 16 })]);
@@ -219,7 +219,7 @@ function library(v) {
   const cw = (v.inner - (cols - 1) * 24) / cols;
   const card = ([slug, dx, title, summary, meta, ink]) =>
     Col({ name: title, width: cw, w: "fixed", gap: 0 }, [
-      Img(`brand/learn/${slug}.webp`, cw, Math.round((cw * 9) / 16), { name: "Cover", radius: 20 }),
+      Img(`brand/learn/${slug}-topic.webp`, cw, Math.round((cw * 9) / 16), { name: "Cover", radius: 20 }),
       gap(20),
       T(dx, "small", { style: "SemiBold", color: ink }),
       gap(4),
@@ -283,10 +283,8 @@ function partners(v) {
     gap(36),
     pillBtn("Create account"),
   ]);
-  const photo = Row({ name: "Photo column", width: colW, w: "fixed", justify: "center" }, [Img("photos/together.jpg", D, D, { name: "Two people on a rock above a mountain lake", radius: 999 })]);
-  const el = v.desk ? { w: 250, x: v.w - 40 - 250, y: -96 } : { w: 120, x: v.w - 8 - 120, y: -80 };
+  const photo = Row({ name: "Photo column", width: colW, w: "fixed", justify: "center" }, [Img("brand/landing/partners.webp", D, D, { name: "Two orange trees above a lake", radius: 999 })]);
   return Row({ name: "Room for partners too", w: "fill", justify: "center", clip: true, padding: [v.desk ? 144 : 96, v.pad] }, [
-    Img("brand/cozy/e-blossom-hang.webp", el.w, Math.round((el.w * 2220) / 1472), { name: "Blossom", scaleMode: "FIT", absolute: true, x: el.x, y: el.y }),
     v.desk ? Row({ name: "inner", width: v.inner, w: "fixed", gap: 80 }, [photo, text]) : Col({ name: "inner", width: v.inner, w: "fixed", gap: 40 }, [photo, text]),
   ]);
 }

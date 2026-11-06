@@ -82,11 +82,11 @@ const tabs = comp("Tabs", { layout: "row", gap: 24, w: "hug", h: "hug", stroke: 
 ]);
 
 // ---------------------------------------------------------------- Avatars
-const AVATARS = ["orange", "blossom", "sprout", "bluebird", "bee", "ladybird", "snail", "butterfly", "hedgehog", "owl", "fox", "sunflower"];
+const AVATARS = ["orange", "olive", "fern", "swallow", "mountain", "wave", "pinecone", "moon", "oak", "owl", "fox", "sunflower"];
 const TINTS = ["#E0F6EB", "#FFE7DE", "#FFFBE8", "#DFF3FF", "#FFE8F3", "#F1E7F1"];
 const avatar = (key, i, size = 48) =>
   comp(`Avatar / Grove / ${key}`, { width: size, height: size, radius: 999, fill: TINTS[i % TINTS.length], clip: true }, [
-    Img(`brand/avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
+    Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
   ]);
 const initial = (size) =>
   comp(`Avatar / Initial / ${size}`, { width: size, height: size, radius: 999, fill: C.tintPink, layout: "row", justify: "center", align: "center" }, [T("A", "body", { name: "letter", size: Math.round(size * 0.4), style: "Bold", color: C.coralInk, free: true })]);
@@ -169,7 +169,7 @@ const guideFab = comp("Grove Guide / Desktop", { layout: "row", align: "center",
 const guideFabPhone = comp("Grove Guide / Phone", { width: 56, height: 56, radius: 999, fill: C.accent, layout: "row", justify: "center", align: "center", shadow: { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 } }, [sparkle()]);
 
 // ---------------------------------------------------------------- Cards
-const avatarImg = (key, size, tint) => F({ name: "avatar", width: size, height: size, radius: 999, fill: tint, clip: true }, [Img(`brand/avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" })]);
+const avatarImg = (key, size, tint) => F({ name: "avatar", width: size, height: size, radius: 999, fill: tint, clip: true }, [Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" })]);
 const pill = (ic, text) => Row({ name: `pill ${text || ic}`, height: 36, h: "fixed", gap: 6, padding: [0, 12], radius: 999, fill: C.raised }, [icon(ic, 17, C.inkSoft), text && T(text, "small", { style: "SemiBold", name: "value" })]);
 
 const postCard = comp("Card / Post", { layout: "column", width: 640, w: "fixed", h: "hug", padding: 24, gap: 14, radius: 20, fill: C.white, stroke: C.line }, [
@@ -205,7 +205,7 @@ const settingsRow = (active) => comp(`Row / Settings / ${active ? "Selected" : "
 ]);
 
 const articleCard = comp("Card / Article", { layout: "column", width: 380, w: "fixed", h: "hug", radius: 20, fill: C.white, stroke: C.line, clip: true }, [
-  Img("brand/learn/endometriosis.webp", 380, 214, { name: "cover", w: "fill" }),
+  Img("brand/learn/endometriosis-topic.webp", 380, 214, { name: "cover", w: "fill" }),
   Col({ name: "body", w: "fill", padding: 20, gap: 4 }, [
     T("Matched on endometriosis", "caption", { style: "SemiBold", color: C.greenInk, name: "why" }),
     T("Endometriosis and fertility", "h4", { size: 17, name: "title" }),

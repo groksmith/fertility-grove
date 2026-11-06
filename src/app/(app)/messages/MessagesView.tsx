@@ -56,7 +56,7 @@ function ConversationList({ activeId, s }: { activeId: string | null; s: State }
 
   return (
     <Panel className="flex min-h-0 flex-col p-3 lg:h-full">
-      <label className="flex h-10 items-center gap-2 rounded-full bg-raised px-3.5 text-muted">
+      <label className="search-field flex h-10 items-center gap-2 rounded-full bg-raised px-3.5 text-muted focus-within:bg-white focus-within:ring-2 focus-within:ring-accent">
         <Search size={16} aria-hidden />
         <span className="sr-only">Search messages</span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search names and messages" className="w-full bg-transparent text-[14px] text-ink placeholder:text-muted focus:outline-none" />

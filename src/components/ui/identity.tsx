@@ -12,22 +12,25 @@ import { sel } from "@/lib/store";
 import type { Badge, Hue, Member } from "@/lib/types";
 import { hueInk } from "@/lib/hue";
 
-/** The grove avatars: painted garden characters a member can wear instead
-    of a photo. Nothing that presumes how a journey ends: no babies, eggs or
-    storks. */
+/** The grove avatars: emblems painted like plates from a naturalist field
+    guide (plants, wildlife, landscape), so anyone can find one that feels like
+    them, whatever their gender or age. Nothing cute and nothing that presumes how
+    a journey ends: no babies, eggs or storks. `zoom` evens out how much of the
+    circle each subject fills (a sitting fox is tall, an orange is round). The
+    order is fixed: members store an index. */
 export const AVATARS = [
-  { key: "orange", label: "Orange" },
-  { key: "blossom", label: "Orange blossom" },
-  { key: "sprout", label: "Sprout" },
-  { key: "bluebird", label: "Bluebird" },
-  { key: "bee", label: "Bee" },
-  { key: "ladybird", label: "Ladybird" },
-  { key: "snail", label: "Snail" },
-  { key: "butterfly", label: "Butterfly" },
-  { key: "hedgehog", label: "Hedgehog" },
-  { key: "owl", label: "Owl" },
-  { key: "fox", label: "Fox" },
-  { key: "sunflower", label: "Sunflower" },
+  { key: "orange", label: "Orange", zoom: 1 },
+  { key: "olive", label: "Olive branch", zoom: 1.1 },
+  { key: "fern", label: "Fern", zoom: 1.12 },
+  { key: "swallow", label: "Swallow", zoom: 1.1 },
+  { key: "mountain", label: "Mountains", zoom: 1.04 },
+  { key: "wave", label: "Wave", zoom: 1 },
+  { key: "pinecone", label: "Pine cone", zoom: 1.08 },
+  { key: "moon", label: "Moon and stars", zoom: 1 },
+  { key: "oak", label: "Oak leaf", zoom: 1.06 },
+  { key: "owl", label: "Owl", zoom: 1.32 },
+  { key: "fox", label: "Fox", zoom: 1.26 },
+  { key: "sunflower", label: "Sunflower", zoom: 1.02 },
 ] as const;
 
 /* The sample members' avatars, spread so no two side by side look alike.
@@ -74,8 +77,8 @@ export function Avatar({
       {team ? (
         <LogoOrange size={Math.round(size * 0.6)} />
       ) : pick !== undefined ? (
-        <span className="absolute inset-[9%]">
-          <Image src={`/brand/avatars/${AVATARS[pick].key}.webp`} alt="" fill sizes={`${size}px`} quality={90} className="object-contain" />
+        <span className="avatar-art absolute inset-[9%]" style={{ transform: `scale(${AVATARS[pick].zoom})` }}>
+          <Image src={`/brand/grove-avatars/${AVATARS[pick].key}.webp`} alt="" fill sizes={`${Math.round(size * 1.3)}px`} quality={90} className="object-contain" />
         </span>
       ) : (
         letter
@@ -128,7 +131,10 @@ export function AvatarPicker({
       {AVATARS.slice(0, count).map((a, i) => (
         <label key={a.key} className="press cursor-pointer" title={a.label}>
           <input type="radio" name={name} className="peer sr-only" checked={value === i} onChange={() => onChange(i)} />
-          <span className={`block rounded-full p-0.5 ring-2 ${value === i ? "ring-accent" : "ring-transparent hover:ring-line-strong"} peer-focus-visible:ring-[var(--focus)]`}>
+          <span
+            className={`avatar-pick block rounded-full p-0.5 ring-2 transition-[box-shadow] duration-150 ${value === i ? "ring-accent" : "ring-transparent hover:ring-line-strong"} peer-focus-visible:ring-[var(--focus)]`}
+            data-on={value === i ? "" : undefined}
+          >
             <Avatar member={{ ...member, avatar: i }} size={size} />
           </span>
           <span className="sr-only">{a.label}</span>

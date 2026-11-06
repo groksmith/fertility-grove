@@ -322,10 +322,10 @@ function Hero() {
   );
 }
 
-function Thumb({ src, alt }: { src: string; alt: string }) {
+function Thumb({ src, alt, bg }: { src: string; alt: string; bg?: string }) {
   return (
-    <span className="relative mx-[0.12em] inline-block h-[0.9em] w-[0.9em] overflow-hidden rounded-full align-[-0.1em]">
-      <Image src={src} alt={alt} fill sizes="60px" className="object-cover" />
+    <span className="relative mx-[0.12em] inline-block h-[0.9em] w-[0.9em] overflow-hidden rounded-full align-[-0.1em]" style={bg ? { background: bg } : undefined}>
+      <Image src={src} alt={alt} fill sizes="60px" className={bg ? "object-contain p-[8%]" : "object-cover"} />
     </span>
   );
 }
@@ -335,9 +335,9 @@ function Statement() {
     <section aria-label="What you get" className="relative px-5 py-24 sm:px-8 lg:py-36">
       <Backdrop kind="statement" />
       <p data-reveal className="relative mx-auto max-w-[30ch] text-left text-[22px] leading-[1.25] font-semibold tracking-[-0.01em] text-ink sm:max-w-[38ch] sm:text-center sm:text-[28px] lg:max-w-[34ch] lg:text-[36px]">
-        Tell us where you are once. Meet people on your <Thumb src="/photos/forest.jpg" alt="A forest path" /> path, answers a clinician
-        <Thumb src={articleCover("pcos")} alt="An open book from the library" /> reviewed, and someone who&apos;s been there
-        <Thumb src="/photos/orange-tree.jpg" alt="An orange tree in fruit" />.
+        Tell us where you are once. Meet people on your <Thumb src="/brand/landing/stage-trying.webp" alt="A path through an orange grove" /> path, answers a clinician
+        <Thumb src={articleCover("male-factor")} alt="A microscope from the library" /> reviewed, and someone who&apos;s been there
+        <Thumb src="/brand/art/tree-orange.webp" alt="An orange tree in fruit" bg="var(--tint-green)" />.
       </p>
     </section>
   );
@@ -378,12 +378,11 @@ function Specimens() {
 
 /* The live thing: pick where you are, see where you'd land. */
 const STAGES = [
-  { stage: "Trying to conceive", photo: "/photos/forest.jpg", alt: "A path through a pine forest", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
-  { stage: "Waiting on tests", photo: "/photos/garden-path.jpg", alt: "A garden path between rose beds", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
-  { stage: "In treatment", photo: "/photos/blossom.jpg", alt: "White blossom on a fruit tree", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
-  { stage: "Taking a break", photo: "/photos/redwood.jpg", alt: "Sunlight through redwood trees", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
-  { stage: "I'm a partner", photo: "/photos/together.jpg", alt: "Two people sitting on a rock by a mountain lake", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
-  { stage: "Pregnant after infertility", photo: "/photos/orange-tree.jpg", alt: "An orange tree heavy with fruit", disc: "var(--tint-neutral)", groups: ["g-pai", "g-endo", "g-dor"], article: "diminished-ovarian-reserve" },
+  { stage: "Trying to conceive", photo: "/brand/landing/stage-trying.webp", alt: "A sunlit path winding up through an orange grove", disc: "var(--tint-green)", groups: ["g-waiting", "g-unexplained", "g-work"], article: "unexplained-infertility" },
+  { stage: "Waiting on tests", photo: "/brand/landing/stage-waiting.webp", alt: "A garden bench under an orange tree, beside a path to a closed gate", disc: "var(--tint-blue)", groups: ["g-waiting", "g-pcos", "g-mf"], article: "pcos" },
+  { stage: "In treatment", photo: "/brand/landing/stage-treatment.webp", alt: "An orange branch in white blossom, a small green fruit just forming", disc: "var(--tag-pink-bg)", groups: ["g-ivf", "g-iui", "g-endo"], article: "endometriosis" },
+  { stage: "Taking a break", photo: "/brand/landing/stage-break.webp", alt: "A hammock in dappled shade at the edge of a still lake", disc: "var(--tint-purple)", groups: ["g-break", "g-rpl", "g-unexplained"], article: "recurrent-pregnancy-loss" },
+  { stage: "I'm a partner", photo: "/brand/landing/stage-partner.webp", alt: "Two chairs side by side facing a lake under an orange tree", disc: "var(--tint-pink)", groups: ["g-partners", "g-mf", "g-donor"], article: "male-factor" },
 ];
 
 function WhereAreYou() {
@@ -422,9 +421,10 @@ function WhereAreYou() {
             <div
               key={s.stage}
               aria-hidden={k !== i}
-              className={`absolute inset-[9%] overflow-hidden rounded-full transition-[opacity,transform] duration-300 ease-[var(--e-out)] ${k === i ? "opacity-100" : "scale-[0.97] opacity-0"}`}
+              className={`absolute inset-[9%] overflow-hidden rounded-full transition-[opacity,transform] duration-500 ease-[var(--e-out)] ${k === i ? "opacity-100" : "scale-[1.04] opacity-0"}`}
             >
-              <Image src={s.photo} alt={s.alt} fill sizes="(min-width: 1024px) 40vw, 90vw" className="object-cover" priority={k === 0} />
+              {/* The chosen painting settles in from a slight zoom while the last one fades; each drifts slowly, like a view through a window. */}
+              <Image src={s.photo} alt={s.alt} fill sizes="(min-width: 1024px) 40vw, 90vw" quality={90} className="drift object-cover" priority={k === 0} />
             </div>
           ))}
           <span className="absolute right-[4%] bottom-[6%]">
@@ -450,15 +450,15 @@ function WhereAreYou() {
   );
 }
 
-/* The library as a shelf: each article's painted cover (an open book with
-   its topic beside it) on its diagnosis's tint. Covers settle into place as
+/* The library as a shelf: each article's painted cover (its topic as one
+   painted subject) on its diagnosis's tint. Covers settle into place as
    the section enters. */
 function LearnList() {
   return (
     <section id="learn" aria-labelledby="learn-h" className="scroll-mt-20 mx-auto max-w-[1440px] px-5 py-24 sm:px-8 lg:py-36">
       <div className="flex items-baseline justify-between gap-4" data-reveal>
         <h2 id="learn-h" className="serif text-[44px] leading-[1] lg:text-[56px]">Clinician-reviewed library</h2>
-        <span className="text-[16px] text-muted">6 articles</span>
+        <span className="shrink-0 text-[16px] whitespace-nowrap text-muted">6 articles</span>
       </div>
       <p className="mt-3 max-w-[60ch] text-[16px] leading-relaxed text-ink-soft" data-reveal>
         One for each of six diagnoses, each reviewed by a clinician before it&apos;s published. Read the summaries now; the full articles open when you join.
@@ -522,7 +522,7 @@ function Partners() {
       <Backdrop kind="partners" />
       <div className="relative mx-auto grid max-w-[1376px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
         <div className="relative mx-auto aspect-square w-full max-w-[520px] overflow-hidden rounded-full" data-reveal>
-          <Image src="/photos/together.jpg" alt="Two people sitting together on a rock above a mountain lake" fill sizes="(min-width: 1024px) 40vw, 90vw" className="drift object-cover" />
+          <Image src="/brand/landing/partners.webp" alt="Two young orange trees on a hill above a lake, their branches reaching toward each other" fill sizes="(min-width: 1024px) 40vw, 90vw" quality={90} className="drift object-cover" />
         </div>
         <div>
           <h2 id="partners-h" className="serif text-[44px] leading-[1] lg:text-[56px]" data-reveal>

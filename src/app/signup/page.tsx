@@ -109,7 +109,6 @@ export default function SignupPage() {
   return (
     <AuthFrame
       title="Create your account"
-      step={8}
       lede={invitedBy ? `${invitedBy} invited you to Fertility Grove. Your account is your own: ${invitedBy} won't see your posts or messages.` : "A private community for people going through infertility, and their partners."}
       footer={
         <p>
