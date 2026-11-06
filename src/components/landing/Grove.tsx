@@ -103,7 +103,7 @@ const TREES = plant();
 
 export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?: React.Ref<HTMLDivElement> }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 bottom-[calc(-1*var(--edge,0px))] overflow-hidden">
       {/* Scrolling out of the hero moves this layer (see useLeaveHero), not the frame that clips it. */}
       <div ref={sceneRef} className="absolute inset-0 origin-[50%_55%]">
       {/* The painting's own box: as wide as the screen, and tall enough that the horizon sits a little over halfway down. */}

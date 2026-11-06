@@ -314,7 +314,12 @@ function Hero() {
   const [heroBox, scene, copy] = useLeaveHero();
   return (
     <header className="relative overflow-hidden bg-white">
-      <div ref={heroBox} className="relative h-[var(--hero-h)]" style={{ "--hero-h": "clamp(700px, 100svh, 980px)" } as React.CSSProperties}>
+      {/* The field fills the screen; the painting runs on below the fold, under the band's brushed edge. */}
+      <div
+        ref={heroBox}
+        className="relative h-[var(--hero-h)]"
+        style={{ "--hero-h": "max(700px, 100svh)", "--edge": "clamp(80px, 11vw, 170px)" } as React.CSSProperties}
+      >
         <Grove
           sceneRef={scene}
           films={[
@@ -343,9 +348,10 @@ function Hero() {
           </div>
         </div>
 
-        {/* The band below is brushed over the bottom of the scene in its own grey, a dry-brush edge rather than a ruled line. */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 -bottom-px z-[5] h-[clamp(80px,11vw,170px)] bg-[url(/brand/landing/brush-edge.webp)] bg-[length:100%_100%]" />
+        {/* Just below the fold, the band is brushed over the scene in its own grey: a dry-brush edge rather than a ruled line, met only once you scroll. */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-full z-[5] h-[var(--edge)] bg-[url(/brand/landing/brush-edge.webp)] bg-[length:100%_100%]" />
       </div>
+      <div aria-hidden className="h-[clamp(80px,11vw,170px)] bg-raised" />
 
       <div className="bg-raised">
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12 lg:py-16">
