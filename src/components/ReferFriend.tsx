@@ -18,6 +18,8 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { useAmbient } from "@/components/art/Cozy";
 import { Button, useCopy } from "@/components/ui";
+import { POINTS } from "@/lib/rules/sunlight";
+import { useHydrated } from "@/lib/store";
 
 const DIR = "/brand/refer";
 
@@ -36,7 +38,10 @@ function Layer({ name, className }: { name: string; className: string }) {
   return <Image src={`${DIR}/${name}.webp`} alt="" fill unoptimized priority className={`object-contain ${className}`} />;
 }
 
-export function ReferFriend({ link, points }: { link: string; points: number }) {
+/** Used on the last onboarding step and on your own profile. */
+export function ReferFriend({ handle }: { handle: string }) {
+  const hydrated = useHydrated();
+  const link = `${hydrated ? window.location.origin : "https://fertilitygrove.com"}/invite/${handle}`;
   const [copied, copy] = useCopy();
   const [phase, setPhase] = useState<"rest" | "send" | "back">("rest");
   const [round, setRound] = useState(0);
@@ -97,7 +102,7 @@ export function ReferFriend({ link, points }: { link: string; points: number }) 
       <div className="w-full min-w-0 flex-1">
         <p className="text-[15px] font-semibold text-ink">Refer a friend to start growing your tree</p>
         <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-          Know someone going through this too? Send them some seeds. When they join with your link, your tree gets {points} Sunlight.
+          Know someone going through this too? Send them some seeds. When they join with your link, your tree gets {POINTS.referral} Sunlight.
         </p>
         <div className="mt-3 flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate rounded-[10px] bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft" title={link}>

@@ -199,8 +199,10 @@ export type SceneKey =
   | "help"
   | "profile";
 
-/** Which header backdrop a route opens onto, if any. Index pages only. */
+/** Which header backdrop a route opens onto, if any. Index pages, and a single
+    group, which stays under the groups list's awning. */
 export function sceneFor(path: string): SceneKey | null {
+  if (/^\/groups\/[^/]+$/.test(path)) return "groups";
   const map: Record<string, SceneKey> = {
     "/home": "home",
     "/groups": "groups",

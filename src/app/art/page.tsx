@@ -8,7 +8,7 @@ import type { TreeLevel } from "@/lib/types";
 export const metadata = { title: "Illustration sheet · Fertility Grove", robots: { index: false } };
 
 const LEVELS: TreeLevel[] = ["Seed", "Bush", "Tree", "Blossom Tree", "Orange Tree"];
-const SPOTS: SpotKind[] = ["canopy", "plate", "lantern", "birds", "blossom", "shelter", "roots", "seeds", "sun", "sprout", "seedlings", "lens", "bud", "bookmark", "envelope"];
+const SPOTS: SpotKind[] = ["canopy", "plate", "lantern", "birds", "blossom", "shelter", "roots", "seeds", "sun", "sprout", "seedlings", "lens", "bud", "bookmark", "envelope", "letter"];
 
 /** Internal reference sheet for the illustration system. */
 export default function ArtSheet() {

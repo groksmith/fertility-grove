@@ -405,7 +405,7 @@ export function MessagesView({ activeId }: { activeId: string | null }) {
     <>
       <header className={`mb-6 flex-wrap items-end justify-between gap-4 lg:mb-8 ${showThread ? "sr-only lg:not-sr-only lg:flex" : "flex"}`}>
         <div className="flex items-center gap-4">
-          <Spot kind="birds" size={88} className="hidden sm:block" />
+          <Spot kind="envelope" size={88} className="hidden sm:block" />
           <div>
             <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">Messages</h1>
             <p className="mt-2 text-[15px] text-ink-soft">
@@ -430,7 +430,7 @@ export function MessagesView({ activeId }: { activeId: string | null }) {
           ) : s.conversations.length ? (
             <div className="grid min-h-[640px] place-items-center rounded-[20px] border border-line bg-panel">
               <div className="text-center">
-                <Spot kind="birds" size={168} />
+                <Spot kind="letter" size={232} className="mx-auto" />
                 <p className="mt-3 text-[15px] text-muted">Choose a conversation to read it here.</p>
               </div>
             </div>

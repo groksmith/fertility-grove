@@ -10,7 +10,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Bookmark, BadgeCheck, Sparkles } from "lucide-react";
 import { GroupCover } from "@/components/art/Brand";
 import { Button, EmptyState, LinkButton, Panel, toast } from "@/components/ui";
-import { DISCLAIMER, articleBySlug, articleCover } from "@/lib/data/articles";
+import { DISCLAIMER, articleBySlug, articleCover, sectionId } from "@/lib/data/articles";
 import { act, useStore } from "@/lib/store";
 import { hueInk } from "@/lib/hue";
 
@@ -62,7 +62,7 @@ export default function ArticlePage() {
 
               <div className="mt-8 max-w-[66ch] space-y-8">
                 {a.sections.map((sec) => (
-                  <section key={sec.heading}>
+                  <section key={sec.heading} id={sectionId(sec.heading)} className="scroll-mt-24">
                     <h2 className="text-[22px] font-semibold text-ink">{sec.heading}</h2>
                     {sec.heading.startsWith("Questions") ? (
                       <ul className="mt-3 space-y-2">

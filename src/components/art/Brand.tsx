@@ -1,8 +1,6 @@
-/* Group covers, as a real community's would look: about half are candid
-   photos of the kind a group creator uploads (a hot-water bottle on a bed,
-   a foggy path, two mugs on a café table), the rest painted motifs in the
-   grove's gouache hand on their type's tint. A group without its own cover
-   falls back to a crop of the orange-tree canopy. The logo lives in
+/* Group covers: one painted motif each, in the grove's gouache hand on their
+   type's tint, until group admins add their own cover photos. A group without
+   its own cover falls back to a crop of the orange-tree canopy. The logo lives in
    components/Logo.tsx. */
 
 import Image from "next/image";

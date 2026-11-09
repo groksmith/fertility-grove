@@ -1,16 +1,20 @@
 "use client";
 
 /* One group. Its question: what's happening here, and can I take part? The
-   header is the group itself; the feed below takes two thirds. */
+   header is the group itself, standing on the same painted backdrop as the
+   groups list, with its painted cover and a few of the people in it; the feed
+   below takes two thirds. */
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { BellOff, Check, ChevronDown, Lock, PenLine } from "lucide-react";
+import { ArrowRight, BellOff, Check, ChevronDown, Lock, PenLine } from "lucide-react";
 import { GroupCover, groupHue } from "@/components/art/Brand";
 import { Spot } from "@/components/art/Scenes";
 import { PostCard } from "@/components/PostCard";
-import { Button, EmptyState, LinkButton, Menu, Panel, Segmented, toast } from "@/components/ui";
+import { Avatar, Button, ChipSelect, EmptyState, LinkButton, Menu, Panel, Segmented, toast } from "@/components/ui";
+import { articleCover, readingFor } from "@/lib/data/articles";
 import { act, sel, useStore } from "@/lib/store";
 
 type Sort = "newest" | "top" | "discussed";
@@ -19,6 +23,7 @@ export default function GroupPage() {
   const { id } = useParams<{ id: string }>();
   const s = useStore();
   const [sort, setSort] = useState<Sort>("newest");
+  const [picked, setPicked] = useState<string[]>([]);
   const group = s.groups.find((g) => g.id === id);
 
   if (!group || group.status === "draft") {
@@ -40,7 +45,22 @@ export default function GroupPage() {
   const match = sel.groupMatches(s, 16).find((m) => m.group.id === group.id && m.why !== "Popular in the grove");
 
   const commentsOf = (pid: string) => sel.commentCount(s, pid);
-  let posts = sel.visiblePosts(s).filter((p) => p.groupId === group.id);
+  const reading = readingFor(group.id);
+  const groupPosts = sel.visiblePosts(s).filter((p) => p.groupId === group.id);
+  // The tags people actually use here, most used first. A post shows if it has any of the ones picked.
+  const tagCounts = new Map<string, number>();
+  for (const p of groupPosts) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+  const tagOptions = [...tagCounts.keys()].sort((a, b) => tagCounts.get(b)! - tagCounts.get(a)! || a.localeCompare(b));
+  const activeTags = picked.filter((t) => tagCounts.has(t));
+  // A few of the people here: whoever has posted, then other members, a different mix for each group.
+  const others = s.members.filter((m) => !m.unavailable && !m.badges.includes("team"));
+  const start = s.groups.indexOf(group) * 3;
+  const faceIds = new Set([
+    ...groupPosts.map((p) => p.authorId).filter((a) => a !== "me" && others.some((m) => m.id === a)),
+    ...others.map((_, i) => others[(start + i) % others.length].id),
+  ]);
+  const faces = [...faceIds].slice(0, 5).map((a) => others.find((m) => m.id === a)!);
+  let posts = activeTags.length ? groupPosts.filter((p) => p.tags.some((t) => activeTags.includes(t))) : groupPosts;
   if (sort === "top") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => sel.score(b) - sel.score(a));
   else if (sort === "discussed") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => commentsOf(b.id) - commentsOf(a.id));
   else posts = [...posts].sort((a, b) => a.minutesAgo - b.minutesAgo);
@@ -52,15 +72,23 @@ export default function GroupPage() {
 
   return (
     <>
-      <Panel className="mb-6 overflow-hidden">
-        <div className="h-3" style={{ background: `var(--${hue}-50)` }} />
-        <div className="flex flex-wrap items-start gap-5 p-5 sm:p-7">
-          <GroupCover group={group} size={88} />
-          <div className="min-w-0 flex-1">
-            <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">{group.name}</h1>
-            <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">{group.description}</p>
-            {match && <p className="mt-2 text-[13px] font-semibold text-green-ink">{match.why}</p>}
-            <p className="tabular mt-3 flex flex-wrap items-center gap-x-1.5 text-[14px] text-muted">
+      <header className="mt-8 mb-6 flex flex-wrap items-start gap-x-5 gap-y-4 lg:mt-0 lg:mb-8">
+        <GroupCover group={group} size={104} />
+        <div className="min-w-0 flex-1 basis-[220px]">
+          <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">{group.name}</h1>
+          <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">{group.description}</p>
+          {match && <p className="mt-2 text-[13px] font-semibold text-green-ink">{match.why}</p>}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            {faces.length > 0 && (
+              <span aria-hidden className="flex -space-x-2">
+                {faces.map((m) => (
+                  <span key={m.id} className="rounded-full ring-2 ring-white">
+                    <Avatar member={m} size={32} />
+                  </span>
+                ))}
+              </span>
+            )}
+            <p className="tabular flex flex-wrap items-center gap-x-1.5 text-[14px] text-ink-soft">
               <span className="font-semibold" style={{ color: `var(--${hue}-700)` }}>
                 {group.type} group
               </span>
@@ -74,6 +102,7 @@ export default function GroupPage() {
               {archived && <span>· Archived, read only</span>}
             </p>
           </div>
+        </div>
           <div className="flex flex-wrap gap-2">
             {archived ? null : joined ? (
               <>
@@ -111,8 +140,7 @@ export default function GroupPage() {
               <Button onClick={join}>Join group</Button>
             )}
           </div>
-        </div>
-      </Panel>
+      </header>
 
       {locked ? (
         <Panel className="flex flex-col items-center px-6 py-12 text-center">
@@ -139,8 +167,21 @@ export default function GroupPage() {
                   { id: "discussed", label: "Most discussed" },
                 ]}
               />
-              <span className="tabular text-[14px] text-muted">{posts.length} posts</span>
+              <span className="tabular text-[14px] text-muted">
+                {posts.length} {posts.length === 1 ? "post" : "posts"}
+              </span>
             </div>
+            {tagOptions.length > 1 && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="text-[14px] text-muted">Filter by tag</span>
+                <ChipSelect label="Filter by tag" options={tagOptions} value={activeTags} onChange={setPicked} />
+                {activeTags.length > 0 && (
+                  <button type="button" onClick={() => setPicked([])} className="press text-[14px] font-semibold text-accent underline underline-offset-2">
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
             {!joined && !archived && (
               <Panel className="flex flex-wrap items-center gap-3 px-5 py-4">
                 <p className="flex-1 text-[14px] text-ink-soft">Join this group to post, comment and vote.</p>
@@ -149,7 +190,17 @@ export default function GroupPage() {
                 </Button>
               </Panel>
             )}
-            {posts.length === 0 ? (
+            {posts.length === 0 && activeTags.length > 0 ? (
+              <EmptyState
+                art="sprout"
+                title={sort === "newest" ? "No posts with those tags." : "No posts with those tags this week."}
+                action={
+                  <Button variant="secondary" onClick={() => setPicked([])}>
+                    Clear tags
+                  </Button>
+                }
+              />
+            ) : posts.length === 0 ? (
               <EmptyState
                 art="sprout"
                 title="No posts yet. Start the conversation."
@@ -166,7 +217,8 @@ export default function GroupPage() {
             )}
           </div>
           <aside className="space-y-4">
-            <Panel className="p-5">
+            <Panel className="relative overflow-hidden border-transparent p-5" style={{ background: `var(--${hue}-50)` }}>
+              <Image src="/brand/cozy/e-branch-side.webp" alt="" aria-hidden width={104} height={58} className="pointer-events-none absolute -top-2 -right-4" />
               <h2 className="text-[16px] font-semibold">Who it&apos;s for</h2>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{group.whoFor}</p>
             </Panel>
@@ -179,6 +231,33 @@ export default function GroupPage() {
                 Community guidelines
               </Link>
             </Panel>
+            <section aria-labelledby="group-reading" className="rounded-[20px] border border-yellow bg-yellow-tint p-4 sm:p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <h2 id="group-reading" className="text-[16px] font-semibold">
+                  From the library
+                </h2>
+                <Link href="/learn" className="inline-flex items-center gap-1 text-[14px] font-semibold text-ink underline decoration-brand underline-offset-[3px]">
+                  {reading.length ? "All articles" : "Browse clinician-reviewed articles"} <ArrowRight size={15} aria-hidden />
+                </Link>
+              </div>
+              {reading.length > 0 && (
+                <ul className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-2">
+                  {reading.map((r) => (
+                    <li key={r.href}>
+                      <Link href={r.href} className="press group flex h-full items-center gap-3 rounded-[14px] bg-white p-2.5 ring-1 ring-yellow ring-inset">
+                        <span aria-hidden className="relative block aspect-[4/3] w-14 shrink-0 overflow-hidden rounded-[8px]">
+                          <Image src={articleCover(r.article.slug)} alt="" fill sizes="112px" quality={90} className="object-cover" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-[14px] leading-snug font-semibold text-ink underline decoration-brand underline-offset-[3px]">{r.label}</span>
+                          <span className="mt-1 block text-[13px] leading-snug text-muted">{r.article.title}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           </aside>
         </div>
       )}

@@ -209,7 +209,7 @@ export default function HomePage() {
     <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
         <div className="min-w-0">
-          <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">Your grove</h1>
+          <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">{s.me.firstName ? `${s.me.firstName}'s grove` : "Your grove"}</h1>
           <p className="mt-2 text-[15px] text-ink-soft">{finding(s)}</p>
         </div>
         <LinkButton href="/posts/new">
