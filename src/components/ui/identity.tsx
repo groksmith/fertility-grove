@@ -12,25 +12,27 @@ import { sel } from "@/lib/store";
 import type { Badge, Hue, Member } from "@/lib/types";
 import { hueInk } from "@/lib/hue";
 
-/** The grove avatars: emblems painted like plates from a naturalist field
-    guide (plants, wildlife, landscape), so anyone can find one that feels like
-    them, whatever their gender or age. Nothing cute and nothing that presumes how
-    a journey ends: no babies, eggs or storks. `zoom` evens out how much of the
-    circle each subject fills (a sitting fox is tall, an orange is round). The
-    order is fixed: members store an index. */
+/** The grove avatars: plants, wildlife and landscape painted in the same gouache
+    as the rest of the grove (all twelve on one sheet, so they share a hand), so
+    anyone can find one that feels like them, whatever their gender or age.
+    Nothing cute and nothing that presumes how a journey ends: no babies, eggs or
+    storks. `zoom` evens out how much of the circle each subject fills. `move` is
+    how it answers when picked: fruit and leaves swing from their stem, plants
+    sway from their base, the swallow glides in, and so on. The order is fixed:
+    members store an index. */
 export const AVATARS = [
-  { key: "orange", label: "Orange", zoom: 1 },
-  { key: "olive", label: "Olive branch", zoom: 1.1 },
-  { key: "fern", label: "Fern", zoom: 1.12 },
-  { key: "swallow", label: "Swallow", zoom: 1.1 },
-  { key: "mountain", label: "Mountains", zoom: 1.04 },
-  { key: "wave", label: "Wave", zoom: 1 },
-  { key: "pinecone", label: "Pine cone", zoom: 1.08 },
-  { key: "moon", label: "Moon and stars", zoom: 1 },
-  { key: "oak", label: "Oak leaf", zoom: 1.06 },
-  { key: "owl", label: "Owl", zoom: 1.32 },
-  { key: "fox", label: "Fox", zoom: 1.26 },
-  { key: "sunflower", label: "Sunflower", zoom: 1.02 },
+  { key: "orange", label: "Orange", zoom: 0.86, move: "hang" },
+  { key: "olive", label: "Olive branch", zoom: 0.93, move: "hang" },
+  { key: "fern", label: "Fern", zoom: 1.12, move: "sway" },
+  { key: "swallow", label: "Swallow", zoom: 1.11, move: "glide" },
+  { key: "mountain", label: "Mountains", zoom: 1.03, move: "rise" },
+  { key: "wave", label: "Wave", zoom: 0.88, move: "roll" },
+  { key: "pinecone", label: "Pine cone", zoom: 0.9, move: "hang" },
+  { key: "moon", label: "Moon and stars", zoom: 0.96, move: "rock" },
+  { key: "oak", label: "Oak leaf", zoom: 0.97, move: "hang" },
+  { key: "owl", label: "Owl", zoom: 0.99, move: "perk" },
+  { key: "fox", label: "Fox", zoom: 1.04, move: "perk" },
+  { key: "sunflower", label: "Sunflower", zoom: 1, move: "sway" },
 ] as const;
 
 /* The sample members' avatars, spread so no two side by side look alike.
@@ -77,8 +79,8 @@ export function Avatar({
       {team ? (
         <LogoOrange size={Math.round(size * 0.6)} />
       ) : pick !== undefined ? (
-        <span className="avatar-art absolute inset-[9%]" style={{ transform: `scale(${AVATARS[pick].zoom})` }}>
-          <Image src={`/brand/grove-avatars/${AVATARS[pick].key}.webp`} alt="" fill sizes={`${Math.round(size * 1.3)}px`} quality={90} className="object-contain" />
+        <span className="avatar-art absolute inset-[9%]" data-move={AVATARS[pick].move} style={{ transform: `scale(${AVATARS[pick].zoom})` }}>
+          <Image src={`/brand/grove-avatars-gouache/${AVATARS[pick].key}.webp`} alt="" fill sizes={`${Math.round(size * 1.3)}px`} quality={90} className="object-contain" />
         </span>
       ) : (
         letter

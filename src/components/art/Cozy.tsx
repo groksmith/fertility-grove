@@ -51,7 +51,7 @@ const ELEMENTS: Record<ElementKey, { src: string; w: number; h: number; glows?: 
 };
 
 /** Marks a subtree's ambient loops as running only while it is on screen. */
-function useAmbient<T extends HTMLElement>() {
+export function useAmbient<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   useEffect(() => {
     const el = ref.current;

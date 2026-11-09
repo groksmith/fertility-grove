@@ -404,27 +404,25 @@ function useFoldOnScroll() {
   return folded;
 }
 
-/** The AI mark: the familiar sparkle, in the brand's orange and white. */
-function AiSparkle() {
+/** The Guide's mark: the brand's orange, its shine a sparkle, so it says both Fertility Grove and AI. */
+function GuideMark() {
   return (
-    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
-      <defs>
-        <linearGradient id="fg-spark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f89414" />
-          <stop offset="1" stopColor="#e97d03" />
-        </linearGradient>
-      </defs>
-      <path className="spark spark-1" fill="url(#fg-spark)" d="M13 5c.9 5.4 2.6 7.3 8.5 8.5-5.9 1.2-7.6 3.1-8.5 8.5-.9-5.4-2.6-7.3-8.5-8.5C10.4 12.3 12.1 10.4 13 5Z" />
-      <path className="spark spark-2" fill="#fff" d="M24.5 3.5c.4 2.3 1 2.9 3.3 3.3-2.3.4-2.9 1-3.3 3.3-.4-2.3-1-2.9-3.3-3.3 2.3-.4 2.9-1 3.3-3.3Z" />
-      <path className="spark spark-3" fill="#f89414" d="M24 20c.3 1.8.8 2.3 2.6 2.6-1.8.3-2.3.8-2.6 2.6-.3-1.8-.8-2.3-2.6-2.6 1.8-.3 2.3-.8 2.6-2.6Z" />
-    </svg>
+    <span className="relative block h-10 w-10">
+      <LogoOrange size={31} className="guide-fruit absolute top-[3px] left-[5px]" />
+      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+        <g className="spark-turn">
+          <path className="spark spark-1" fill="#fff" d="M9 7c.8 4.6 2.2 6 7 7-4.8 1-6.2 2.4-7 7-.8-4.6-2.2-6-7-7 4.8-1 6.2-2.4 7-7Z" />
+        </g>
+        <path className="spark spark-2" fill="#f89414" d="M35 30c.4 2.1.9 2.6 3 3-2.1.4-2.6.9-3 3-.4-2.1-.9-2.6-3-3 2.1-.4 2.6-.9 3-3Z" />
+      </svg>
+    </span>
   );
 }
 
-/* Grove Guide, the AI assistant, floats bottom right: the sparkle that marks
-   AI everywhere, with an AI tag on the label. Its stars twinkle in turn, the
-   big one turns when you point at it, and the label folds away while you
-   read. */
+/* Grove Guide, the AI assistant, floats bottom right: the brand's orange with
+   a sparkle for its shine, and an AI tag on the label. The two stars twinkle
+   slowly in turn; point at it and the fruit tips on its stem as the big star
+   turns. The label folds away while you read. */
 function GuideButton() {
   const path = usePathname();
   const folded = useFoldOnScroll();
@@ -438,7 +436,7 @@ function GuideButton() {
         className="guide-fab rise press fixed right-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-50 flex h-14 items-center rounded-full bg-accent p-2 text-[15px] font-semibold text-white shadow-[0_12px_28px_-10px_rgba(3,30,15,0.5)] hover:bg-black lg:right-8 lg:bottom-8"
       >
         <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center">
-          <AiSparkle />
+          <GuideMark />
         </span>
         <span className="guide-label hidden sm:grid">
           <span className="min-w-0 overflow-hidden">
