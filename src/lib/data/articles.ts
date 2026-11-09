@@ -307,3 +307,89 @@ export const articleBySlug = (slug: string) => ARTICLES.find((a) => a.slug === s
 
 /** Each article's painted cover: its topic as one painted subject, on its tint. */
 export const articleCover = (slug: string) => `/brand/learn/${slug}-topic.webp`;
+
+/** The anchor of an article section, e.g. /learn/pcos#common-treatment-paths. */
+export const sectionId = (heading: string) => heading.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+const TREATMENT = "Common treatment paths";
+const QUESTIONS = "Questions to bring to your doctor";
+const AFFECT = "How it can affect fertility";
+const NUMBERS = "What the numbers do and don't say";
+const SEMEN = "What the semen analysis measures";
+const SELF = "Looking after yourself";
+
+/* What each group should read, by hand and only where a section really covers
+   it: stage and topic groups have no article of their own, so they get the
+   relevant sections of the diagnosis articles. Pregnant after infertility has
+   none yet: the nearest section is in the recurrent loss article, which is the
+   wrong thing to hand someone who is pregnant. */
+const GROUP_READING: Record<string, { slug: string; section: string; label: string }[]> = {
+  "g-endo": [
+    { slug: "endometriosis", section: AFFECT, label: "How endometriosis can affect fertility" },
+    { slug: "endometriosis", section: TREATMENT, label: "Common treatment paths" },
+    { slug: "endometriosis", section: QUESTIONS, label: QUESTIONS },
+  ],
+  "g-pcos": [
+    { slug: "pcos", section: AFFECT, label: "How PCOS can affect fertility" },
+    { slug: "pcos", section: TREATMENT, label: "Common treatment paths" },
+    { slug: "pcos", section: QUESTIONS, label: QUESTIONS },
+  ],
+  "g-dor": [
+    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: NUMBERS },
+    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "Common treatment paths" },
+    { slug: "diminished-ovarian-reserve", section: QUESTIONS, label: QUESTIONS },
+  ],
+  "g-mf": [
+    { slug: "male-factor", section: SEMEN, label: SEMEN },
+    { slug: "male-factor", section: TREATMENT, label: "Common treatment paths" },
+    { slug: "male-factor", section: QUESTIONS, label: QUESTIONS },
+  ],
+  "g-rpl": [
+    { slug: "recurrent-pregnancy-loss", section: "What testing can include", label: "What testing can include" },
+    { slug: "recurrent-pregnancy-loss", section: "Support matters", label: "Support matters" },
+    { slug: "recurrent-pregnancy-loss", section: QUESTIONS, label: QUESTIONS },
+  ],
+  "g-unexplained": [
+    { slug: "unexplained-infertility", section: "What it is", label: "What unexplained infertility means" },
+    { slug: "unexplained-infertility", section: TREATMENT, label: "Common treatment paths" },
+    { slug: "unexplained-infertility", section: SELF, label: SELF },
+  ],
+  "g-waiting": [
+    { slug: "unexplained-infertility", section: "What it is", label: "What standard testing looks at" },
+    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
+    { slug: "male-factor", section: SEMEN, label: SEMEN },
+  ],
+  "g-iui": [
+    { slug: "pcos", section: TREATMENT, label: "Where IUI fits with PCOS" },
+    { slug: "unexplained-infertility", section: TREATMENT, label: "Where IUI fits when the cause is unexplained" },
+    { slug: "male-factor", section: TREATMENT, label: "Where IUI fits with male factor" },
+  ],
+  "g-ivf": [
+    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
+    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "IVF with low ovarian reserve" },
+    { slug: "endometriosis", section: TREATMENT, label: "IVF with endometriosis" },
+  ],
+  "g-eggfreeze": [
+    { slug: "diminished-ovarian-reserve", section: "What it is", label: "What ovarian reserve means" },
+    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
+  ],
+  "g-partners": [
+    { slug: "male-factor", section: SEMEN, label: SEMEN },
+    { slug: "male-factor", section: TREATMENT, label: "Treatment paths with male factor" },
+    { slug: "unexplained-infertility", section: SELF, label: SELF },
+  ],
+  "g-donor": [{ slug: "diminished-ovarian-reserve", section: TREATMENT, label: "Where donor eggs fit in treatment" }],
+  "g-break": [{ slug: "unexplained-infertility", section: SELF, label: SELF }],
+  "g-work": [{ slug: "unexplained-infertility", section: SELF, label: SELF }],
+  "g-spring": [
+    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "IVF with low ovarian reserve" },
+    { slug: "endometriosis", section: TREATMENT, label: "IVF with endometriosis" },
+  ],
+};
+
+/** A group's reading as real links to the sections of its articles. */
+export const readingFor = (groupId: string) =>
+  (GROUP_READING[groupId] ?? []).flatMap(({ slug, section, label }) => {
+    const article = articleBySlug(slug);
+    return article?.sections.some((s) => s.heading === section) ? [{ href: `/learn/${slug}#${sectionId(section)}`, label, article }] : [];
+  });

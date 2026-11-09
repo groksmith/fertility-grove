@@ -28,6 +28,7 @@ import {
   Textarea,
   toast,
 } from "@/components/ui";
+import { ReferFriend } from "@/components/ReferFriend";
 import { requestLeave, useUnsavedGuard } from "@/components/UnsavedGuard";
 import { act, sel, useStore } from "@/lib/store";
 import { PRONOUNS } from "@/lib/options";
@@ -449,6 +450,12 @@ function Profile() {
 
         {editing ? <EditProfile onDone={() => router.push("/profile")} /> : preview ? <PublicPreview /> : null}
         <TreeHero />
+
+        {!editing && !preview && (
+          <Panel className="p-5 sm:p-6">
+            <ReferFriend handle={s.me.handle} />
+          </Panel>
+        )}
 
         {!editing && !preview && (
           <Panel className="space-y-5 p-5 sm:p-7">

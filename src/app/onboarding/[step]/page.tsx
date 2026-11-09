@@ -45,7 +45,6 @@ import {
   PRONOUNS,
   TREATMENTS,
 } from "@/lib/options";
-import { POINTS } from "@/lib/rules/sunlight";
 import { MSG, checks } from "@/lib/rules/validation";
 import { act, get, sel, useHydrated, useStore, type Me } from "@/lib/store";
 import type { CommunityId, MessagePolicy } from "@/lib/types";
@@ -507,7 +506,6 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   const [inviteErr, setInviteErr] = useState<string>();
   const [invited, setInvited] = useState(false);
   const showInvite = !s.invitedBy && !s.partner.linked;
-  const inviteLink = `${typeof window === "undefined" ? "https://fertilitygrove.com" : window.location.origin}/invite/${s.me.handle}`;
 
   return (
     <div className="space-y-4">
@@ -522,7 +520,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
           </div>
         </div>
         <div className="mt-5 border-t border-line pt-5">
-          <ReferFriend link={inviteLink} points={POINTS.referral} />
+          <ReferFriend handle={s.me.handle} />
         </div>
       </div>
 

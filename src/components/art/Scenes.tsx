@@ -33,6 +33,7 @@ export type SpotKind =
   | "bud"
   | "bookmark"
   | "envelope"
+  | "letter"
   | "stories";
 
 type Piece = { src: string; x: number; w: number; flip?: boolean };
@@ -72,8 +73,19 @@ const SPOTS: Record<SpotKind, Piece[]> = {
   lantern: [],
   birds: [],
   envelope: [],
+  letter: [],
   bookmark: [],
   plate: [],
+};
+
+/* Conversation has its own pictures. Messages are letters passed between
+   people here, in the same envelope used to send a friend seeds: sealed for a
+   message on its way, opened with the letter showing when there's one to read.
+   Two birds on a branch are for people who haven't talked yet. */
+const PAINTED: Partial<Record<SpotKind, string>> = {
+  birds: "/brand/cozy/e-birds.webp",
+  envelope: "/brand/messages/envelope-sealed.webp",
+  letter: "/brand/messages/letter-open.webp",
 };
 
 export function Spot({ kind, size = 160, className = "" }: { kind: SpotKind; size?: number; className?: string }) {
@@ -85,13 +97,19 @@ export function Spot({ kind, size = 160, className = "" }: { kind: SpotKind; siz
       </span>
     );
   }
-  if (kind === "lantern" || kind === "bookmark" || kind === "envelope" || kind === "birds") {
-    // The orange from the logo: one for the Guide and saved things, two in conversation.
-    const two = kind === "birds" || kind === "envelope";
+  const painted = PAINTED[kind];
+  if (painted) {
     return (
-      <span aria-hidden className={`relative flex shrink-0 items-end justify-center gap-[6%] ${className}`} style={{ width: size, height: h }}>
+      <span aria-hidden className={`relative block shrink-0 ${className}`} style={{ width: size, height: h }}>
+        <Image src={painted} alt="" fill sizes={`${size * 2}px`} quality={90} className="object-contain object-bottom" />
+      </span>
+    );
+  }
+  if (kind === "lantern" || kind === "bookmark") {
+    // The orange from the logo, for the Guide and saved things.
+    return (
+      <span aria-hidden className={`relative flex shrink-0 items-end justify-center ${className}`} style={{ width: size, height: h }}>
         <Image src={ORANGE} alt="" width={Math.round(h * 0.62)} height={Math.round(h * 0.67)} className="object-contain" />
-        {two && <Image src={ORANGE} alt="" width={Math.round(h * 0.5)} height={Math.round(h * 0.54)} className="-scale-x-100 object-contain" />}
       </span>
     );
   }
