@@ -13,6 +13,7 @@ import { Menu as MenuIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LogoOrange, Logo } from "@/components/Logo";
 import { Grove } from "./Grove";
+import { GuideScene } from "./GuideScene";
 import { Backdrop } from "@/components/art/Cozy";
 import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
 import { ARTICLES, articleCover } from "@/lib/data/articles";
@@ -382,29 +383,54 @@ function Thumb({ src, alt, bg }: { src: string; alt: string; bg?: string }) {
   );
 }
 
+/* The promise in three lines, each picture right after the word it belongs
+   to. From tablet up the type scales with the window so each stays one line; on
+   a phone each wraps, and a picture never leaves its word. The lines rise in
+   turn, the gaps tightening a little so they read as one breath. */
 function Statement() {
+  const word = "whitespace-nowrap";
+  const mark = "-ml-[0.1em]"; // punctuation sits close against the round picture
+  const line = "block md:whitespace-nowrap";
   return (
-    <section aria-label="What you get" className="relative px-5 py-24 sm:px-8 lg:py-36">
+    <section aria-label="What you get" className="relative px-5 py-32 sm:px-8 lg:py-56">
       <Backdrop kind="statement" />
-      <p data-reveal className="relative mx-auto max-w-[30ch] text-left text-[22px] leading-[1.25] font-semibold tracking-[-0.01em] text-ink sm:max-w-[38ch] sm:text-center sm:text-[28px] lg:max-w-[34ch] lg:text-[36px]">
-        Tell us where you are once. Meet people on your <Thumb src="/brand/landing/stage-trying.webp" alt="A path through an orange grove" /> path, answers a clinician
-        <Thumb src={articleCover("male-factor")} alt="A microscope from the library" /> reviewed, and someone who&apos;s been there
-        <Thumb src="/brand/art/tree-orange.webp" alt="An orange tree in fruit" bg="var(--tint-green)" />.
+      <p className="serif relative text-center text-[clamp(30px,8.4vw,44px)] leading-[1.15] text-balance text-ink md:text-[4vw] min-[100rem]:text-[60px]">
+        <span data-reveal className={line}>Tell us where you are once.</span>
+        <span data-reveal className={`${line} mt-4 lg:mt-7`} style={{ transitionDelay: "130ms" }}>
+          Meet people on your{" "}
+          <span className={word}>
+            path <Thumb src="/brand/landing/stage-trying.webp" alt="A path through an orange grove" />
+            <span className={mark}>,</span>
+          </span>{" "}
+          answers a clinician{" "}
+          <span className={word}>
+            reviewed <Thumb src={articleCover("male-factor")} alt="A microscope from the library" />
+            <span className={mark}>,</span>
+          </span>
+        </span>
+        <span data-reveal className={`${line} mt-4 lg:mt-7`} style={{ transitionDelay: "230ms" }}>
+          and someone who&apos;s been{" "}
+          <span className={word}>
+            there <Thumb src="/brand/art/tree-orange.webp" alt="An orange tree in fruit" bg="var(--tint-green)" />
+            <span className={mark}>.</span>
+          </span>
+        </span>
       </p>
     </section>
   );
 }
 
 /* Each way in has its own painted subject (public/brand/landing/way-*.webp,
-   prompts in scripts/art/prompts-ways/): an old tree reaching over a staked
-   sapling (mentors), saplings gathered close (groups), a lantern on an open
-   book (the Guide, which answers from reviewed articles), a ripe orange under
+   prompts in scripts/art/prompts-ways/): a bench under an orange tree, two
+   mugs and an open notebook left on it (mentors: someone sits with you and
+   talks it through), saplings gathered close (groups), a lantern hung from
+   a branch, lighting a winding path (the Guide, showing you the way), a ripe orange under
    a glass cloche (success stories, kept in their own space), two trees
    entwined in one pot (family), and the brand's own tree (your tree). */
-const SPECIMENS: { name: string; fact: string; art: string; bg: string; wide?: boolean }[] = [
-  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "/brand/landing/way-mentors.webp", bg: "var(--tint-purple)", wide: true },
+const SPECIMENS: { name: string; fact: string; art: string; bg: string; wide?: boolean; bleed?: boolean }[] = [
+  { name: "Mentors who've been there", fact: "Experienced members mentor for free. No application, just time in the grove.", art: "/brand/landing/way-mentors-bench.webp", bg: "var(--tint-purple)", wide: true, bleed: true },
   { name: "Matched groups", fact: "Join up to five groups chosen for your diagnosis and stage, each with the reason why.", art: "/brand/landing/way-groups.webp", bg: "var(--tint-pink)" },
-  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "/brand/landing/way-guide.webp", bg: "var(--tint-blue)" },
+  { name: "The Grove Guide", fact: "Ask anything. It answers only from reviewed articles and shows its sources.", art: "guide", bg: "var(--tint-blue)" },
   { name: "Success stories, kept apart", fact: "Hope when you want it. Pregnancy news stays in its own space.", art: "/brand/landing/way-stories.webp", bg: "var(--tag-pink-bg)", wide: true },
   { name: "A family space", fact: "Share a question list or a note with your partner, only when you choose.", art: "/brand/landing/way-family.webp", bg: "var(--tint-neutral)" },
   { name: "Your tree", fact: "Grow from Seed to Orange Tree each time someone finds you helpful.", art: "tree", bg: "var(--tint-green)" },
@@ -422,9 +448,16 @@ function Specimens() {
       <ul className="grid grid-cols-2 gap-2.5 lg:col-span-9 lg:grid-cols-4" role="list">
         {SPECIMENS.map((s, i) => (
           <li key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={s.wide ? "col-span-2" : ""}>
-            <div className={`grid place-items-center overflow-hidden rounded-[20px] px-4 pt-6 ${s.wide ? "aspect-[8/5]" : "aspect-[4/5]"}`} style={{ background: s.bg }}>
+            <div className={`relative grid place-items-center overflow-hidden rounded-[20px] px-4 pt-6 ${s.wide ? "aspect-[8/5]" : "aspect-[4/5]"}`} style={{ background: s.bg }}>
               {s.art === "tree" ? (
                 <TreeArt level="Orange Tree" size={170} />
+              ) : s.art === "guide" ? (
+                <GuideScene delay={i * 70} />
+              ) : s.bleed ? (
+                // A close-up: the canopy runs off the card's top and sides.
+                <span className="absolute inset-x-0 bottom-[5%] block aspect-[1400/906]">
+                  <Image src={s.art} alt="" fill sizes="(min-width: 1024px) 520px, 100vw" quality={90} className="object-contain" />
+                </span>
               ) : (
                 <span className={`relative block ${s.wide ? "h-[74%] w-[60%]" : "h-[66%] w-[84%]"}`}>
                   <Image src={s.art} alt="" fill sizes={s.wide ? "(min-width: 1024px) 320px, 60vw" : "(min-width: 1024px) 200px, 40vw"} quality={90} className="object-contain" />

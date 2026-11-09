@@ -491,17 +491,659 @@ a {
   }
 }
 
-/* Avatar picker: the emblem you choose settles in with a small pop; under a
-   mouse the one you point at lifts a touch. Avatars elsewhere never move. */
-.avatar-pick[data-on] .avatar-art > * {
-  animation: fg-pick 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+/* The Grove Guide card (components/landing/GuideScene.tsx). The light comes on
+   as the card arrives. Lantern, beam and pool are one layer swinging from the
+   knot on the branch, so the light sweeps the path as the lantern swings; the
+   flame breathes on its own beat (.glow). */
+.reveal-ready [data-reveal] .guide-light {
+  opacity: 0;
+  transition: opacity 900ms var(--e-out);
 }
-@keyframes fg-pick {
+.reveal-ready [data-reveal][data-in] .guide-light {
+  opacity: 1;
+}
+.guide-swing {
+  animation: guide-swing 3.9s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+@keyframes guide-swing {
   from {
-    transform: scale(0.88);
+    transform: rotate(-2.4deg);
   }
   to {
+    transform: rotate(2.4deg);
+  }
+}
+
+/* Planting your seed (components/art/PlantingScene.tsx), one action per step
+   on one stage. Positions and travel are in cqw of the stage. Props rest or
+   leave through transitions and act through keyframes keyed to data-step, so
+   only the new step's action plays. */
+.plant {
+  container-type: size;
+}
+.plant-stage {
+  container-type: inline-size;
+}
+.plant-pouch,
+.plant-trowel,
+.plant-seed,
+.plant-can,
+.plant-water,
+.plant-sun {
+  position: absolute;
+  display: block;
+}
+/* Step 1: the seeds are handed over. */
+.plant-pouch {
+  left: 12cqw;
+  top: 51cqw;
+  width: 24cqw;
+  margin-left: -12cqw;
+  opacity: 0;
+  transform: translate(-30cqw, 2cqw);
+  transition: opacity 500ms var(--e-out), transform 700ms var(--e-out);
+}
+.plant[data-step="1"] .plant-pouch,
+.plant[data-step="2"] .plant-pouch,
+.plant[data-step="3"] .plant-pouch {
+  opacity: 1;
+  transform: none;
+}
+.plant[data-step="1"] .plant-pouch {
+  animation: plant-hand 1300ms var(--e-out) both;
+}
+@keyframes plant-hand {
+  0% {
+    opacity: 0;
+    transform: translate(-46cqw, -26cqw) rotate(-20deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(1cqw, -1.5cqw) rotate(4deg);
+  }
+  78% {
+    transform: translate(0, 0.5cqw) rotate(-1.5deg);
+  }
+  100% {
+    opacity: 1;
     transform: none;
+  }
+}
+/* Step 2: dig, two strikes. Step 4: pat it down, then away. The tip is the pivot. */
+.plant-trowel {
+  left: 76cqw;
+  top: 48cqw;
+  width: 10cqw;
+  margin: -37.43cqw 0 0 -5cqw; /* the tip, not the corner, sits at left/top */
+  transform-origin: 50% 100%;
+  opacity: 0;
+  transform: translate(18cqw, -40cqw) rotate(34deg);
+  transition: opacity 500ms var(--e-out), transform 700ms var(--e-out);
+}
+.plant[data-step="2"] .plant-trowel,
+.plant[data-step="3"] .plant-trowel {
+  opacity: 1;
+  transform: rotate(14deg);
+}
+.plant[data-step="2"] .plant-trowel {
+  animation: plant-dig 1600ms cubic-bezier(0.45, 0, 0.55, 1) both;
+}
+.plant[data-step="4"] .plant-trowel {
+  animation: plant-pat 1500ms cubic-bezier(0.45, 0, 0.55, 1) both;
+}
+@keyframes plant-dig {
+  0% {
+    opacity: 0;
+    transform: translate(18cqw, -40cqw) rotate(34deg);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-28cqw, -8cqw) rotate(-8deg);
+  }
+  36% {
+    transform: translate(-28cqw, 8cqw) rotate(-14deg);
+  }
+  50% {
+    transform: translate(-22cqw, -6cqw) rotate(8deg);
+  }
+  62% {
+    transform: translate(-28cqw, 8cqw) rotate(-14deg);
+  }
+  78% {
+    transform: translate(-18cqw, -8cqw) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(14deg);
+  }
+}
+@keyframes plant-pat {
+  0% {
+    opacity: 1;
+    transform: rotate(14deg);
+  }
+  24% {
+    transform: translate(-28cqw, -1cqw) rotate(-6deg);
+  }
+  38% {
+    transform: translate(-28cqw, 7cqw) rotate(-10deg);
+  }
+  50% {
+    transform: translate(-28cqw, 1cqw) rotate(-6deg);
+  }
+  62% {
+    transform: translate(-28cqw, 7cqw) rotate(-10deg);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-16cqw, -10cqw) rotate(8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(18cqw, -40cqw) rotate(34deg);
+  }
+}
+/* Step 3: three seeds arc from the pouch one after another, the furthest first
+   so none flies over one already planted, and drop behind the hole's front lip.
+   They hold until the soil painting with all three fades in under them, then
+   hand over to it. Each seed sets --x/--y (where it flew from, relative to where
+   it lands), --r (how it lies), --d (when it leaves) and --t (how long it flies). */
+.plant-seed {
+  width: 7cqw;
+  margin-left: -3.5cqw;
+  margin-top: -5.8cqw;
+  opacity: 0;
+}
+.plant-lip {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.plant[data-step="3"] .plant-lip {
+  opacity: 1;
+}
+.plant[data-step="3"] .plant-seed {
+  animation:
+    plant-seed var(--t) cubic-bezier(0.45, 0, 0.55, 1) var(--d) both,
+    plant-seed-rest 1ms linear 1720ms forwards;
+}
+@keyframes plant-seed {
+  0% {
+    opacity: 0;
+    transform: translate(var(--x), calc(var(--y) + 10cqw)) scale(0.5);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(var(--x), var(--y)) scale(1);
+  }
+  56% {
+    transform: translate(calc(var(--x) * 0.26), -24cqw) rotate(calc(var(--r) + 200deg));
+  }
+  76% {
+    transform: translate(0, -18cqw) rotate(calc(var(--r) + 350deg));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(calc(var(--r) + 360deg));
+  }
+}
+@keyframes plant-seed-rest {
+  to {
+    opacity: 0;
+  }
+}
+/* Step 5: the can tips in and waters; the soil darkens beneath it. The spout's tip is the pivot. */
+.plant-can {
+  left: 46cqw;
+  top: 24cqw;
+  width: 44cqw;
+  transform-origin: 0.5% 4%;
+  opacity: 0;
+  transform: translate(45cqw, -25cqw) rotate(6deg);
+  transition: opacity 500ms var(--e-out), transform 800ms var(--e-out);
+}
+.plant[data-step="5"] .plant-can {
+  opacity: 1;
+  transform: rotate(-16deg);
+  animation: plant-can 1100ms var(--e-out) both;
+}
+@keyframes plant-can {
+  0% {
+    opacity: 0;
+    transform: translate(45cqw, -25cqw) rotate(6deg);
+  }
+  62% {
+    opacity: 1;
+    transform: rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-16deg);
+  }
+}
+.plant-water {
+  left: 46cqw;
+  top: 25cqw;
+  width: 0;
+  height: 0;
+}
+.plant-drop {
+  position: absolute;
+  top: 0;
+  display: block;
+  width: 0.9cqw;
+  height: 1.8cqw;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: #a9d6ef;
+  opacity: 0;
+}
+.plant[data-step="5"] .plant-drop {
+  animation: plant-drop 840ms cubic-bezier(0.45, 0.05, 0.75, 0.6) 1050ms infinite;
+}
+@keyframes plant-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  12% {
+    opacity: 0.95;
+  }
+  88% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(26cqw);
+  }
+}
+/* Step 6 on: the sun comes up and stays. */
+.plant-sun {
+  left: 70cqw;
+  top: -48cqw;
+  width: 24cqw;
+  opacity: 0;
+  transform: translateY(30cqw) scale(0.9);
+  transition: opacity 1100ms var(--e-out), transform 2400ms var(--e-out);
+}
+/* On a short panel the line of narration reaches the sun's height, so the sun rises less. */
+@media (max-height: 720px) {
+  .plant:not([data-compact]) .plant-sun {
+    top: -38cqw;
+  }
+}
+.plant[data-compact] .plant-sun {
+  left: 83cqw;
+  top: 2cqw;
+  width: 13cqw;
+}
+.plant-sun::before {
+  content: "";
+  position: absolute;
+  inset: -55%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 222 150 / 0.55), rgb(255 196 110 / 0.16) 45%, transparent 70%);
+  animation: plant-warm 5.2s ease-in-out infinite alternate;
+}
+@keyframes plant-warm {
+  from {
+    opacity: 0.65;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+.plant[data-step="6"] .plant-sun,
+.plant[data-step="7"] .plant-sun,
+.plant[data-step="8"] .plant-sun {
+  opacity: 1;
+  transform: none;
+}
+/* Step 7: the ground lifts as the tip pushes through. Step 8: the seed and shoot stand up. */
+.plant[data-step="7"] .plant-soil {
+  transform-origin: 50% 95%;
+  animation: plant-stir 800ms var(--e-out) 260ms both;
+}
+@keyframes plant-stir {
+  0%,
+  100% {
+    transform: none;
+  }
+  35% {
+    transform: scaleY(1.03);
+  }
+  70% {
+    transform: scaleY(0.99);
+  }
+}
+/* Step 8: the shoot unfolds from the tip of the seed that came through on step 7. */
+.plant-shoot {
+  position: absolute;
+  left: 45.53cqw;
+  top: 30.25cqw;
+  width: 12.58cqw;
+  transform-origin: 35.5% 100%;
+  opacity: 0;
+  transform: scale(0.3) rotate(-14deg);
+}
+.plant[data-step="8"] .plant-shoot {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 240ms var(--e-out) 260ms,
+    transform 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 260ms;
+}
+
+/* The line of narration. It hangs just above where the sun rises (the stage is
+   69% of the panel's width, standing 6% up from its foot), so it keeps clear of
+   the sun at any panel size, and stops at the panel's top on short screens.
+   All eight lines share one cell, so changing step moves nothing else. */
+.plant-say {
+  position: absolute;
+  inset-inline: 0;
+  top: max(4.75rem, calc(94cqh - 90.91cqw - 1.25rem));
+  transform: translateY(-100%);
+  display: grid;
+  padding-inline: 1.5rem;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink);
+  font-size: clamp(1.875rem, 6.6cqw, 2.5rem);
+  line-height: 1.1;
+  pointer-events: none;
+}
+.plant[data-compact] .plant-say {
+  top: 0;
+  transform: none;
+  font-size: 1.1875rem;
+  line-height: 1.5rem;
+}
+.plant-line {
+  grid-area: 1 / 1;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(0.625rem);
+  transition:
+    opacity 180ms var(--e-out),
+    filter 180ms var(--e-out),
+    transform 180ms var(--e-out);
+}
+.plant-line[data-at="past"] {
+  transform: translateY(-0.5rem);
+}
+.plant-line[data-at="now"] {
+  opacity: 1;
+  filter: none;
+  transform: none;
+  transition:
+    opacity 480ms var(--e-out) 140ms,
+    filter 480ms var(--e-out) 140ms,
+    transform 720ms var(--e-out) 140ms;
+}
+
+/* Refer a friend (components/ReferFriend.tsx). One gesture, each part waiting
+   for the one that causes it: the seeds are pushed in, lowest first (40-680ms),
+   the envelope takes their weight (680ms), the flap folds (720ms) and lands
+   (1110ms), the seal presses on (1140ms) and the envelope gives under it
+   (1305ms), a beat sealed, then it lifts away (1840ms). The two flaps meet
+   edge-on at the fold, so it reads as one. */
+.env-stage {
+  container-type: inline-size;
+}
+.env-seed {
+  position: absolute;
+  width: 7.5cqw;
+  margin-left: -3.75cqw;
+  margin-top: -6.2cqw;
+  animation: env-bob 3.4s ease-in-out var(--b) infinite;
+}
+.env-seal {
+  position: absolute;
+  left: 41cqw;
+  top: 66.5cqw;
+  width: 18cqw;
+  opacity: 0;
+}
+.env-flap-open,
+.env-flap-closed {
+  transform-origin: 50% 36.66%;
+}
+.env-flap-closed {
+  opacity: 0;
+}
+@keyframes env-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1cqw);
+  }
+}
+.env[data-phase="back"] {
+  animation: env-arrive 420ms var(--e-out) both;
+}
+.env[data-phase="send"] {
+  animation: env-fly 700ms cubic-bezier(0.45, 0, 0.55, 1) 1840ms both;
+}
+.env[data-phase="send"] .env-inner {
+  animation: env-bump 720ms linear 680ms both;
+}
+.env[data-phase="send"] .env-seed {
+  animation: env-push 300ms cubic-bezier(0.45, 0, 0.55, 1) var(--d) both;
+}
+.env[data-phase="send"] .env-flap-open {
+  animation: env-fold 150ms cubic-bezier(0.45, 0, 0.55, 1) 720ms both;
+}
+.env[data-phase="send"] .env-flap-closed {
+  animation: env-shut 240ms var(--e-out) 870ms both;
+}
+.env[data-phase="send"] .env-seal {
+  animation: env-seal 300ms var(--e-out) 1140ms both;
+}
+@keyframes env-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6cqw) scale(0.96);
+  }
+}
+@keyframes env-push {
+  30% {
+    transform: translateY(-2.5cqw);
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+@keyframes env-bump {
+  0%,
+  28%,
+  76%,
+  100% {
+    transform: none;
+  }
+  9% {
+    transform: translateY(1.4cqw);
+  }
+  87% {
+    transform: translateY(1.2cqw) scale(0.985);
+  }
+}
+@keyframes env-fold {
+  from {
+    transform: perspective(260cqw) rotateX(0deg);
+  }
+  to {
+    transform: perspective(260cqw) rotateX(-90deg);
+  }
+}
+@keyframes env-shut {
+  from {
+    opacity: 1;
+    transform: perspective(260cqw) rotateX(90deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(260cqw) rotateX(0deg);
+  }
+}
+@keyframes env-seal {
+  0% {
+    opacity: 0;
+    transform: scale(1.7) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.92) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes env-fly {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-2cqw, 4cqw) rotate(-3deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(78cqw, -96cqw) rotate(14deg) scale(0.55);
+  }
+}
+
+/* Bee wings in the landing grove (components/landing/GroveBees.tsx): they beat
+   too fast to see as anything but a shimmer. */
+.bee-wing {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  background: rgba(235, 244, 250, 0.72);
+  box-shadow: inset 0 0 0 0.5px rgba(120, 140, 160, 0.45);
+  transform-origin: 50% 100%;
+  animation: bee-beat 80ms ease-in-out infinite alternate;
+}
+.bee-wing-b {
+  animation-delay: -40ms;
+}
+@keyframes bee-beat {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0.38);
+  }
+}
+
+/* Avatar picker: the one you choose answers in its own way, once (picking is
+   rare, so it can take its time): fruit and leaves swing from the stem, plants
+   sway from the base, the swallow glides in, the wave rolls, the mountains rise,
+   the moon rocks, the owl and fox shift their weight. A new background fades in
+   under it. Under a mouse the one you point at lifts a touch. Avatars elsewhere
+   never move. */
+.avatar-pick > span {
+  transition: background-color 240ms var(--e-out);
+}
+.avatar-pick[data-on] .avatar-art[data-move] > * {
+  animation-duration: 640ms;
+  animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+}
+.avatar-pick[data-on] .avatar-art[data-move="hang"] > * {
+  animation-name: fg-hang;
+  transform-origin: 50% 6%;
+}
+.avatar-pick[data-on] .avatar-art[data-move="sway"] > * {
+  animation-name: fg-sway;
+  transform-origin: 50% 100%;
+}
+.avatar-pick[data-on] .avatar-art[data-move="glide"] > * {
+  animation-name: fg-glide;
+}
+.avatar-pick[data-on] .avatar-art[data-move="roll"] > * {
+  animation-name: fg-roll;
+}
+.avatar-pick[data-on] .avatar-art[data-move="rise"] > * {
+  animation-name: fg-rise;
+  transform-origin: 50% 100%;
+}
+.avatar-pick[data-on] .avatar-art[data-move="rock"] > * {
+  animation-name: fg-rock;
+}
+.avatar-pick[data-on] .avatar-art[data-move="perk"] > * {
+  animation-name: fg-perk;
+  transform-origin: 50% 100%;
+}
+@keyframes fg-hang {
+  0% {
+    transform: rotate(-11deg) scale(0.94);
+  }
+  36% {
+    transform: rotate(7deg);
+  }
+  68% {
+    transform: rotate(-3deg);
+  }
+}
+@keyframes fg-sway {
+  0% {
+    transform: rotate(9deg) scale(0.94);
+  }
+  40% {
+    transform: rotate(-5deg);
+  }
+  72% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes fg-glide {
+  0% {
+    transform: translate(-16%, 10%) rotate(-9deg) scale(0.9);
+  }
+  62% {
+    transform: translate(3%, -3%) rotate(2deg);
+  }
+}
+@keyframes fg-roll {
+  0% {
+    transform: translateX(-12%) rotate(-14deg) scale(0.92);
+  }
+  58% {
+    transform: translateX(3%) rotate(4deg);
+  }
+}
+@keyframes fg-rise {
+  0% {
+    transform: scaleY(0.8);
+  }
+  55% {
+    transform: scaleY(1.05);
+  }
+}
+@keyframes fg-rock {
+  0% {
+    transform: rotate(-16deg) scale(0.94);
+  }
+  40% {
+    transform: rotate(8deg);
+  }
+  72% {
+    transform: rotate(-3deg);
+  }
+}
+@keyframes fg-perk {
+  0% {
+    transform: scale(1.06, 0.9);
+  }
+  45% {
+    transform: translateY(-5%) scale(0.97, 1.05);
   }
 }
 @media (hover: hover) and (pointer: fine) {
@@ -760,9 +1402,11 @@ a {
   }
 }
 
-/* The Grove Guide button (AppShell): its sparkle's stars twinkle in turn,
-   the big star turns a quarter under a mouse pointer, and the label folds
-   away while you scroll down to read. */
+/* The Grove Guide button (AppShell): the orange's two stars twinkle slowly in
+   turn. Under a mouse pointer the fruit tips on its stem and the big star turns
+   a quarter (a four-point star looks the same after it, so it can rest there);
+   both are transitions, so they retarget if the pointer leaves halfway. The
+   label folds away while you scroll down to read. */
 @keyframes fg-twinkle {
   0%,
   100% {
@@ -774,42 +1418,30 @@ a {
     transform: scale(1);
   }
 }
-@keyframes fg-spark-breathe {
-  0%,
-  100% {
-    transform: scale(0.94);
-  }
-  50% {
-    transform: scale(1);
-  }
-}
-@keyframes fg-spark-turn {
-  from {
-    transform: rotate(0deg) scale(1);
-  }
-  60% {
-    transform: rotate(80deg) scale(1.08);
-  }
-  to {
-    transform: rotate(90deg) scale(1);
-  }
-}
-.spark {
+.spark,
+.spark-turn {
   transform-box: fill-box;
   transform-origin: center;
 }
 .spark-1 {
-  animation: fg-spark-breathe 3.2s ease-in-out infinite;
+  animation: fg-twinkle 3.6s ease-in-out -0.6s infinite;
 }
 .spark-2 {
-  animation: fg-twinkle 2.4s ease-in-out -0.6s infinite;
+  animation: fg-twinkle 3.6s ease-in-out -2.4s infinite;
 }
-.spark-3 {
-  animation: fg-twinkle 2.4s ease-in-out -1.8s infinite;
+.guide-fruit {
+  transform-origin: 52% 8%;
+  transition: transform 260ms var(--e-out);
+}
+.spark-turn {
+  transition: transform 260ms var(--e-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .guide-fab:hover .spark-1 {
-    animation: fg-spark-turn 600ms var(--e-out);
+  .guide-fab:hover .guide-fruit {
+    transform: rotate(-7deg);
+  }
+  .guide-fab:hover .spark-turn {
+    transform: rotate(90deg);
   }
 }
 .guide-label {

@@ -7,11 +7,12 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, CircleHelp, Copy, Lock, LogOut, Sparkles } from "lucide-react";
+import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { ReferFriend } from "@/components/ReferFriend";
 import { GroupCover } from "@/components/art/Brand";
 import { Backdrop } from "@/components/art/Cozy";
-import { OnboardingScene } from "@/components/art/Scenes";
+import { PlantingScene } from "@/components/art/PlantingScene";
 import { TreeArt } from "@/components/art/Tree";
 import {
   Avatar,
@@ -29,7 +30,6 @@ import {
   Textarea,
   Toggle,
   toast,
-  useCopy,
 } from "@/components/ui";
 import { ARTICLES } from "@/lib/data/articles";
 import { GUIDE_STARTERS } from "@/lib/data/social";
@@ -507,7 +507,6 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   const [inviteErr, setInviteErr] = useState<string>();
   const [invited, setInvited] = useState(false);
   const showInvite = !s.invitedBy && !s.partner.linked;
-  const [copied, copy] = useCopy();
   const inviteLink = `${typeof window === "undefined" ? "https://fertilitygrove.com" : window.location.origin}/invite/${s.me.handle}`;
 
   return (
@@ -522,20 +521,8 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
             </p>
           </div>
         </div>
-        <div className="mt-5 border-t border-line pt-4">
-          <p className="text-[15px] font-semibold text-ink">Refer a friend to start growing your tree</p>
-          <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-            Know someone going through this too? When they join with your link, your tree gets {POINTS.referral} Sunlight.
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate rounded-[10px] bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft" title={inviteLink}>
-              {inviteLink.replace(/^https?:\/\//, "")}
-            </p>
-            <Button size="sm" variant="secondary" onClick={() => copy(inviteLink)}>
-              {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
-              {copied ? "Copied" : "Copy link"}
-            </Button>
-          </div>
+        <div className="mt-5 border-t border-line pt-5">
+          <ReferFriend link={inviteLink} points={POINTS.referral} />
         </div>
       </div>
 
@@ -793,8 +780,8 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
         </div>
         </header>
 
-        <div className="-mx-4 mt-4 h-32 overflow-hidden sm:-mx-8 lg:hidden" aria-hidden>
-          <OnboardingScene step={step} className="h-full w-full" />
+        <div className="relative -mx-4 mt-4 h-32 overflow-hidden sm:-mx-8 lg:hidden" aria-hidden>
+          <PlantingScene step={step} compact />
         </div>
 
         <main className="mx-auto w-full max-w-[600px] flex-1 py-8 lg:py-12">
@@ -854,7 +841,7 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
       <aside className="sticky top-0 hidden h-dvh p-4 lg:block" aria-hidden>
         <div className="relative h-full overflow-hidden rounded-[20px]">
           <Backdrop kind="auth" wash />
-          <OnboardingScene step={step} className="h-full w-full" />
+          <PlantingScene step={step} />
         </div>
       </aside>
     </div>
