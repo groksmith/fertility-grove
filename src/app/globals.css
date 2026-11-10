@@ -1020,29 +1020,6 @@ a {
   }
 }
 
-/* Bee wings in the landing grove (components/landing/GroveBees.tsx): they beat
-   too fast to see as anything but a shimmer. */
-.bee-wing {
-  position: absolute;
-  z-index: 0;
-  border-radius: 50%;
-  background: rgba(235, 244, 250, 0.72);
-  box-shadow: inset 0 0 0 0.5px rgba(120, 140, 160, 0.45);
-  transform-origin: 50% 100%;
-  animation: bee-beat 80ms ease-in-out infinite alternate;
-}
-.bee-wing-b {
-  animation-delay: -40ms;
-}
-@keyframes bee-beat {
-  from {
-    transform: scaleY(1);
-  }
-  to {
-    transform: scaleY(0.38);
-  }
-}
-
 /* Avatar picker: the one you choose answers in its own way, once (picking is
    rare, so it can take its time): fruit and leaves swing from the stem, plants
    sway from the base, the swallow glides in, the wave rolls, the mountains rise,

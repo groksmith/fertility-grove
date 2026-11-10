@@ -5,7 +5,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 key = os.environ["GEMINI_API_KEY"]
 out, aspect, pfile, *refs = sys.argv[1:]
 prompt = open(pfile).read() if os.path.exists(pfile) else pfile
-style = open(os.path.join(here, "style.txt")).read()
+style = open(os.path.join(here, os.environ.get("ART_STYLE", "style.txt"))).read()  # ART_STYLE picks another style file in this folder
 parts = []
 for r in refs:
     parts.append({"inline_data": {"mime_type": "image/png", "data": base64.b64encode(open(r, "rb").read()).decode()}})
