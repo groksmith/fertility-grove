@@ -8,8 +8,7 @@
    green, in flower, in flower and fruit, or full of oranges. Rows follow the
    path's bends, so you stand inside the orchard rather than at its edge.
    Further trees are smaller and paler in the haze. The view eases forward a
-   little as it grows, as if you'd stepped onto the path, and once the blossoms
-   open bees come to them (GroveBees).
+   little as it grows, as if you'd stepped onto the path.
 
    Geometry comes from the painting (public/brand/landing/grove-land-winding.webp,
    prompt in scripts/art/prompts-hero/landscape-winding.txt): the horizon sits
@@ -23,7 +22,6 @@
 
 import Image from "next/image";
 import { STAGE_SRC } from "@/components/art/Tree";
-import { GroveBees, type BeePlan, type Pt } from "./GroveBees";
 
 const HORIZON = 49.9; // % of the painting's height
 const SIZE = 50; // a grove tree's height at depth 1, as % of the painting's height (short enough to see the path wind between them)
@@ -148,37 +146,6 @@ function plant(): Tree[] {
 }
 const TREES = plant();
 
-/* Bees go to the trees that finish in flower. Each visits a few neighbouring
-   trees at a chosen depth, and arrives as the blossom on its first one opens,
-   so they come in behind the grove's own wave, near to far. Depth sets size. */
-const inFlower = (t: Tree) => /blossom|mixed/.test(t.stages[t.stages.length - 1]);
-const crown = (t: Tree, u: number): Pt => {
-  const { left, top } = ground(t.d, t.side, t.off);
-  const h = SIZE * t.d * t.scale;
-  return { x: left + u * h * ASPECT * 0.2, y: top - h * 0.62 };
-};
-const BEES: BeePlan[] = (() => {
-  const used = new Set<string>();
-  const plans = [
-    { side: 1, near: 0.55, far: 0.2, size: 1.9, phone: true },
-    { side: -1, near: 0.55, far: 0.2, size: 2, phone: false },
-    { side: -1, near: 0.26, far: 0.09, size: 1.3, phone: false },
-    { side: 1, near: 0.14, far: 0.05, size: 0.95, phone: false },
-    { side: -1, near: 0.14, far: 0.05, size: 0.9, phone: false },
-  ];
-  return plans.flatMap((p) => {
-    const trees = TREES.filter((t) => t.side === p.side && t.d <= p.near && t.d >= p.far && (t.row < 3 || !p.phone) && inFlower(t) && !used.has(t.key))
-      // Closest to the road first: that is the part of the grove a phone shows.
-      .sort((a, b) => Math.abs(ground(a.d, a.side, a.off).left - 50) - Math.abs(ground(b.d, b.side, b.off).left - 50))
-      .slice(0, 3);
-    if (trees.length < 2) return [];
-    trees.forEach((t) => used.add(t.key));
-    const stops = trees.flatMap((t, i) => (i === 0 ? [crown(t, -1), crown(t, 1)] : [crown(t, i % 2 ? 1 : -1)]));
-    // The moment the first tree's blossom has opened (its third stage), plus a beat.
-    return [{ stops, size: p.size, phone: p.phone, arriveAt: trees[0].delay + 2 * STEP + 380 }];
-  });
-})();
-
 export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?: React.Ref<HTMLDivElement> }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 bottom-[calc(-1*var(--edge,0px))] overflow-hidden">
@@ -238,8 +205,6 @@ export function Grove({ films, sceneRef }: { films: React.ReactNode[]; sceneRef?
             </span>
           );
         })}
-
-        <GroveBees plans={BEES} />
       </div>
       </div>
     </div>

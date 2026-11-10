@@ -67,14 +67,14 @@ function PillButton({ href, children, tone = "dark" }: { href: string; children:
   );
 }
 
-/* Each promise is its own symbol, painted in the grove's gouache with a
-   sprig of leaf and blossom: a tag marked @, an eye struck through, a heart
-   under padlock, an arrow down into an envelope. */
+/* Each promise is its own symbol grown from the orange tree, in the watercolour
+   hand of the tree and branch art: a twig curled into an @, an eye struck out
+   by a branch, a heart-shaped orange under padlock, an arrow down into a basket. */
 const PRIVACY: { text: string; art: string }[] = [
-  { text: "You post under a handle, not your name", art: "/brand/cozy/q-handle.webp" },
-  { text: "No ad trackers, ever", art: "/brand/cozy/q-trackers.webp" },
-  { text: "Your health data is never sold", art: "/brand/cozy/q-sold.webp" },
-  { text: "Download or delete everything, any time", art: "/brand/cozy/q-download.webp" },
+  { text: "You post under a handle, not your name", art: "/brand/landing/privacy-handle.webp" },
+  { text: "No ad trackers, ever", art: "/brand/landing/privacy-trackers.webp" },
+  { text: "Your health data is never sold", art: "/brand/landing/privacy-sold.webp" },
+  { text: "Download or delete everything, any time", art: "/brand/landing/privacy-download.webp" },
 ];
 
 /** The brand's growth film plays once, then rests on the tree in fruit. It is
