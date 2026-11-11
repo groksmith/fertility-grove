@@ -275,6 +275,9 @@
     if (SKIP.has(el.tagName)) return;
     const cs = getComputedStyle(el);
     if (hidden(cs) && cs.display !== "contents") return;
+    // A closed <details> shows only its summary; the rest still has layout boxes.
+    const host = el.parentElement;
+    if (host && host.tagName === "DETAILS" && !host.open && el.tagName !== "SUMMARY") return;
     if (cs.display === "contents") {
       for (const c of el.children) walk(c, list, origin, depth);
       return;

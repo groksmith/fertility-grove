@@ -13,8 +13,10 @@ States to add on the States page later: account menu open, phone menu sheet, sig
 | Help | `/help` | Signed out |
 | Terms | `/terms` | Signed out |
 | Privacy | `/privacy` | Signed out |
-| Shared post | `/p/p-1` | Signed out |
+| Shared post | `/p/p-3` | Signed out |
 | Demo personas | `/demo` | Signed out |
+| Public feed | `/community` | Signed out |
+| Public group | `/community/g-ivf` | Signed out |
 
 ## Auth
 
