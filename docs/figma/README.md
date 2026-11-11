@@ -49,6 +49,8 @@ node dom-to-figma.mjs 3:4493 ../onboarding-screens.json
 
 `FG_REPLACE=1` deletes a frame of the same name before building its replacement. Pages render at rest: reduced motion, every reveal shown, every image loaded; CSS background pictures come across as image layers. Demo personas was unchanged and kept; it now sits below Shared post. To compare before rebuilding, export a frame (`export_node_as_image`) and capture the same route at 1440, then look at them side by side.
 
+**PRD v1.2 update.** Rebuilt from the app: Group and Dashboard (App), Landing, Help and Shared post (Public), 8 All set (Onboarding). New on Public, below Demo personas from y 20678: Public feed (`/community`) and Public group (`/community/g-ivf`). On a single named screen with `FG_STACK=1`, set `FG_Y0` to its current y, since rows that aren't rebuilt don't advance the stack. Closed `<details>` now come across closed (only the summary). Components gained the brand-orange Grove Guide button as the app draws it, Post visibility (Show to visitors) in Form controls, Removed post in Cards and rows, and the guest sign-up prompt in Menus, dialogs and toasts; the account menu says Dashboard.
+
 Components: `node components.mjs 1:196 nav cards avatars` rebuilds those sections (gouache avatars, Feed and Dashboard in the nav); delete the old section first, then move the new one back to its place with `set_parent` and an `index`.
   - Bold words or links inside a sentence need the plugin's styled runs (added to the local plugin; re-run the plugin in Figma to pick them up).
 
