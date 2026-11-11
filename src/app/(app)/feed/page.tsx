@@ -1,6 +1,6 @@
 "use client";
 
-/* Home. The screen's question: who replied, or who needs a reply from me?
+/* Feed. The screen's question: who replied, or who needs a reply from me?
    The finding sits under the title; the feed takes two thirds, and the right
    third is your tree, people on your path and groups matched to you. */
 
@@ -23,6 +23,7 @@ import {
   Tabs,
   toast,
 } from "@/components/ui";
+import { dismissCompletionCard, profileCompletion } from "@/lib/api";
 import { act, sel, useStore, type State } from "@/lib/store";
 import { POST_TYPES } from "@/lib/options";
 import { nextLevel, progress } from "@/lib/rules/sunlight";
@@ -72,7 +73,7 @@ function TreeCard() {
         ) : (
           <p className="mt-2 text-[13px] text-muted">The top of the grove.</p>
         )}
-        <Link href="/profile#sunlight" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
+        <Link href="/dashboard#sunlight" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
           How you earned it
         </Link>
       </div>
@@ -142,10 +143,22 @@ function GroupsForYou({ limit = 3 }: { limit?: number }) {
   );
 }
 
+/* What each of the API's missingProfileItems keys asks for. The card returns
+   30 days after "Hide for 30 days" if anything is still missing. */
+const GAP: Record<string, { label: string; href: string }> = {
+  diagnosis: { label: "Add a diagnosis", href: "/settings#journey" },
+  path: { label: "Add your path to parenthood", href: "/settings#journey" },
+  photo: { label: "Choose a photo or avatar", href: "/dashboard?edit=1" },
+  aboutMe: { label: "Write a line about you", href: "/dashboard?edit=1" },
+  story: { label: "Share your story", href: "/dashboard?edit=1" },
+};
+
 function ProfileCard() {
   const s = useStore();
-  const gaps = sel.profileGaps(s);
-  if (s.me.profileCardDismissed || gaps.length === 0) return null;
+  // TODO(api): GET /api/v1/profile/me. No local "hidden" flag: the server decides.
+  const { showProfileCompletionCard, missingProfileItems } = profileCompletion(s);
+  if (!showProfileCompletionCard) return null;
+  const gaps = missingProfileItems.flatMap((key) => (GAP[key] ? [{ key, ...GAP[key] }] : []));
   // No avatar yet: offer the first six right here, one tap to wear one.
   const needsAvatar = gaps.some((g) => g.key === "photo");
   return (
@@ -168,7 +181,7 @@ function ProfileCard() {
                   toast("Avatar saved. Change it any time on your profile.");
                 }}
               />
-              <Link href="/profile?edit=1" className="text-[14px] font-semibold text-accent underline underline-offset-2">
+              <Link href="/dashboard?edit=1" className="text-[14px] font-semibold text-accent underline underline-offset-2">
                 See all 12
               </Link>
             </div>
@@ -186,7 +199,7 @@ function ProfileCard() {
           </ul>
         )}
       </div>
-      <button type="button" aria-label="Hide for 30 days" title="Hide for 30 days" onClick={() => act.settings.dismissProfileCard()} className="press grid h-10 w-10 place-items-center self-start rounded-full text-muted hover:bg-raised">
+      <button type="button" aria-label="Hide for 30 days" title="Hide for 30 days" onClick={dismissCompletionCard} className="press grid h-10 w-10 place-items-center self-start rounded-full text-muted hover:bg-raised">
         <X size={18} />
       </button>
     </Panel>
@@ -209,7 +222,7 @@ export default function HomePage() {
     <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
         <div className="min-w-0">
-          <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">{s.me.firstName ? `${s.me.firstName}'s grove` : "Your grove"}</h1>
+          <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">Feed</h1>
           <p className="mt-2 text-[15px] text-ink-soft">{finding(s)}</p>
         </div>
         <LinkButton href="/posts/new">

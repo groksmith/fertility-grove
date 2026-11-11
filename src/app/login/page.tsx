@@ -33,7 +33,7 @@ export default function LoginPage() {
         className="w-full"
         onClick={() => {
           act.auth.signInWithGoogle(keep);
-          router.push("/home");
+          router.push("/feed");
         }}
       >
         <GoogleMark /> Continue with Google
@@ -48,7 +48,7 @@ export default function LoginPage() {
           e.preventDefault();
           const r = act.auth.signIn(email, password, keep);
           if (!r.ok) setError(r.error);
-          else router.push("/home");
+          else router.push("/feed");
         }}
       >
         {error && (

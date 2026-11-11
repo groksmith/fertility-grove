@@ -34,7 +34,7 @@ export default function RestorePage() {
         <Button
           onClick={() => {
             act.settings.restoreAccount();
-            router.push("/home");
+            router.push("/feed");
           }}
         >
           Restore my account

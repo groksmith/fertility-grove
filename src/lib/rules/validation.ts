@@ -47,7 +47,7 @@ export const MSG = {
 
   postTitle: "Add a title.",
   postBody: "Write something before posting.",
-  postTypeSource: "Pick a post type and a source.",
+  postType: "Pick a post type.",
   researchLink: "Add a link to the research or guideline.",
   badLink: "Enter a full web address, starting with https://",
   postLimit: "You've reached the limit of 10 posts an hour. Try again a little later.",

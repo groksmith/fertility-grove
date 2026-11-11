@@ -10,6 +10,8 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ReferFriend } from "@/components/ReferFriend";
+import { useSignOut } from "@/components/SignOut";
+import { completeOnboarding } from "@/lib/api";
 import { GroupCover } from "@/components/art/Brand";
 import { Backdrop } from "@/components/art/Cozy";
 import { PlantingScene } from "@/components/art/PlantingScene";
@@ -507,6 +509,12 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   const [invited, setInvited] = useState(false);
   const showInvite = !s.invitedBy && !s.partner.linked;
 
+  // Screen 8 completes onboarding as it opens: the personal invite link is
+  // behind the onboarding gate (PRD §5, §10).
+  useEffect(() => {
+    if (!preview) completeOnboarding();
+  }, [preview]);
+
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-[20px] border border-line bg-white p-5">
@@ -520,7 +528,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
           </div>
         </div>
         <div className="mt-5 border-t border-line pt-5">
-          <ReferFriend handle={s.me.handle} />
+          <ReferFriend />
         </div>
       </div>
 
@@ -674,13 +682,17 @@ function OnboardingStep() {
   const s = useStore();
   const step = Math.min(8, Math.max(1, Number(params.step) || 1));
   const preview = search.get("preview") === "1";
+  // Arriving on screen 8 completes onboarding there, so stay on it until Finish.
+  const [onFinal, setOnFinal] = useState(false);
+  if (hydrated && step === 8 && s.step === 8 && !onFinal) setOnFinal(true);
 
+  // Signed out mid-onboarding: sign in, and onboarding resumes where it stopped.
   const target = !hydrated
     ? null
     : !s.signedIn && !preview
-      ? "/signup"
-      : s.step >= 9 && !preview
-        ? "/home"
+      ? "/login"
+      : s.step >= 9 && !preview && !onFinal
+        ? "/feed"
         : step > s.step && !preview
           ? `/onboarding/${s.step}`
           : null;
@@ -695,6 +707,7 @@ function OnboardingStep() {
 
 function StepView({ step, preview }: { step: number; preview: boolean }) {
   const router = useRouter();
+  const signOut = useSignOut();
   const firstName = useStore((s) => s.me.firstName);
   const [d, setD] = useState<Draft>(initialDraft);
   const [errs, setErrs] = useState<Record<string, string>>({});
@@ -733,7 +746,7 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
 
   const finish = (to: string) => {
     if (!preview) {
-      act.onboarding.complete();
+      completeOnboarding();
       // Screen 8 already celebrated the Seed; don't repeat it on Home.
       act.settings.acknowledgeLevelUp();
     }
@@ -757,14 +770,12 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
             <button
               type="button"
               className="inline-flex items-center gap-1.5 text-danger hover:underline hover:underline-offset-4"
-              onClick={() => {
-                act.auth.signOut();
-                router.push("/");
-              }}
+              onClick={signOut.ask}
             >
               <LogOut size={16} aria-hidden />
               Sign out
             </button>
+            {signOut.ui}
           </div>
           </div>
 
@@ -807,7 +818,7 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
             onSubmit={(e) => {
               e.preventDefault();
               if (step < 8) next();
-              else finish("/home");
+              else finish("/feed");
             }}
           >
             {step === 1 && <Step1 d={d} set={set} errs={errs} />}

@@ -3,8 +3,15 @@
 // reads the rendered page with dom-extract.js and builds it in Figma as frames,
 // text, images and icons at their exact positions.
 // Usage: FG_CHANNEL=fertility-grove node dom-to-figma.mjs <pageId> <screens.json> [name...]
-//   screens.json: [["App", "Home", "/home"], ...]. Rows stack on a fixed pitch
-//   (in order of the list) so one screen can be rebuilt in place.
+//   screens.json: [["App", "Feed", "/feed"], ["Auth", "Sign in", "/login", "out"], ...].
+//   A fourth item "out" captures signed out; otherwise as the demo member. A fifth,
+//   {"window": "keep"}, reads the page in a normal-height window (for pages whose
+//   hero is sized to the screen).
+//   Rows stack on a fixed pitch (FG_PITCH, in list order) so one screen can be
+//   rebuilt in place. FG_STACK=1 stacks rows by their real height instead
+//   (FG_Y0 start, FG_GAP between rows). FG_REPLACE=1 deletes a frame of the same
+//   name on the page before building its replacement.
+//   Pages render at rest: reduced motion, every reveal shown, every image loaded.
 import { spawn } from "node:child_process";
 import { readFileSync, mkdtempSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -67,15 +74,24 @@ const SETTLE = `(async () => {
   return true;
 })()`;
 
-async function capture(path, size) {
+const STORE = "fertility-grove-state-v3";
+async function capture(path, size, session = "in", opts = {}) {
   const mobile = size.w < 700;
   await cdp("Emulation.setDeviceMetricsOverride", { width: size.w, height: size.h, deviceScaleFactor: 1, mobile });
+  await cdp("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  // The session: signed out for public and auth screens, otherwise the demo member.
+  await cdp("Page.navigate", { url: BASE + "/terms" });
+  await sleep(1500);
+  await ev(session === "out" ? `localStorage.setItem("${STORE}", JSON.stringify({ signedIn: false }))` : `localStorage.removeItem("${STORE}")`);
   await cdp("Page.navigate", { url: BASE + path });
   await sleep(4000);
   await ev(SETTLE);
   const full = await ev("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)");
+  // Pages sized to the window (the landing hero is a full screen) keep a normal
+  // window: everything below the fold is still read at its page position.
+  if (opts.window === "keep") return ev(EXTRACT);
   // The window as tall as the page: fixed bars sit at the page's ends.
-  await cdp("Emulation.setDeviceMetricsOverride", { width: size.w, height: Math.max(size.h, Math.min(full, 12000)), deviceScaleFactor: 1, mobile });
+  await cdp("Emulation.setDeviceMetricsOverride", { width: size.w, height: Math.max(size.h, Math.min(full, 20000)), deviceScaleFactor: 1, mobile });
   await sleep(700);
   await ev(SETTLE);
   return ev(EXTRACT);
@@ -117,13 +133,27 @@ function batches(children, limit = 6e6) {
 const countImages = (n) => (n.image ? 1 : 0) + (n.children || []).reduce((a, c) => a + countImages(c), 0);
 
 await fig("set_current_page", { pageId: page });
+const STACK = process.env.FG_STACK === "1";
+const GAP = Number(process.env.FG_GAP || 400);
+let stackY = Number(process.env.FG_Y0 || 0);
+const existing = new Map();
+if (process.env.FG_REPLACE === "1") {
+  const doc = await fig("get_document_info", {});
+  for (const c of doc.children || []) existing.set(c.name, c.id);
+}
 const log = [];
-for (const [row, [area, name, path]] of SCREENS.entries()) {
+for (const [row, [area, name, path, session, opts]] of SCREENS.entries()) {
   if (only.length && !only.includes(name)) continue;
   let x = 0;
-  for (const size of SIZES) {
-    const tree = await capture(path, size);
-    const board = { type: "frame", name: `${area} / ${name} / ${size.key}`, width: tree.width, height: tree.height, fill: tree.fill, clip: true, x, y: row * PITCH, children: [] };
+  const trees = [];
+  for (const size of SIZES) trees.push(await capture(path, size, session, opts));
+  const y = STACK ? stackY : row * PITCH;
+  stackY += Math.max(...trees.map((t) => t.height)) + GAP;
+  for (const [i, size] of SIZES.entries()) {
+    const tree = trees[i];
+    const frameName = `${area} / ${name} / ${size.key}`;
+    if (existing.has(frameName)) await fig("delete_node", { nodeId: existing.get(frameName) });
+    const board = { type: "frame", name: frameName, width: tree.width, height: tree.height, fill: tree.fill, clip: true, x, y, children: [] };
     const res = await build([board]);
     const id = res.roots[0].id;
     const kids = tree.children.map(resolve).filter(Boolean);

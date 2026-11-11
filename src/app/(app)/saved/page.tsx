@@ -83,9 +83,11 @@ export default function SavedPage() {
   const total = keys.length;
   const show = (k: Exclude<Kind, "all">) => kind === "all" || kind === k;
 
-  // While the list is short, offer reviewed articles matched to the member.
-  const suggestions = ARTICLES.filter((a) => !s.savedArticles.includes(a.slug))
-    .sort((a, b) => Number(b.diagnoses.some((d) => s.me.diagnoses.includes(d))) - Number(a.diagnoses.some((d) => s.me.diagnoses.includes(d))))
+  // While the list is short, offer reviewed articles matched to the member:
+  // their diagnosis only counts while health-data consent is on.
+  const dx = sel.journey(s).diagnoses;
+  const suggestions = ARTICLES.filter((a) => !s.savedArticles.includes(a.slug) && (a.status ?? "published") === "published")
+    .sort((a, b) => Number(b.diagnoses.some((d) => dx.includes(d))) - Number(a.diagnoses.some((d) => dx.includes(d))))
     .slice(0, 3);
 
   const lists = s.appointmentLists.length;

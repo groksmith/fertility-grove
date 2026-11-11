@@ -16,14 +16,14 @@ import {
   ChevronsUpDown,
   CircleHelp,
   Flower2,
-  Home,
+  LayoutDashboard,
   LogOut,
   Menu as MenuIcon,
   MessageCircle,
+  Newspaper,
   Search,
   Settings,
   Sprout,
-  UserRound,
   Users,
   UsersRound,
   X,
@@ -32,7 +32,7 @@ import { useEffect, useState } from "react";
 import { Logo, LogoOrange } from "@/components/Logo";
 import { HeaderBackdrop, sceneFor } from "@/components/art/Cozy";
 import { TreeGlyph } from "@/components/art/Tree";
-import { requestLeave } from "@/components/UnsavedGuard";
+import { useSignOut } from "@/components/SignOut";
 import { act, sel, useStore, type State } from "@/lib/store";
 import { COMMUNITIES } from "@/lib/options";
 import { Avatar, Button, Dialog, Menu, Toaster } from "./ui";
@@ -40,7 +40,8 @@ import { Avatar, Button, Dialog, Menu, Toaster } from "./ui";
 type NavItem = { href: string; label: string; icon: React.ElementType; count?: (s: State) => number };
 
 const PRIMARY: NavItem[] = [
-  { href: "/home", label: "Home", icon: Home },
+  { href: "/feed", label: "Feed", icon: Newspaper },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/groups", label: "Groups", icon: Users },
   { href: "/stories", label: "Success stories", icon: Flower2 },
   { href: "/learn", label: "Learn", icon: BookOpen },
@@ -57,10 +58,10 @@ const SECONDARY: NavItem[] = [
 ];
 
 const PHONE: NavItem[] = [
-  { href: "/home", label: "Home", icon: Home },
+  { href: "/feed", label: "Feed", icon: Newspaper },
   { href: "/groups", label: "Groups", icon: Users },
   { href: "/messages", label: "Messages", icon: MessageCircle, count: (s) => sel.unreadMessages(s) },
-  { href: "/profile", label: "Me", icon: Sprout },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 const isActive = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
@@ -134,37 +135,6 @@ function Scope() {
   );
 }
 
-/** Sign out, iOS style: a short confirmation first. Signing out lands on
-    the sign-in screen (the app's gate does the redirect). */
-function useSignOut() {
-  const [confirm, setConfirm] = useState(false);
-  const ask = () => requestLeave(() => setConfirm(true));
-  const ui = (
-    <Dialog
-      open={confirm}
-      onClose={() => setConfirm(false)}
-      title="Sign out of Fertility Grove?"
-      description="You can sign back in any time with your email or Google."
-    >
-      <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
-        <Button
-          variant="danger"
-          onClick={() => {
-            setConfirm(false);
-            act.auth.signOut();
-          }}
-        >
-          Sign out
-        </Button>
-        <Button variant="ghost" onClick={() => setConfirm(false)}>
-          Cancel
-        </Button>
-      </div>
-    </Dialog>
-  );
-  return { ask, ui };
-}
-
 /** Your row at the foot of the sidebar opens your account menu. */
 function AccountMenu() {
   const s = useStore();
@@ -197,7 +167,7 @@ function AccountMenu() {
           </button>
         )}
         items={[
-          { label: "View profile", icon: <UserRound size={16} />, onSelect: () => router.push("/profile") },
+          { label: "Dashboard", icon: <LayoutDashboard size={16} />, onSelect: () => router.push("/dashboard") },
           { label: "Settings", icon: <Settings size={16} />, onSelect: () => router.push("/settings") },
           { label: "Help", icon: <CircleHelp size={16} />, onSelect: () => router.push("/help") },
           "divider",
@@ -213,7 +183,7 @@ function MeRow({ onNavigate }: { onNavigate?: () => void }) {
   const s = useStore();
   const me = sel.meAsMember(s);
   return (
-    <Link href="/profile" onClick={onNavigate} className="nav-row press flex items-center gap-3 rounded-[14px] p-2 hover:bg-line">
+    <Link href="/dashboard" onClick={onNavigate} className="nav-row press flex items-center gap-3 rounded-[14px] p-2 hover:bg-line">
       <Avatar member={me} size={36} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14px] font-semibold text-ink">{sel.displayName(me)}</span>
@@ -231,7 +201,7 @@ function Sidebar() {
   return (
     <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[76px] flex-col border-r border-line bg-chrome px-2 pt-5 pb-4 lg:flex xl:w-[248px] xl:px-3">
       <div className="flex justify-center xl:block xl:px-2">
-        <Link href="/home" className="flex items-center gap-2" aria-label="Fertility Grove home">
+        <Link href="/feed" className="flex items-center gap-2" aria-label="Fertility Grove, your feed">
           <span className="xl:hidden">
             <LogoOrange size={36} />
           </span>
@@ -293,7 +263,7 @@ function PhoneChrome() {
     <>
       <header className="sticky top-0 z-40 flex h-[calc(52px+env(safe-area-inset-top))] items-end bg-ground/80 px-2 pt-[env(safe-area-inset-top)] pb-1 shadow-[0_1px_0_var(--line)] backdrop-blur-xl backdrop-saturate-150 lg:hidden">
         <div className="flex h-12 w-full items-center gap-1">
-          <Link href="/home" className="flex items-center gap-2 px-2" aria-label="Fertility Grove home">
+          <Link href="/feed" className="flex items-center gap-2 px-2" aria-label="Fertility Grove, your feed">
             <Logo height={34} />
           </Link>
           <span className="flex-1" />

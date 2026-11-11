@@ -2,8 +2,8 @@
 
 /* One group. Its question: what's happening here, and can I take part? The
    header is the group itself, standing on the same painted backdrop as the
-   groups list, with its painted cover and a few of the people in it; the feed
-   below takes two thirds. */
+   groups list, with its painted cover and the people who've posted in it; the
+   feed below takes two thirds. */
 
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +16,8 @@ import { PostCard } from "@/components/PostCard";
 import { Avatar, Button, ChipSelect, EmptyState, LinkButton, Menu, Panel, Segmented, toast } from "@/components/ui";
 import { articleCover, readingFor } from "@/lib/data/articles";
 import { act, sel, useStore } from "@/lib/store";
+import { POST_TYPES } from "@/lib/options";
+import type { PostType } from "@/lib/types";
 
 type Sort = "newest" | "top" | "discussed";
 
@@ -24,6 +26,7 @@ export default function GroupPage() {
   const s = useStore();
   const [sort, setSort] = useState<Sort>("newest");
   const [picked, setPicked] = useState<string[]>([]);
+  const [types, setTypes] = useState<PostType[]>([]);
   const group = s.groups.find((g) => g.id === id);
 
   if (!group || group.status === "draft") {
@@ -52,15 +55,29 @@ export default function GroupPage() {
   for (const p of groupPosts) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
   const tagOptions = [...tagCounts.keys()].sort((a, b) => tagCounts.get(b)! - tagCounts.get(a)! || a.localeCompare(b));
   const activeTags = picked.filter((t) => tagCounts.has(t));
-  // A few of the people here: whoever has posted, then other members, a different mix for each group.
-  const others = s.members.filter((m) => !m.unavailable && !m.badges.includes("team"));
-  const start = s.groups.indexOf(group) * 3;
-  const faceIds = new Set([
-    ...groupPosts.map((p) => p.authorId).filter((a) => a !== "me" && others.some((m) => m.id === a)),
-    ...others.map((_, i) => others[(start + i) % others.length].id),
-  ]);
-  const faces = [...faceIds].slice(0, 5).map((a) => others.find((m) => m.id === a)!);
-  let posts = activeTags.length ? groupPosts.filter((p) => p.tags.some((t) => activeTags.includes(t))) : groupPosts;
+  // Faces in the header (PRD §8): only members who posted here, most recent
+  // poster first, up to 5, never padded with other members. Never you, anyone
+  // either of you blocked, suspended or departing members, or the Support
+  // account. A Members-only group you haven't joined shows none.
+  // TODO(api): the group endpoint will return these; this derives them from the mock.
+  const faces = locked
+    ? []
+    : [...new Set(
+        s.posts
+          .filter((p) => p.groupId === group.id && p.status === "published")
+          .sort((a, b) => a.minutesAgo - b.minutesAgo)
+          .map((p) => p.authorId),
+      )]
+        .flatMap((a) => s.members.find((m) => m.id === a) ?? [])
+        .filter((m) => !m.unavailable && !m.badges.includes("team") && !s.blocked.includes(m.id) && !m.blocks?.includes("me"))
+        .slice(0, 5);
+  // Filters combine: a post shows if it is one of the picked types and has any of the picked tags.
+  let posts = groupPosts.filter((p) => (!types.length || types.includes(p.type)) && (!activeTags.length || p.tags.some((t) => activeTags.includes(t))));
+  const filtering = types.length > 0 || activeTags.length > 0;
+  const clearFilters = () => {
+    setTypes([]);
+    setPicked([]);
+  };
   if (sort === "top") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => sel.score(b) - sel.score(a));
   else if (sort === "discussed") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => commentsOf(b.id) - commentsOf(a.id));
   else posts = [...posts].sort((a, b) => a.minutesAgo - b.minutesAgo);
@@ -167,19 +184,27 @@ export default function GroupPage() {
                   { id: "discussed", label: "Most discussed" },
                 ]}
               />
-              <span className="tabular text-[14px] text-muted">
-                {posts.length} {posts.length === 1 ? "post" : "posts"}
-              </span>
-            </div>
-            {tagOptions.length > 1 && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="text-[14px] text-muted">Filter by tag</span>
-                <ChipSelect label="Filter by tag" options={tagOptions} value={activeTags} onChange={setPicked} />
-                {activeTags.length > 0 && (
-                  <button type="button" onClick={() => setPicked([])} className="press text-[14px] font-semibold text-accent underline underline-offset-2">
-                    Clear
+              <span className="flex items-center gap-3 text-[14px]">
+                {filtering && (
+                  <button type="button" onClick={clearFilters} className="press font-semibold text-accent underline underline-offset-2">
+                    Clear filters
                   </button>
                 )}
+                <span className="tabular text-muted">
+                  {posts.length} {posts.length === 1 ? "post" : "posts"}
+                </span>
+              </span>
+            </div>
+            {groupPosts.length > 0 && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-x-3">
+                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">Filter by post type</span>
+                <ChipSelect label="Filter by post type" options={POST_TYPES} value={types} onChange={setTypes} />
+              </div>
+            )}
+            {tagOptions.length > 1 && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-x-3">
+                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">Filter by tag</span>
+                <ChipSelect label="Filter by tag" options={tagOptions} value={activeTags} onChange={setPicked} />
               </div>
             )}
             {!joined && !archived && (
@@ -190,13 +215,13 @@ export default function GroupPage() {
                 </Button>
               </Panel>
             )}
-            {posts.length === 0 && activeTags.length > 0 ? (
+            {posts.length === 0 && filtering ? (
               <EmptyState
                 art="sprout"
-                title={sort === "newest" ? "No posts with those tags." : "No posts with those tags this week."}
+                title={sort === "newest" ? "No posts match those filters." : "No posts match those filters this week."}
                 action={
-                  <Button variant="secondary" onClick={() => setPicked([])}>
-                    Clear tags
+                  <Button variant="secondary" onClick={clearFilters}>
+                    Clear filters
                   </Button>
                 }
               />

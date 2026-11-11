@@ -22,7 +22,7 @@ const PERSONAS = [
     kind: "member" as const,
     title: "Annie, six weeks in",
     body: "Stage III endometriosis, starting IVF. A Tree with 271 Sunlight, three groups, a mentor and an unread message request.",
-    href: "/home",
+    href: "/feed",
     art: <TreeArt level="Tree" size={110} />,
   },
   {

@@ -24,7 +24,7 @@ export default function ConfirmEmailPage() {
     setState(r.ok ? "done" : "expired");
   }, [hydrated]);
 
-  const next = !signedIn ? "/login" : step < 9 ? `/onboarding/${step}` : "/home";
+  const next = !signedIn ? "/login" : step < 9 ? `/onboarding/${step}` : "/feed";
 
   if (state === "expired") {
     return (

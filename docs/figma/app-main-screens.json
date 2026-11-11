@@ -1,8 +1,8 @@
-[["App", "Home", "/home"],
+[["App", "Feed", "/feed"],
  ["App", "Groups", "/groups"],
  ["App", "Group", "/groups/g-endo"],
  ["App", "Messages", "/messages"],
  ["App", "Notifications", "/notifications"],
- ["App", "Your profile", "/profile"],
+ ["App", "Dashboard", "/dashboard"],
  ["App", "Member profile", "/u/maya_after_endo"],
  ["App", "Conversation", "/messages/cv-maya"]]

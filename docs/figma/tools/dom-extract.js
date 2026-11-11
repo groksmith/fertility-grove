@@ -309,6 +309,14 @@
       return;
     }
 
+    // A CSS background picture (e.g. the landing's dry-brush edge): an image
+    // layer at the element's box, behind whatever the element draws.
+    const bgUrl = /url\(["']?([^"')]+)["']?\)/.exec(cs.backgroundImage || "");
+    if (bgUrl && r.width >= 1 && r.height >= 1) {
+      const path = imgPath(new URL(bgUrl[1], location.href).href);
+      if (path) list.push({ type: "rect", image: path, width: Math.round(r.width), height: Math.round(r.height), x: Math.round(r.left - origin.x), y: Math.round(r.top - origin.y), scaleMode: cs.backgroundSize === "contain" ? "FIT" : "FILL", name: path.split("/").pop() });
+    }
+
     const s = boxStyle(el, cs);
     const isField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
     if (isField && (el.type === "checkbox" || el.type === "radio" || el.type === "hidden")) return;

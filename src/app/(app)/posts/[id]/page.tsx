@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { PostVisibility } from "@/components/PostVisibility";
 import { useUnsavedGuard } from "@/components/UnsavedGuard";
 import { ArrowLeft, BadgeCheck, Bookmark, MoreHorizontal, Reply } from "lucide-react";
 import { GroupCover } from "@/components/art/Brand";
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui";
 import { act, sel, useStore } from "@/lib/store";
 import { SOURCES } from "@/lib/options";
-import type { Comment, Post, Source } from "@/lib/types";
+import type { Comment, Group, Post, Source } from "@/lib/types";
 
 function CommentComposer({
   post,
@@ -205,17 +206,23 @@ function CommentItem({ c, post, canTakePart, reply }: { c: Comment; post: Post; 
   );
 }
 
-function EditPost({ post, onDone }: { post: Post; onDone: () => void }) {
+function EditPost({ post, group, onDone }: { post: Post; group: Group; onDone: () => void }) {
   const [title, setTitle] = useState(post.title);
   const [body, setBody] = useState(post.body);
+  const [share, setShare] = useState({ allowSharing: post.allowSharing, showToVisitors: post.showToVisitors });
   const commit = () => {
     if (!title.trim() || !body.trim()) return false;
-    act.posts.edit(post.id, { title: title.trim(), body: body.trim() });
+    act.posts.edit(post.id, {
+      ...(title.trim() !== post.title || body.trim() !== post.body ? { title: title.trim(), body: body.trim() } : {}),
+      ...share,
+    });
     onDone();
     toast("Post updated");
     return true;
   };
-  const guard = useUnsavedGuard({ dirty: title !== post.title || body !== post.body, onSave: commit });
+  const dirty =
+    title !== post.title || body !== post.body || share.allowSharing !== post.allowSharing || share.showToVisitors !== post.showToVisitors;
+  const guard = useUnsavedGuard({ dirty, onSave: commit });
   return (
     <div className="mt-4 space-y-4">
       <Field label="Title" counter={<Counter value={title} max={150} />}>
@@ -224,6 +231,7 @@ function EditPost({ post, onDone }: { post: Post; onDone: () => void }) {
       <Field label="Your post" counter={<Counter value={body} max={5000} />}>
         <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={7} max={5000} hardStop />
       </Field>
+      <PostVisibility group={group} type={post.type} allowSharing={share.allowSharing} showToVisitors={share.showToVisitors} onChange={setShare} />
       <div className="flex gap-2">
         <Button
           disabled={!title.trim() || !body.trim()}
@@ -262,7 +270,7 @@ export default function PostPage() {
         art="lens"
         title="This post isn't available."
         body="It may have been deleted or removed."
-        action={<LinkButton href="/home" variant="secondary">Back to your grove</LinkButton>}
+        action={<LinkButton href="/feed" variant="secondary">Back to your feed</LinkButton>}
       />
     );
   }
@@ -332,7 +340,7 @@ export default function PostPage() {
                         ]
                       : [
                           { label: "Report post", onSelect: () => setReport(true) },
-                          { label: `Block ${sel.displayName(author)}`, danger: true, onSelect: () => { act.social.block(author.id); router.push("/home"); toast("Blocked"); } },
+                          { label: `Block ${sel.displayName(author)}`, danger: true, onSelect: () => { act.social.block(author.id); router.push("/feed"); toast("Blocked"); } },
                         ]),
                   ]}
                 />
@@ -345,7 +353,7 @@ export default function PostPage() {
               )}
 
               {editing ? (
-                <EditPost post={post} onDone={() => setEditing(false)} />
+                <EditPost post={post} group={group} onDone={() => setEditing(false)} />
               ) : hidden ? (
                 <div className="mt-5 rounded-[10px] bg-raised px-4 py-3 text-[14px] text-muted">
                   Hidden because members voted it down.{" "}

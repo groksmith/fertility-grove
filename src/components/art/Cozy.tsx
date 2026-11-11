@@ -204,7 +204,7 @@ export type SceneKey =
 export function sceneFor(path: string): SceneKey | null {
   if (/^\/groups\/[^/]+$/.test(path)) return "groups";
   const map: Record<string, SceneKey> = {
-    "/home": "home",
+    "/feed": "home",
     "/groups": "groups",
     "/stories": "stories",
     "/learn": "learn",
@@ -216,7 +216,7 @@ export function sceneFor(path: string): SceneKey | null {
     "/notifications": "notifications",
     "/settings": "settings",
     "/help": "help",
-    "/profile": "profile",
+    "/dashboard": "profile",
   };
   return map[path] ?? null;
 }

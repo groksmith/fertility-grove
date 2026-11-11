@@ -259,6 +259,8 @@ export const MEMBERS: Member[] = [
     paths: ["Own eggs and sperm"],
     followers: 58,
     aboutMe: "Freezing my eggs at 36. Asking all the questions so you don't have to.",
+    // Blocked the demo member: never shown to them, as on group pages (PRD §8).
+    blocks: ["me"],
   }),
   m({
     id: "m-tess",

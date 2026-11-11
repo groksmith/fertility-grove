@@ -176,9 +176,9 @@ export function profileGaps(s: State) {
   const gaps: { key: string; label: string; href: string }[] = [];
   if (s.me.healthConsent && !s.me.diagnoses.length) gaps.push({ key: "diagnosis", label: "Add a diagnosis", href: "/settings#journey" });
   if (s.me.healthConsent && !s.me.paths.length) gaps.push({ key: "path", label: "Add your path to parenthood", href: "/settings#journey" });
-  if (!s.me.hasPhoto && s.me.avatarPreset < 0) gaps.push({ key: "photo", label: "Choose a photo or avatar", href: "/profile?edit=1" });
-  if (!s.me.aboutMe) gaps.push({ key: "about", label: "Write a line about you", href: "/profile?edit=1" });
-  if (!s.me.myStory) gaps.push({ key: "story", label: "Share your story", href: "/profile?edit=1" });
+  if (!s.me.hasPhoto && s.me.avatarPreset < 0) gaps.push({ key: "photo", label: "Choose a photo or avatar", href: "/dashboard?edit=1" });
+  if (!s.me.aboutMe) gaps.push({ key: "aboutMe", label: "Write a line about you", href: "/dashboard?edit=1" });
+  if (!s.me.myStory) gaps.push({ key: "story", label: "Share your story", href: "/dashboard?edit=1" });
   return gaps;
 }
 

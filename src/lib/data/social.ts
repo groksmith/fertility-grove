@@ -69,6 +69,45 @@ export const MENTOR_REQUESTS: MentorRequest[] = [
     status: "accepted",
     daysAgo: 3,
   },
+  // More than 4, so the Dashboard's Mentoring card shows its order (PRD §6):
+  // waiting, connected, then finished ones, newest first. The oldest is cut.
+  {
+    id: "mr-2",
+    mentorId: "m-priya",
+    menteeId: "me",
+    message: "Hi Priya, could I ask how you kept track of your cycles? I'm starting to feel lost in the numbers.",
+    helpWith: ["IVF"],
+    status: "waiting",
+    daysAgo: 1,
+  },
+  {
+    id: "mr-3",
+    mentorId: "m-noah",
+    menteeId: "me",
+    message: "Hi Noah, my partner is finding this hard to talk about. Could I ask how you two handled it?",
+    helpWith: ["Relationships"],
+    status: "declined",
+    note: "I'm stretched thin right now. Please try again in a month.",
+    daysAgo: 16,
+  },
+  {
+    id: "mr-4",
+    mentorId: "m-dana",
+    menteeId: "me",
+    message: "Hi Dana, I'd love to hear how you decided between clinics.",
+    helpWith: ["IVF"],
+    status: "expired",
+    daysAgo: 30,
+  },
+  {
+    id: "mr-5",
+    mentorId: "m-dana",
+    menteeId: "me",
+    message: "Hi Dana, I was just diagnosed and don't know where to begin.",
+    helpWith: ["Endometriosis"],
+    status: "ended",
+    daysAgo: 44,
+  },
 ];
 
 export const NOTIFICATIONS: Notification[] = [
@@ -76,7 +115,7 @@ export const NOTIFICATIONS: Notification[] = [
   { id: "n-2", kind: "message", text: "Maya R. sent you a message", href: "/messages/cv-maya", minutesAgo: 35, read: false, actorId: "m-maya" },
   { id: "n-3", kind: "message-request", text: "@marcus_mf sent you a message request", href: "/messages/cv-marcus", minutesAgo: 180, read: false, actorId: "m-marcus" },
   { id: "n-4", kind: "follow", text: "@jules_waits started following you", href: "/u/jules_waits", minutesAgo: 400, read: true, actorId: "m-jules" },
-  { id: "n-5", kind: "match", text: "3 new people on your path this week", href: "/home#people", minutesAgo: 1440, read: true },
+  { id: "n-5", kind: "match", text: "3 new people on your path this week", href: "/feed#people", minutesAgo: 1440, read: true },
   { id: "n-6", kind: "mentor", text: "Maya R. accepted your mentor request", href: "/messages/cv-maya", minutesAgo: 2880, read: true, actorId: "m-maya" },
 ];
 

@@ -1,17 +1,23 @@
 "use client";
 
-/* A beta invite link. Opening it unlocks sign-up on this device. */
+/* A beta invite link, /invite/{code}. The code is the member's fixed invite
+   code (PRD §10), never their handle, so it keeps working after a handle
+   change and never credits whoever takes an old handle. Opening it unlocks
+   sign-up on this device. */
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Button } from "@/components/ui";
-import { act } from "@/lib/store";
+import { inviteOwner } from "@/lib/api";
+import { act, sel, useStore } from "@/lib/store";
 
 export default function InvitePage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
-  const from = code && code !== "beta" ? `@${decodeURIComponent(code)}` : "The Fertility Grove team";
+  // TODO(api): the backend resolves the code to the member who sent it.
+  const owner = inviteOwner(useStore(), decodeURIComponent(code ?? ""));
+  const from = owner ? sel.displayName(owner) : code && code !== "beta" ? "A member" : "The Fertility Grove team";
   return (
     <AuthFrame
       title="You're invited"

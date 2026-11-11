@@ -239,6 +239,11 @@ function SiteNav() {
               </li>
             ))}
             <li>
+              <Link href="/community" className="press inline-flex h-10 items-center rounded-full px-4 text-[15px] font-semibold text-ink-soft transition-colors duration-150 hover:text-ink">
+                Read posts
+              </Link>
+            </li>
+            <li>
               <Link href="/help" className="press inline-flex h-10 items-center rounded-full px-4 text-[15px] font-semibold text-ink-soft transition-colors duration-150 hover:text-ink">
                 Help
               </Link>
@@ -246,7 +251,7 @@ function SiteNav() {
           </ul>
           <div className="ml-auto flex items-center gap-2 lg:ml-0 lg:justify-self-end">
             {signedIn ? (
-              <Link href="/home" className="press inline-flex h-10 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-white hover:bg-black">
+              <Link href="/feed" className="press inline-flex h-10 items-center rounded-full bg-accent px-5 text-[15px] font-semibold text-white hover:bg-black">
                 Your grove
               </Link>
             ) : (
@@ -289,6 +294,11 @@ function SiteNav() {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link href="/community" className="flex h-12 items-center text-[17px] font-semibold text-ink">
+                  Read posts
+                </Link>
+              </li>
               <li>
                 <Link href="/help" className="flex h-12 items-center text-[17px] font-semibold text-ink">
                   Help
@@ -344,7 +354,13 @@ function Hero() {
                 Sign in
               </PillButton>
             </div>
-            <p className="mt-3 text-[14px] text-ink-soft">Invite-only during the beta. Ask a member for their invite link.</p>
+            <p className="mt-3 text-[14px] text-ink-soft">
+              Invite-only during the beta. Ask a member for their invite link, or{" "}
+              <Link href="/community" className="font-semibold text-ink underline underline-offset-2">
+                read posts members shared
+              </Link>
+              .
+            </p>
           </div>
         </div>
 

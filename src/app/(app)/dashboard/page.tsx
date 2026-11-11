@@ -1,15 +1,21 @@
 "use client";
 
-/* Your profile. The question: how is my tree growing, and what do others see?
-   The tree leads; Sunlight history explains every point; "How others see me"
-   shows exactly the public view; edit mode follows PRD §6's field rules. */
+/* Your dashboard. The question: what's mine here, and how is it going? It
+   holds everything that was the profile (the tree, Sunlight history, "How
+   others see me", editing per PRD §6) and gathers what you've made and joined
+   into tabs: an overview with your latest activity, then all your posts, your
+   replies, your groups and what you've saved. Followers, mentoring and your
+   partner sit beside every tab. The tab lives in the URL (?tab=posts), so a
+   link can open straight onto one. */
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Eye, PenLine, X } from "lucide-react";
+import { Eye, MessageSquare, PenLine, X } from "lucide-react";
+import { GroupCover } from "@/components/art/Brand";
 import { Spot } from "@/components/art/Scenes";
 import { TreeArt } from "@/components/art/Tree";
+import { PostCard } from "@/components/PostCard";
 import {
   Avatar,
   AvatarPicker,
@@ -17,24 +23,50 @@ import {
   Button,
   Choices,
   Counter,
+  Dialog,
+  EmptyState,
   Field,
   HueSwatches,
   Input,
   LinkButton,
   Name,
   Panel,
+  Person,
   Select,
   Tabs,
   Textarea,
+  TypeChip,
   toast,
 } from "@/components/ui";
 import { ReferFriend } from "@/components/ReferFriend";
 import { requestLeave, useUnsavedGuard } from "@/components/UnsavedGuard";
-import { act, sel, useStore } from "@/lib/store";
+import { act, sel, useStore, type State } from "@/lib/store";
 import { PRONOUNS } from "@/lib/options";
 import { MSG, checks } from "@/lib/rules/validation";
 import { LEVELS, levelIndex, nextLevel, progress } from "@/lib/rules/sunlight";
-import type { Hue } from "@/lib/types";
+import type { Hue, MentorRequestStatus, Post } from "@/lib/types";
+
+const TABS = ["overview", "posts", "replies", "groups", "saved"] as const;
+type Tab = (typeof TABS)[number];
+
+const ago = (minutes: number) => (minutes < 1 ? "just now" : `${sel.timeAgo(minutes)} ago`);
+
+/** Everything of yours the tabs show, worked out once per render. What a
+    moderator removed stays listed for you alone (PRD §6); what you deleted
+    doesn't. */
+function mine(s: State) {
+  const posts = s.posts
+    .filter((p) => p.authorId === "me" && p.status !== "deleted")
+    .sort((a, b) => a.minutesAgo - b.minutesAgo);
+  const replies = s.comments
+    .filter((c) => c.authorId === "me" && c.status !== "deleted")
+    .sort((a, b) => a.minutesAgo - b.minutesAgo);
+  const stories = s.stories.filter((x) => x.authorId === "me");
+  const groups = s.groups.filter((g) => s.joined.includes(g.id));
+  const saved = sel.savedItems(s);
+  const savedCount = saved.posts.length + saved.stories.length + saved.articles.length;
+  return { posts, replies, stories, groups, saved, savedCount };
+}
 
 
 function TreeHero() {
@@ -415,47 +447,458 @@ function Connections() {
   );
 }
 
-function Profile() {
+/** Your latest posts and replies, newest first, with a way into each full list. */
+function RecentActivity({ onOpen }: { onOpen: (t: Tab) => void }) {
+  const s = useStore();
+  const { posts: allPosts, replies: allReplies } = mine(s);
+  const posts = allPosts.filter((p) => p.status !== "removed");
+  const replies = allReplies.filter((c) => c.status !== "removed");
+  const items = [
+    ...posts.map((p) => ({ kind: "post" as const, id: p.id, minutesAgo: p.minutesAgo, post: p })),
+    ...replies.map((c) => ({ kind: "reply" as const, id: c.id, minutesAgo: c.minutesAgo, comment: c, post: s.posts.find((p) => p.id === c.postId) })),
+  ]
+    .sort((a, b) => a.minutesAgo - b.minutesAgo)
+    .slice(0, 4);
+  const groupName = (id?: string) => s.groups.find((g) => g.id === id)?.name;
+
+  return (
+    <Panel className="p-5 sm:p-6" aria-labelledby="activity-h">
+      <h2 id="activity-h" className="text-[18px] font-semibold">Recent activity</h2>
+      {items.length === 0 ? (
+        <p className="mt-2 text-[15px] text-muted">
+          Nothing yet. Your posts and replies will collect here.{" "}
+          <Link href="/posts/new" className="font-semibold text-accent underline underline-offset-2">
+            Write a post
+          </Link>
+        </p>
+      ) : (
+        <ul className="mt-2 divide-y divide-line">
+          {items.map((it) => (
+            <li key={it.id} className="flex items-start gap-3 py-3.5">
+              <span aria-hidden className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-raised text-ink-soft">
+                {it.kind === "post" ? <PenLine size={15} /> : <MessageSquare size={15} />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] text-muted">
+                  {it.kind === "post" ? "You posted" : "You replied"}
+                  {groupName(it.post?.groupId) && <> in {groupName(it.post?.groupId)}</>} · {ago(it.minutesAgo)}
+                </p>
+                {it.post && (
+                  <Link href={`/posts/${it.post.id}${it.kind === "reply" ? "#comments" : ""}`} className="mt-0.5 block text-[15px] leading-snug font-semibold text-ink hover:underline">
+                    {it.post.title}
+                  </Link>
+                )}
+                {it.kind === "reply" && <p className="mt-1 line-clamp-2 text-[14px] leading-relaxed text-ink-soft">{it.comment.body}</p>}
+                {it.kind === "post" && (
+                  <p className="tabular mt-1 text-[13px] text-muted">
+                    {sel.plural(sel.score(it.post), "vote")} · {sel.plural(sel.commentCount(s, it.post.id), "reply", "replies")}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(posts.length > 0 || replies.length > 0) && (
+        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 border-t border-line pt-3 text-[14px]">
+          <button type="button" onClick={() => onOpen("posts")} className="press font-semibold text-accent underline underline-offset-2">
+            All your posts
+          </button>
+          <button type="button" onClick={() => onOpen("replies")} className="press font-semibold text-accent underline underline-offset-2">
+            All your replies
+          </button>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/** "Removed by a moderator", with Appeal (PRD §19) and Delete. One appeal per
+    decision. TODO(api): no posts or appeals API yet; this edits the mock. */
+function Removed({ what, appealed, onAppeal, onDelete }: { what: "post" | "reply"; appealed?: boolean; onAppeal: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState("");
+  const [err, setErr] = useState<string>();
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4">
+      <p className="min-w-0 flex-1 basis-[220px] text-[13px] font-semibold text-coral-ink">
+        Removed by a moderator · Only you can see this
+        {appealed && <span className="block font-normal text-muted">Appeal sent. We&apos;ll tell you the decision here and by email.</span>}
+      </p>
+      <div className="flex gap-2">
+        {!appealed && (
+          <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
+            Appeal
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" onClick={onDelete}>
+          Delete
+        </Button>
+      </div>
+      <Dialog open={open} onClose={() => setOpen(false)} title={`Appeal the removal of your ${what}`} description="A person on our team will look at it again.">
+        <form
+          noValidate
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!why.trim()) return setErr("Tell us why this should be reviewed again.");
+            onAppeal();
+            setOpen(false);
+            toast("Appeal sent");
+          }}
+        >
+          <Field label="Why this should be reviewed again" error={err} counter={<Counter value={why} max={500} />}>
+            <Textarea value={why} onChange={(e) => setWhy(e.target.value)} max={500} hardStop rows={4} />
+          </Field>
+          <p className="text-[13px] text-muted">One appeal per decision, within 14 days.</p>
+          <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
+            <Button type="submit">Send appeal</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+    </div>
+  );
+}
+
+function RemovedPost({ post }: { post: Post }) {
+  const s = useStore();
+  const group = s.groups.find((g) => g.id === post.groupId);
+  return (
+    <Panel as="article" className="p-5 sm:p-6">
+      <p className="text-[13px] text-muted">
+        {group ? <>{group.name} · </> : null}
+        {ago(post.minutesAgo)}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <TypeChip type={post.type} />
+      </div>
+      <h2 className="mt-2 text-[18px] leading-snug font-semibold text-ink">{post.title}</h2>
+      <p className="mt-1.5 line-clamp-3 text-[15px] leading-relaxed text-ink-soft">{post.body}</p>
+      <Removed
+        what="post"
+        appealed={post.appealed}
+        onAppeal={() => act.posts.appeal(post.id)}
+        onDelete={() => {
+          act.posts.remove(post.id);
+          toast("Post deleted");
+        }}
+      />
+    </Panel>
+  );
+}
+
+function PostsTab() {
+  const s = useStore();
+  const { posts, stories } = mine(s);
+  if (posts.length === 0 && stories.length === 0) {
+    return (
+      <EmptyState
+        art="sprout"
+        title="You haven't posted yet."
+        body="Ask a question or share where you are. Your posts collect here."
+        action={<LinkButton href="/posts/new">Write a post</LinkButton>}
+      />
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <ul className="space-y-4">
+        {posts.map((p) => (
+          <li key={p.id}>{p.status === "removed" ? <RemovedPost post={p} /> : <PostCard post={p} />}</li>
+        ))}
+      </ul>
+      {stories.length > 0 && (
+        <Panel className="p-5 sm:p-6" aria-labelledby="my-stories-h">
+          <h2 id="my-stories-h" className="text-[16px] font-semibold">Your stories</h2>
+          <ul className="mt-2 divide-y divide-line">
+            {stories.map((st) => (
+              <li key={st.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+                <TypeChip type={st.type} />
+                <Link href="/stories" className="min-w-0 flex-1 text-[15px] font-semibold text-ink hover:underline">
+                  {st.title}
+                </Link>
+                <span className="text-[13px] text-muted">{ago(st.minutesAgo)}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+function RepliesTab() {
+  const s = useStore();
+  const { replies } = mine(s);
+  if (replies.length === 0) {
+    return <EmptyState art="birds" title="No replies yet." body="Replies you leave on other members' posts collect here." action={<LinkButton href="/feed" variant="secondary">Go to your feed</LinkButton>} />;
+  }
+  return (
+    <ul className="space-y-3">
+      {replies.map((c) => {
+        const post = s.posts.find((p) => p.id === c.postId);
+        const group = s.groups.find((g) => g.id === post?.groupId);
+        return (
+          <li key={c.id}>
+            <Panel className="p-5">
+              <p className="text-[13px] text-muted">
+                {group ? <>{group.name} · </> : null}
+                {ago(c.minutesAgo)}
+                {c.status === "held" && <> · Only you can see this for now</>}
+              </p>
+              {post && (
+                <Link href={`/posts/${post.id}#comments`} className="mt-0.5 block text-[15px] leading-snug font-semibold text-ink hover:underline">
+                  On “{post.title}”
+                </Link>
+              )}
+              <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-ink-soft">{c.body}</p>
+              {c.status === "removed" ? (
+                <Removed
+                  what="reply"
+                  appealed={c.appealed}
+                  onAppeal={() => act.posts.appealComment(c.id)}
+                  onDelete={() => {
+                    act.posts.removeComment(c.id);
+                    toast("Reply deleted");
+                  }}
+                />
+              ) : (
+                <p className="tabular mt-3 text-[13px] text-muted">{sel.plural(sel.score(c), "vote")}</p>
+              )}
+            </Panel>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function GroupsTab() {
+  const s = useStore();
+  const { groups, posts } = mine(s);
+  if (groups.length === 0) {
+    return <EmptyState art="canopy" title="You haven't joined a group yet." body="Groups are where posts live. Join one that matches where you are." action={<LinkButton href="/groups">Browse groups</LinkButton>} />;
+  }
+  return (
+    <div className="space-y-4">
+      <Panel>
+        <ul className="divide-y divide-line">
+        {groups.map((g) => {
+          const yours = posts.filter((p) => p.groupId === g.id).length;
+          const muted = s.muted.includes(g.id);
+          return (
+            <li key={g.id} className="flex items-center gap-4 p-4 sm:px-5">
+              <GroupCover group={g} size={52} />
+              <div className="min-w-0 flex-1">
+                <Link href={`/groups/${g.id}`} className="block truncate text-[15px] font-semibold text-ink hover:underline">
+                  {g.name}
+                </Link>
+                <p className="tabular truncate text-[13px] text-muted">
+                  {sel.plural(g.members, "member")} · {sel.plural(g.postsThisWeek, "post")} this week
+                  {yours > 0 && <> · {sel.plural(yours, "post")} from you</>}
+                  {muted && <> · Muted</>}
+                </p>
+              </div>
+              <LinkButton href={`/posts/new?group=${g.id}`} variant="ghost" size="sm" aria-label={`Write a post in ${g.name}`}>
+                <PenLine size={15} /> <span className="hidden sm:inline">Post</span>
+              </LinkButton>
+            </li>
+          );
+        })}
+        </ul>
+      </Panel>
+      <LinkButton href="/groups" variant="secondary">
+        Find more groups
+      </LinkButton>
+    </div>
+  );
+}
+
+function SavedTab() {
+  const s = useStore();
+  const { saved, savedCount } = mine(s);
+  if (savedCount === 0) {
+    return <EmptyState art="bookmark" title="Nothing saved yet." body="Save posts, stories and articles to find them again before your next appointment." />;
+  }
+  const rows: { key: string; kind: string; title: string; href: string; meta?: string }[] = [
+    ...saved.posts.map((p) => ({ key: p.id, kind: "Post", title: p.title, href: `/posts/${p.id}`, meta: s.groups.find((g) => g.id === p.groupId)?.name })),
+    ...saved.stories.map((st) => ({ key: st.id, kind: "Story", title: st.title, href: "/stories", meta: st.type })),
+    ...saved.articles.map((a) => ({ key: a!.slug, kind: "Article", title: a!.title, href: `/learn/${a!.slug}`, meta: "Learn library" })),
+  ];
+  return (
+    <div className="space-y-4">
+      <Panel>
+        <ul className="divide-y divide-line">
+        {rows.map((r) => (
+          <li key={r.key} className="flex items-center gap-4 p-4 sm:px-5">
+            <span className="w-16 shrink-0 text-[13px] font-semibold text-muted">{r.kind}</span>
+            <div className="min-w-0 flex-1">
+              <Link href={r.href} className="block text-[15px] leading-snug font-semibold text-ink hover:underline">
+                {r.title}
+              </Link>
+              {r.meta && <p className="truncate text-[13px] text-muted">{r.meta}</p>}
+            </div>
+          </li>
+        ))}
+        </ul>
+      </Panel>
+      <LinkButton href="/saved" variant="secondary">
+        Manage saved
+      </LinkButton>
+    </div>
+  );
+}
+
+/* The card's order (PRD §6): open ones first, waiting then connected, then the
+   finished ones, each group newest first. "Not available right now" means the
+   mentor declined. */
+const MENTOR_ORDER: Record<MentorRequestStatus, number> = { waiting: 0, accepted: 1, declined: 2, expired: 2, ended: 2 };
+
+const MENTOR_STATUS: Record<MentorRequestStatus, string> = {
+  waiting: "Waiting for a reply",
+  accepted: "Connected",
+  declined: "Not available right now",
+  expired: "Request expired",
+  ended: "Mentoring ended",
+};
+
+/** Your mentors, and the members you mentor. Hidden until there is one. */
+function MentoringCard() {
+  const s = useStore();
+  // TODO(api): no mentoring API yet; this orders the mock requests.
+  const rows = s.mentorRequests
+    .filter((r) => r.menteeId === "me" || r.mentorId === "me")
+    .sort((a, b) => MENTOR_ORDER[a.status] - MENTOR_ORDER[b.status] || a.daysAgo - b.daysAgo)
+    .map((r) => {
+      const asMentee = r.menteeId === "me";
+      const other = sel.person(s, asMentee ? r.mentorId : r.menteeId);
+      return other ? { id: r.id, other, role: asMentee ? "Your mentor" : "You mentor them", status: MENTOR_STATUS[r.status] } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+  if (!rows.length) return null;
+  return (
+    <Panel className="p-5" aria-labelledby="mentoring-h">
+      <h2 id="mentoring-h" className="text-[16px] font-semibold">Mentoring</h2>
+      <ul className="mt-3 space-y-3">
+        {rows.map((r) => (
+          <li key={r!.id}>
+            <Person member={r!.other} size={36} sub={`${r!.role} · ${r!.status}`} />
+          </li>
+        ))}
+      </ul>
+      <Link href="/mentors" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
+        Open mentors
+      </Link>
+    </Panel>
+  );
+}
+
+function Dashboard() {
   const params = useSearchParams();
   const router = useRouter();
   const s = useStore();
   const me = sel.meAsMember(s);
   const editing = params.get("edit") === "1";
+  const asked = params.get("tab") as Tab | null;
+  const tab: Tab = !editing && asked && TABS.includes(asked) ? asked : "overview";
   const [preview, setPreview] = useState(false);
   const consent = s.me.healthConsent;
+  const counts = mine(s);
+
+  const open = (t: Tab) => {
+    setPreview(false);
+    router.replace(t === "overview" ? "/dashboard" : `/dashboard?tab=${t}`, { scroll: false });
+  };
+  const togglePreview = () => {
+    if (tab !== "overview") open("overview");
+    setPreview((v) => !v);
+  };
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="min-w-0 space-y-4">
-        <header className="flex flex-wrap items-center gap-4">
+    <>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
+        <div className="flex min-w-0 items-center gap-4">
           <Avatar member={me} size={64} />
-          <div className="min-w-0 flex-1">
-            <h1 className="serif text-[28px] leading-tight [overflow-wrap:anywhere] lg:text-[32px]">{sel.displayName(me)}</h1>
-            <p className="text-[14px] text-muted">
-              {s.me.showRealName ? `@${s.me.handle}` : `${s.me.firstName} ${s.me.lastName.charAt(0)}. (only you see your name)`}
-              {me.pronouns && <> · {me.pronouns}</>}
+          <div className="min-w-0">
+            <h1 className="serif text-[28px] leading-[1.1] text-ink lg:text-[32px]">Dashboard</h1>
+            <p className="mt-1.5 text-[15px] text-ink-soft [overflow-wrap:anywhere]">
+              <span className="font-semibold text-ink">{sel.displayName(me)}</span>
+              <span className="text-muted">
+                {" "}
+                · {s.me.showRealName ? `@${s.me.handle}` : `${s.me.firstName} ${s.me.lastName.charAt(0)}. (only you see your name)`}
+                {me.pronouns && <> · {me.pronouns}</>}
+              </span>
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" aria-pressed={preview} onClick={() => setPreview((v) => !v)}>
-              <Eye size={16} /> {preview ? "Back to my view" : "How others see me"}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" aria-pressed={preview} onClick={togglePreview}>
+            <Eye size={16} /> {preview ? "Back to my view" : "How others see me"}
+          </Button>
+          {!editing && (
+            <Button onClick={() => router.push("/dashboard?edit=1")}>
+              <PenLine size={16} /> Edit profile
             </Button>
-            {!editing && (
-              <Button onClick={() => router.push("/profile?edit=1")}>
-                <PenLine size={16} /> Edit
-              </Button>
-            )}
-          </div>
-        </header>
+          )}
+        </div>
+      </header>
 
-        {editing ? <EditProfile onDone={() => router.push("/profile")} /> : preview ? <PublicPreview /> : null}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-4">
+          <Tabs
+            label="Dashboard"
+            value={tab}
+            onChange={open}
+            tabs={[
+              { id: "overview", label: "Overview" },
+              { id: "posts", label: `Posts ${counts.posts.length + counts.stories.length}` },
+              { id: "replies", label: `Replies ${counts.replies.length}` },
+              { id: "groups", label: `Groups ${counts.groups.length}` },
+              { id: "saved", label: `Saved ${counts.savedCount}` },
+            ]}
+          />
+          {tab === "posts" && <PostsTab />}
+          {tab === "replies" && <RepliesTab />}
+          {tab === "groups" && <GroupsTab />}
+          {tab === "saved" && <SavedTab />}
+          {tab === "overview" && (
+            <Overview editing={editing} preview={preview} consent={consent} onOpen={open} onDoneEditing={() => router.push("/dashboard")} />
+          )}
+        </div>
+        <aside className="space-y-4" aria-label="Your people">
+          <Connections />
+          <MentoringCard />
+          <PartnerCard />
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function Overview({
+  editing,
+  preview,
+  consent,
+  onOpen,
+  onDoneEditing,
+}: {
+  editing: boolean;
+  preview: boolean;
+  consent: boolean;
+  onOpen: (t: Tab) => void;
+  onDoneEditing: () => void;
+}) {
+  const s = useStore();
+  return (
+    <>
+        {editing ? <EditProfile onDone={onDoneEditing} /> : preview ? <PublicPreview /> : null}
         <TreeHero />
 
-        {!editing && !preview && (
-          <Panel className="p-5 sm:p-6">
-            <ReferFriend handle={s.me.handle} />
-          </Panel>
-        )}
+        {!editing && !preview && <RecentActivity onOpen={onOpen} />}
 
         {!editing && !preview && (
           <Panel className="space-y-5 p-5 sm:p-7">
@@ -504,29 +947,21 @@ function Profile() {
             </section>
           </Panel>
         )}
+
+        {!editing && !preview && (
+          <Panel className="p-5 sm:p-6">
+            <ReferFriend />
+          </Panel>
+        )}
         <SunlightHistory />
-      </div>
-      <aside className="space-y-4">
-        <Connections />
-        <PartnerCard />
-        <Panel className="flex items-center justify-between gap-3 p-5">
-          <div>
-            <h2 className="text-[16px] font-semibold">Saved</h2>
-            <p className="text-[14px] text-muted">Posts and articles for your next appointment.</p>
-          </div>
-          <LinkButton href="/saved" variant="secondary" size="sm">
-            Open
-          </LinkButton>
-        </Panel>
-      </aside>
-    </div>
+    </>
   );
 }
 
-export default function ProfilePage() {
+export default function DashboardPage() {
   return (
     <Suspense>
-      <Profile />
+      <Dashboard />
     </Suspense>
   );
 }

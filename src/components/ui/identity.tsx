@@ -181,7 +181,7 @@ export function Name({
 }) {
   const name = sel.displayName(member);
   const team = member.badges.includes("team");
-  const href = member.id === "me" ? "/profile" : `/u/${member.handle}`;
+  const href = member.id === "me" ? "/dashboard" : `/u/${member.handle}`;
   return (
     <span className={`inline-flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 ${className}`}>
       {/* The name and its tree stay together; long handles truncate, never wrap away from the tree. */}
