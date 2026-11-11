@@ -33,12 +33,12 @@ Demo sign-in: `annie.m@grove.test` / `sunlight-demo`.
 | Landing, Help, Terms, Privacy | `/`, `/help`, `/terms`, `/privacy` | §4 |
 | Sign-up (invite gate, paused state, Google or email), sign-in (lockout), reset, confirm email | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/invite/[code]` | §4 |
 | Onboarding, 8 screens, consent, matching on screen 8 | `/onboarding/1` … `/onboarding/8` (`?preview=1` to view when already onboarded) | §5, §11 |
-| Home feed (For you / Following, sort, filters, matched posts, Complete your profile) | `/home` | §3, §8, §11 |
+| Feed (For you / Following, sort, filters, matched posts, Complete your profile) | `/feed` (`/home` redirects) | §3, §8, §11 |
 | Groups and group pages (join, mute, leave, members-only, archived) | `/groups`, `/groups/[id]` | §8 |
 | Posts, comments, votes, source tags, one-level replies, collapse at −5 | `/posts/new`, `/posts/[id]` | §9 |
 | Success stories | `/stories`, `/stories/new` | §10 |
 | People search, member profiles, follow, message, request mentoring | `/people`, `/u/[handle]` | §6, §10, §12 |
-| Your profile, Sunlight history, How others see me | `/profile` | §6, §13 |
+| Dashboard: your profile, Sunlight history, How others see me, and all your posts, replies, groups and saved items | `/dashboard` (`/profile` redirects) | §6, §13 |
 | Learn library (6 articles) | `/learn`, `/learn/[slug]` | §16 |
 | Grove Guide AI, appointment questions | `/guide`, `/guide/appointments` | §17 |
 | AI credits and demo checkout | `/credits`, `/credits/checkout` | §18 |

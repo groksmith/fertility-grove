@@ -319,7 +319,7 @@ export default function MentorsPage() {
             ) : (
               <p className="mt-2 text-[14px] text-muted">
                 Mentoring opens at Blossom Tree, 750 Sunlight. You have <span className="tabular">{me.sunlight.toLocaleString()}</span>.{" "}
-                <Link href="/profile#sunlight" className="font-semibold text-accent">How Sunlight works</Link>
+                <Link href="/dashboard#sunlight" className="font-semibold text-accent">How Sunlight works</Link>
               </p>
             )}
           </Panel>

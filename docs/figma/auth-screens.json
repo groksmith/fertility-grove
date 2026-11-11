@@ -1,0 +1,7 @@
+[["Auth", "Sign in", "/login", "out"],
+ ["Auth", "Create account", "/signup", "out"],
+ ["Auth", "Forgot password", "/forgot-password", "out"],
+ ["Auth", "Reset password", "/reset-password", "out"],
+ ["Auth", "Confirm email", "/confirm-email", "out"],
+ ["Auth", "Beta invite", "/invite/grove-beta", "out"],
+ ["Auth", "Partner invite", "/partner-invite/demo", "out"]]

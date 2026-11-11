@@ -1,6 +1,6 @@
 # Figma screen inventory
 
-Every screen to rebuild in Figma, each at three artboards: **Desktop 1440 · Tablet 768 · Phone 390**. Artboard names follow `Area / Screen / Size` (for example `App / Home / Phone 390`). "Signed out" screens are captured with no session; the rest as the demo member, Annie. Onboarding uses `?preview=1` to open any step.
+Every screen to rebuild in Figma, each at three artboards: **Desktop 1440 · Tablet 768 · Phone 390**. Artboard names follow `Area / Screen / Size` (for example `App / Feed / Phone 390`). "Signed out" screens are captured with no session; the rest as the demo member, Annie. Onboarding uses `?preview=1` to open any step.
 
 States to add on the States page later: account menu open, phone menu sheet, sign-out confirmation, unsaved-changes dialog, empty states (Saved, Messages, Notifications), toasts, the Guide's crisis answer, suspended and restore screens.
 
@@ -45,7 +45,7 @@ States to add on the States page later: account menu open, phone menu sheet, sig
 
 | Screen | Route | Session |
 |---|---|---|
-| Home | `/home` | Member |
+| Feed | `/feed` | Member |
 | Groups | `/groups` | Member |
 | Group | `/groups/g-endo` | Member |
 | Post | `/posts/p-1` | Member |
@@ -65,8 +65,8 @@ States to add on the States page later: account menu open, phone menu sheet, sig
 | Notifications | `/notifications` | Member |
 | Find people | `/people?q=han` | Member |
 | Member profile | `/u/maya_after_endo` | Member |
-| Your profile | `/profile` | Member |
-| Edit profile | `/profile?edit=1` | Member |
+| Dashboard | `/dashboard` | Member |
+| Edit profile | `/dashboard?edit=1` | Member |
 | Saved | `/saved` | Member |
 | Family space | `/family` | Member |
 | Family note | `/family/notes/fn-1` | Member |

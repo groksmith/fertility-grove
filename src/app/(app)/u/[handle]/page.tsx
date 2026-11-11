@@ -84,12 +84,12 @@ export default function MemberPage() {
   const isMe = handle === s.me.handle;
 
   useEffect(() => {
-    if (isMe) router.replace("/profile");
+    if (isMe) router.replace("/dashboard");
   }, [isMe, router]);
 
   if (isMe) return null;
   if (!member || member.unavailable || s.blocked.includes(member.id)) {
-    return <EmptyState art="lens" title="This profile isn't available." action={<LinkButton href="/home" variant="secondary">Back to your grove</LinkButton>} />;
+    return <EmptyState art="lens" title="This profile isn't available." action={<LinkButton href="/feed" variant="secondary">Back to your feed</LinkButton>} />;
   }
 
   const following = s.following.includes(member.id);
@@ -146,7 +146,7 @@ export default function MemberPage() {
                     onSelect: () => {
                       act.social.block(member.id);
                       toast("Blocked. They can't message you, follow you or see your posts.");
-                      router.push("/home");
+                      router.push("/feed");
                     },
                   },
                 ]}

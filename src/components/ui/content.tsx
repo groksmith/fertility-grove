@@ -64,7 +64,8 @@ export function TypeChip({ type }: { type: PostType | string }) {
   return <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold ${tone}`}>{type}</span>;
 }
 
-export function SourceLabel({ source, link }: { source: Source; link?: string }) {
+export function SourceLabel({ source, link }: { source?: Source; link?: string }) {
+  if (!source) return null; // a source is optional on posts
   return (
     <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--grey-300)]" />

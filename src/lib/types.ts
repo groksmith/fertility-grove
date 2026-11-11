@@ -50,6 +50,8 @@ export interface Member {
   follows: string[];
   joinedDaysAgo: number;
   unavailable?: "suspended" | "deleting";
+  /** Members this member blocked. Only "me" matters in the prototype. */
+  blocks?: string[];
 }
 
 export interface MentorProfile {
@@ -73,6 +75,9 @@ export interface Group {
   readAccess: "any" | "members-only";
   rules?: string;
   status: "active" | "archived" | "draft";
+  /** PRD §8: guests may browse this group and its posts shown to visitors.
+      Never true while readAccess is "members-only". */
+  visibleToGuests: boolean;
   community: CommunityId | "both";
   members: number;
   postsThisWeek: number;
@@ -116,6 +121,8 @@ export interface Comment {
   myVote: Vote;
   edited?: boolean;
   status: ContentStatus;
+  /** The author appealed a moderator's removal (PRD §19). */
+  appealed?: boolean;
 }
 
 export interface Post {
@@ -125,10 +132,17 @@ export interface Post {
   type: PostType;
   title: string;
   body: string;
-  source: Source;
+  /** Optional: a member may post without naming where it comes from. */
+  source?: Source;
   sourceLink?: string;
   tags: string[];
   allowSharing: boolean;
+  /** PRD §10 Guest browsing: guests and search engines may read it, only in a
+      group with visibleToGuests. While on, allowSharing stays on too. */
+  showToVisitors: boolean;
+  /** Crisis words waiting in the Priority queue: never shown to guests. */
+  crisisPending?: boolean;
+  appealed?: boolean;
   minutesAgo: number;
   up: number;
   down: number;
@@ -170,6 +184,8 @@ export interface Article {
   sources: { label: string; url: string }[];
   relatedGroups: string[];
   hue: Hue;
+  /** Unset means published. */
+  status?: "published" | "draft";
 }
 
 export type ConversationKind = "dm" | "mentoring" | "support";

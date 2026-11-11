@@ -96,10 +96,10 @@ function hero(v) {
 
 function privacy(v) {
   const items = [
-    ["You post under a handle, not your name", "q-handle"],
-    ["No ad trackers, ever", "q-trackers"],
-    ["Your health data is never sold", "q-sold"],
-    ["Download or delete everything, any time", "q-download"],
+    ["You post under a handle, not your name", "privacy-handle"],
+    ["No ad trackers, ever", "privacy-trackers"],
+    ["Your health data is never sold", "privacy-sold"],
+    ["Download or delete everything, any time", "privacy-download"],
   ];
   const art = v.desk ? 104 : 80;
   const cols = v.desk ? 4 : v.phone ? 1 : 2;
@@ -107,7 +107,7 @@ function privacy(v) {
   const itemW = (listW - (cols - 1) * 32) / cols;
   const item = ([t, a]) =>
     Row({ name: t, width: itemW, w: "fixed", gap: 16 }, [
-      Img(`brand/cozy/${a}.webp`, art, art, { name: a, scaleMode: "FIT" }),
+      Img(`brand/landing/${a}.webp`, art, art, { name: a, scaleMode: "FIT" }),
       T(t, "body", { size: 16, lineHeight: 1.35, width: itemW - art - 16, free: true }),
     ]);
   const rows = [];

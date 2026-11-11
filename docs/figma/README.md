@@ -29,10 +29,27 @@ The app (Next.js, running at http://localhost:3003) is the source of truth. Figm
   - Public page, Landing (y 0): `node tools/screens-landing.mjs <pageId> [y] [Desktop|Tablet|Phone]`. It builds the board first, then one section per call, because the page carries a lot of art.
   - Public page, reading pages (from y 11000): `node tools/screens-public.mjs <pageId> <startY> [screen...]`. Five screens: Help, Terms, Privacy, Shared post, Demo personas.
 - Onboarding page: done. `node tools/screens-onboarding.mjs <pageId> [step...]` builds the eight steps with Annie's answers, one row per step on a 3400px pitch, so a single step can be rebuilt in place.
-- App page, main screens: Home, Groups, a group (Endometriosis), Messages (list and an open conversation), Notifications, Your profile and a member's profile ([app-main-screens.json](app-main-screens.json)). The full list of 28 is in [app-screens.json](app-screens.json) if more are wanted later.
+- App page, main screens: Feed, Groups, a group (Endometriosis), Messages (list and an open conversation), Notifications, Dashboard and a member's profile ([app-main-screens.json](app-main-screens.json)). Home was renamed Feed and Your profile became the Dashboard on 2026-11-11; those rows were rebuilt with the new names. The full list of 28 is in [app-screens.json](app-screens.json) if more are wanted later.
   - These come straight from the running app: `node tools/dom-to-figma.mjs <pageId> ../app-main-screens.json [name...]` opens each route in headless Chrome as Annie at 1440, 768 and 390, reads the rendered page with [tools/dom-extract.js](tools/dom-extract.js) and rebuilds it as frames, text, images and icons at their exact positions. The layers are positioned, not auto layout.
   - Fixed bars sit at the page's ends: the sidebar runs the full height on desktop, and on tablet and phone the top bar is at the top, with the tab bar and the Grove Guide button at the bottom.
-  - Rows are 4000px apart (`FG_PITCH`), in list order, so one screen can be rebuilt in place.
+  - Rows are 4500px apart (`FG_PITCH=4500`; the phone Dashboard is about 4,250px tall), in list order, so one screen can be rebuilt in place. The app runs on port 3000 now: set `FG_APP=http://localhost:3000`.
+  - Page ids: Components `1:195` (board `1:196`), Auth `2:524`, Public `2:525`, Onboarding `3:4493`, App `4:8544`.
+
+### Updating from the running app (2026-11-11)
+
+Public (except Demo personas), Auth and Onboarding are now built the same way as the App screens, from the running app, because the hand-built scripts (`screens-auth.mjs`, `screens-landing.mjs`, `screens-onboarding.mjs`) had fallen behind it. Lists: [public-screens.json](public-screens.json), [auth-screens.json](auth-screens.json), [onboarding-screens.json](onboarding-screens.json). A fourth item `"out"` captures signed out; a fifth `{"window": "keep"}` reads the landing in a normal-height window, since its hero fills the screen.
+
+```
+cd docs/figma/tools
+export FG_CHANNEL=fertility-grove FG_APP=http://localhost:3000 FG_STACK=1 FG_REPLACE=1 FG_GAP=600
+node dom-to-figma.mjs 2:524 ../auth-screens.json          # whole page, rows stacked by real height
+node dom-to-figma.mjs 2:525 ../public-screens.json
+node dom-to-figma.mjs 3:4493 ../onboarding-screens.json
+```
+
+`FG_REPLACE=1` deletes a frame of the same name before building its replacement. Pages render at rest: reduced motion, every reveal shown, every image loaded; CSS background pictures come across as image layers. Demo personas was unchanged and kept; it now sits below Shared post. To compare before rebuilding, export a frame (`export_node_as_image`) and capture the same route at 1440, then look at them side by side.
+
+Components: `node components.mjs 1:196 nav cards avatars` rebuilds those sections (gouache avatars, Feed and Dashboard in the nav); delete the old section first, then move the new one back to its place with `set_parent` and an `index`.
   - Bold words or links inside a sentence need the plugin's styled runs (added to the local plugin; re-run the plugin in Figma to pick them up).
 
 ### Notes for the Public and Auth screens

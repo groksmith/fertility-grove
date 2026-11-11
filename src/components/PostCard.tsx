@@ -51,7 +51,7 @@ export function PostCard({ post, matched, showGroup = true }: { post: Post; matc
         {author.badges.includes("team") ? (
           <Avatar member={author} size={40} />
         ) : (
-          <Link href={author.id === "me" ? "/profile" : `/u/${author.handle}`} aria-hidden tabIndex={-1} className="shrink-0">
+          <Link href={author.id === "me" ? "/dashboard" : `/u/${author.handle}`} aria-hidden tabIndex={-1} className="shrink-0">
             <Avatar member={author} size={40} />
           </Link>
         )}

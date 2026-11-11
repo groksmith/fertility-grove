@@ -4,14 +4,20 @@
 
 import type { Comment, Post, Story } from "../types";
 
-const p = (x: Omit<Post, "myVote" | "saved" | "status" | "allowSharing" | "tags"> & Partial<Post>): Post => ({
+const p = (x: Omit<Post, "myVote" | "saved" | "status" | "allowSharing" | "showToVisitors" | "tags"> & Partial<Post>): Post => ({
   myVote: 0,
   saved: false,
   status: "published",
   allowSharing: false,
+  showToVisitors: false,
   tags: [],
   ...x,
 });
+
+/* Guest browsing (PRD v1.2 §10): posts whose authors turned on Show to
+   visitors. It only reaches guests while the group is visible to guests too;
+   p-4 is on in a group that isn't (Endometriosis), so guests never see it. */
+const VISITORS = { allowSharing: true, showToVisitors: true } as const;
 
 export const ME_ID = "me";
 
@@ -54,7 +60,7 @@ export const POSTS: Post[] = [
     minutesAgo: 120,
     up: 41,
     down: 1,
-    allowSharing: true,
+    ...VISITORS,
   }),
   p({
     id: "p-4",
@@ -67,6 +73,7 @@ export const POSTS: Post[] = [
     minutesAgo: 30,
     up: 18,
     down: 0,
+    ...VISITORS,
   }),
   p({
     id: "p-5",
@@ -80,6 +87,7 @@ export const POSTS: Post[] = [
     minutesAgo: 210,
     up: 37,
     down: 0,
+    ...VISITORS,
   }),
   p({
     id: "p-6",
@@ -106,7 +114,7 @@ export const POSTS: Post[] = [
     minutesAgo: 420,
     up: 56,
     down: 2,
-    allowSharing: true,
+    ...VISITORS,
   }),
   p({
     id: "p-8",
@@ -120,6 +128,7 @@ export const POSTS: Post[] = [
     minutesAgo: 600,
     up: 31,
     down: 0,
+    ...VISITORS,
   }),
   p({
     id: "p-9",
@@ -145,6 +154,7 @@ export const POSTS: Post[] = [
     minutesAgo: 900,
     up: 27,
     down: 0,
+    ...VISITORS,
   }),
   p({
     id: "p-11",
@@ -171,6 +181,7 @@ export const POSTS: Post[] = [
     minutesAgo: 1600,
     up: 19,
     down: 0,
+    ...VISITORS,
   }),
   p({
     id: "p-13",
@@ -198,6 +209,22 @@ export const POSTS: Post[] = [
     minutesAgo: 2600,
     up: 23,
     down: 1,
+    ...VISITORS,
+  }),
+  // Removed by a moderator: only its author sees it, on the Dashboard (PRD §6).
+  p({
+    id: "p-15",
+    groupId: "g-ivf",
+    authorId: ME_ID,
+    type: "Seeking input",
+    title: "Clinic abroad offering IVF packages at half the price",
+    body: "A clinic messaged me on Instagram with a package deal and a discount code if I book this week. Has anyone used them? I can share the link.",
+    source: "Personal experience",
+    tags: ["IVF", "Insurance"],
+    minutesAgo: 4300,
+    up: 1,
+    down: 3,
+    status: "removed",
   }),
 ];
 
@@ -223,6 +250,8 @@ export const COMMENTS: Comment[] = [
   c({ id: "c-12", postId: "p-9", authorId: "m-dana", body: "Ask what your antral follicle count is, what protocol they'd suggest, and how many retrievals they'd expect you to need. Write it all down; the appointment goes fast.", minutesAgo: 60, up: 8 }),
   c({ id: "c-13", postId: "p-11", authorId: "m-lena", body: "There's no good evidence any supplement doubles egg numbers in a month. Some are reasonable to discuss with your doctor; please check before adding several at once.", source: "Clinician input", minutesAgo: 1300, up: 33 }),
   c({ id: "c-14", postId: "p-12", authorId: "m-priya", body: "I told my manager I had 'recurring medical appointments' and left it there. It was enough.", minutesAgo: 1500, up: 10 }),
+  // Removed by a moderator: listed for its author only, on the Dashboard Replies tab.
+  c({ id: "c-15", postId: "p-2", authorId: ME_ID, body: "Ask your clinic for the name of the lab director and message them directly. Mine gave me their personal number and fixed everything.", minutesAgo: 2900, up: 0, down: 2, status: "removed" }),
 ];
 
 export const STORIES: Story[] = [

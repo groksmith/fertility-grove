@@ -99,7 +99,7 @@ function Account({ s }: { s: State }) {
           <p className="text-[14px] text-muted">Email</p>
           <p className="text-[15px] font-semibold">{s.me.email}</p>
         </div>
-        <LinkButton href="/profile" variant="secondary" size="sm">Edit profile</LinkButton>
+        <LinkButton href="/dashboard?edit=1" variant="secondary" size="sm">Edit profile</LinkButton>
       </div>
       <form
         className="flex flex-wrap items-end gap-3"
@@ -387,7 +387,7 @@ function PrototypeTools({ s }: { s: State }) {
   const waiting = s.mentorRequests.some((r) => r.menteeId === "me" && r.status === "waiting");
   const go = (kind: State["persona"]) => {
     act.demo.persona(kind);
-    router.push(kind === "new" ? "/" : kind === "partner" ? "/partner-invite/annie" : "/home");
+    router.push(kind === "new" ? "/" : kind === "partner" ? "/partner-invite/annie" : "/feed");
   };
   return (
     <section id="prototype" aria-labelledby="prototype-h" className="rounded-[20px] bg-raised p-5 sm:p-7">
@@ -433,7 +433,7 @@ function PrototypeTools({ s }: { s: State }) {
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="secondary" onClick={() => { act.demo.suspend(); router.push("/suspended"); }}>Simulate a suspension</Button>
             <Button size="sm" variant="secondary" onClick={() => { act.demo.worstCase(); toast("Worst-case data loaded"); }}>Load worst-case data</Button>
-            <Button size="sm" variant="danger" onClick={() => { act.demo.reset(); toast("Demo data reset"); router.push("/home"); }}>Reset demo data</Button>
+            <Button size="sm" variant="danger" onClick={() => { act.demo.reset(); toast("Demo data reset"); router.push("/feed"); }}>Reset demo data</Button>
           </div>
         </div>
         <div className="rounded-[14px] bg-panel p-4 text-[14px] leading-relaxed">

@@ -84,10 +84,16 @@ const tabs = comp("Tabs", { layout: "row", gap: 24, w: "hug", h: "hug", stroke: 
 // ---------------------------------------------------------------- Avatars
 const AVATARS = ["orange", "olive", "fern", "swallow", "mountain", "wave", "pinecone", "moon", "oak", "owl", "fox", "sunflower"];
 const TINTS = ["#E0F6EB", "#FFE7DE", "#FFFBE8", "#DFF3FF", "#FFE8F3", "#F1E7F1"];
+// The painted gouache set (components/ui/identity.tsx), each drawn at its own zoom
+// inside a 9% inset, as the app does.
+const ZOOM = { orange: 0.86, olive: 0.93, fern: 1.12, swallow: 1.11, mountain: 1.03, wave: 0.88, pinecone: 0.9, moon: 0.96, oak: 0.97, owl: 0.99, fox: 1.04, sunflower: 1 };
+const avatarArt = (key, size) => {
+  const s = Math.round(size * 0.82 * (ZOOM[key] || 1));
+  const o = Math.round((size - s) / 2);
+  return Img(`brand/grove-avatars-gouache/${key}.webp`, s, s, { name: "art", x: o, y: o, scaleMode: "FIT" });
+};
 const avatar = (key, i, size = 48) =>
-  comp(`Avatar / Grove / ${key}`, { width: size, height: size, radius: 999, fill: TINTS[i % TINTS.length], clip: true }, [
-    Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
-  ]);
+  comp(`Avatar / Grove / ${key}`, { width: size, height: size, radius: 999, fill: TINTS[i % TINTS.length], clip: true }, [avatarArt(key, size)]);
 const initial = (size) =>
   comp(`Avatar / Initial / ${size}`, { width: size, height: size, radius: 999, fill: C.tintPink, layout: "row", justify: "center", align: "center" }, [T("A", "body", { name: "letter", size: Math.round(size * 0.4), style: "Bold", color: C.coralInk, free: true })]);
 
@@ -97,7 +103,7 @@ const logo = (h) => Img("brand/logo.png", Math.round(h * LOGO_RATIO), h, { name:
 const mark = (s) => Img("brand/orange.png", s, Math.round(s * (322 / 297)), { name: "mark", scaleMode: "FIT" });
 
 const NAV = [
-  ["house", "Home"], ["users", "Groups"], ["flower-2", "Success stories"], ["book-open", "Learn"],
+  ["newspaper", "Feed"], ["layout-dashboard", "Dashboard"], ["users", "Groups"], ["flower-2", "Success stories"], ["book-open", "Learn"],
   ["sprout", "Mentors"], ["message-circle", "Messages", "2"], ["bell", "Notifications", "3"],
 ];
 const YOURS = [["bookmark", "Saved"], ["users-round", "Family space"], ["settings", "Settings"], ["circle-help", "Help"]];
@@ -149,7 +155,7 @@ const topBar = comp("Phone / Top bar", { layout: "row", width: 390, height: 52, 
   ]),
 ]);
 
-const TABS = [["house", "Home"], ["users", "Groups"], ["message-circle", "Messages", "2"], ["sprout", "Me"]];
+const TABS = [["newspaper", "Feed"], ["users", "Groups"], ["message-circle", "Messages", "2"], ["layout-dashboard", "Dashboard"]];
 const tabBar = comp("Phone / Tab bar", { layout: "row", width: 390, height: 94, w: "fixed", h: "fixed", padding: [0, 0, 34, 0], fill: "#FFFFFFCC", stroke: C.line }, TABS.map(([i, l, n], k) =>
   F({ name: `tab ${l}`, width: 97, height: 60, grow: true, layout: "column", justify: "center", align: "center", gap: 2 }, [
     F({ name: "pill", width: 56, height: 32, radius: 999, fill: k === 0 ? C.raised : null, layout: "row", justify: "center", align: "center" }, [icon(i, 21, k === 0 ? C.ink : C.muted, k === 0 ? 2.2 : 1.7)]),
@@ -169,12 +175,12 @@ const guideFab = comp("Grove Guide / Desktop", { layout: "row", align: "center",
 const guideFabPhone = comp("Grove Guide / Phone", { width: 56, height: 56, radius: 999, fill: C.accent, layout: "row", justify: "center", align: "center", shadow: { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 } }, [sparkle()]);
 
 // ---------------------------------------------------------------- Cards
-const avatarImg = (key, size, tint) => F({ name: "avatar", width: size, height: size, radius: 999, fill: tint, clip: true }, [Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" })]);
+const avatarImg = (key, size, tint) => F({ name: "avatar", width: size, height: size, radius: 999, fill: tint, clip: true }, [avatarArt(key, size)]);
 const pill = (ic, text) => Row({ name: `pill ${text || ic}`, height: 36, h: "fixed", gap: 6, padding: [0, 12], radius: 999, fill: C.raised }, [icon(ic, 17, C.inkSoft), text && T(text, "small", { style: "SemiBold", name: "value" })]);
 
 const postCard = comp("Card / Post", { layout: "column", width: 640, w: "fixed", h: "hug", padding: 24, gap: 14, radius: 20, fill: C.white, stroke: C.line }, [
   Row({ name: "header", w: "fill", gap: 12, align: "start" }, [
-    avatarImg("hedgehog", 40, "#FFFBE8"),
+    avatarImg("oak", 40, "#DFF3FF"),
     Col({ name: "who", gap: 0, grow: true, w: "fill" }, [
       Row({ name: "name row", gap: 6 }, [T("@hannah_endo", "small", { style: "SemiBold", name: "author" }), T("· 30m", "small", { color: C.muted, name: "time" })]),
       T("Endometriosis", "caption", { color: C.muted, name: "group" }),
@@ -188,7 +194,7 @@ const postCard = comp("Card / Post", { layout: "column", width: 640, w: "fixed",
 ]);
 
 const groupRow = comp("Row / Group", { layout: "row", width: 720, w: "fixed", h: "hug", gap: 16, padding: [16, 0], align: "center" }, [
-  Img("brand/groups/g-endo.webp", 56, 56, { name: "cover", radius: 10 }),
+  F({ name: "cover", width: 56, height: 56, radius: 10, fill: C.white, stroke: C.line, strokeAlign: "INSIDE", clip: true }, [Img("brand/groups/g-endo.webp", 56, 56, { name: "art" })]),
   Col({ name: "text", gap: 2, grow: true, w: "fill" }, [
     Row({ name: "title row", gap: 8 }, [T("Endometriosis", "h4", { name: "name" }), F({ name: "type", layout: "row", align: "center", height: 24, h: "fixed", w: "hug", padding: [0, 10], radius: 999, fill: C.tintPink, stroke: C.coral }, [T("Diagnosis", "chip", { color: C.coralInk })])]),
     T("Matched on endometriosis", "caption", { style: "SemiBold", color: C.greenInk, name: "why" }),

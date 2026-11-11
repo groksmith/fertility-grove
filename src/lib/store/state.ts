@@ -99,7 +99,10 @@ export interface Me {
     capacity: number;
   };
   skipped: string[];
-  profileCardDismissed: boolean;
+  /** The member's fixed invite code (PRD §10). It never changes with the handle. */
+  inviteCode: string;
+  /** Kept server-side: "Hide for 30 days" on the Complete your profile card (PRD §5). */
+  profileCardHiddenUntil?: number;
   guidelinesAccepted: boolean;
 }
 
@@ -205,7 +208,7 @@ export const EMPTY_ME: Me = {
   founding: false,
   mentoring: { on: false, paused: false, bio: "", helpsWith: [], capacity: 3 },
   skipped: [],
-  profileCardDismissed: false,
+  inviteCode: "",
   guidelinesAccepted: false,
 };
 
@@ -243,6 +246,7 @@ const ANNIE: Me = {
   level: levelFor(DEMO_SUNLIGHT),
   history: SUNLIGHT_HISTORY,
   skipped: ["photo", "story"],
+  inviteCode: "GRV7K2QX",
   guidelinesAccepted: true,
 };
 
@@ -366,7 +370,9 @@ export const ARTICLE_SLUGS = ARTICLES.map((a) => a.slug);
 
 /* ----------------------------------------------------------------- Store */
 
-const KEY = "fertility-grove-state-v2";
+/* v3 (PRD v1.2): guest browsing fields, removed items and invite codes are
+   new in the sample data, so older saved states start over. */
+const KEY = "fertility-grove-state-v3";
 const initial = persona("member");
 let current: State = initial;
 let loaded = false;

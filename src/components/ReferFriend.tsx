@@ -18,8 +18,9 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { useAmbient } from "@/components/art/Cozy";
 import { Button, useCopy } from "@/components/ui";
+import { inviteLink, myInvite } from "@/lib/api";
 import { POINTS } from "@/lib/rules/sunlight";
-import { useHydrated } from "@/lib/store";
+import { useHydrated, useStore } from "@/lib/store";
 
 const DIR = "/brand/refer";
 
@@ -38,10 +39,14 @@ function Layer({ name, className }: { name: string; className: string }) {
   return <Image src={`${DIR}/${name}.webp`} alt="" fill unoptimized priority className={`object-contain ${className}`} />;
 }
 
-/** Used on the last onboarding step and on your own profile. */
-export function ReferFriend({ handle }: { handle: string }) {
+/** Used on the last onboarding step and on the Dashboard. The link carries the
+    member's fixed invite code, never the handle (PRD §10): a handle can change
+    and, 14 days later, belong to someone else. */
+export function ReferFriend() {
   const hydrated = useHydrated();
-  const link = `${hydrated ? window.location.origin : "https://fertilitygrove.com"}/invite/${handle}`;
+  const origin = hydrated ? window.location.origin : "https://fertilitygrove.com";
+  const invite = myInvite(useStore(), origin);
+  const link = invite ? inviteLink(invite, origin) : "";
   const [copied, copy] = useCopy();
   const [phase, setPhase] = useState<"rest" | "send" | "back">("rest");
   const [round, setRound] = useState(0);
@@ -105,12 +110,13 @@ export function ReferFriend({ handle }: { handle: string }) {
           Know someone going through this too? Send them some seeds. When they join with your link, your tree gets {POINTS.referral} Sunlight.
         </p>
         <div className="mt-3 flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate rounded-[10px] bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft" title={link}>
-            {link.replace(/^https?:\/\//, "")}
+          <p className="min-w-0 flex-1 truncate rounded-[10px] bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft" title={link || undefined}>
+            {link ? link.replace(/^https?:\/\//, "") : "Getting your link…"}
           </p>
           <Button
             size="sm"
             variant="secondary"
+            disabled={!link}
             onClick={() => {
               copy(link);
               setPhase("send");

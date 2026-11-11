@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { PostVisibility, offersVisitors } from "@/components/PostVisibility";
 import { useUnsavedGuard } from "@/components/UnsavedGuard";
 import { Spot } from "@/components/art/Scenes";
 import { useResult } from "@/components/Safety";
@@ -23,7 +24,6 @@ import {
   Panel,
   Select,
   Textarea,
-  Toggle,
 } from "@/components/ui";
 import { act, validatePost, useStore } from "@/lib/store";
 import { POST_TYPES, POST_TYPE_HELP, SOURCES, TOPIC_TAGS } from "@/lib/options";
@@ -51,6 +51,7 @@ function Composer() {
   const [sourceLink, setSourceLink] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [allowSharing, setAllowSharing] = useState(false);
+  const [showToVisitors, setShowToVisitors] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [errs, setErrs] = useState<Record<string, string | undefined>>({});
   const [done, setDone] = useState<string | null>(null);
@@ -86,8 +87,8 @@ function Composer() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <LinkButton href={`/posts/${done}`}>See your post</LinkButton>
-          <LinkButton href="/home" variant="ghost">
-            Back to your grove
+          <LinkButton href="/feed" variant="ghost">
+            Back to your feed
           </LinkButton>
         </div>
         {ui}
@@ -97,7 +98,8 @@ function Composer() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const input = { groupId, type: type[0] ?? "", title, body, source, sourceLink, tags, allowSharing: allowSharing && !membersOnly };
+    const visitors = showToVisitors && offersVisitors(group);
+    const input = { groupId, type: type[0] ?? "", title, body, source, sourceLink, tags, allowSharing: (allowSharing || visitors) && !membersOnly, showToVisitors: visitors };
     const v: Record<string, string | undefined> = { ...validatePost(input) };
     if (!groupId) v.groupId = "Choose a group to post in.";
     if (title.length > 150) v.title = "Titles can be up to 150 characters.";
@@ -129,7 +131,14 @@ function Composer() {
         )}
         <Panel className="space-y-6 p-5 sm:p-7">
           <Field label="Post in" error={errs.groupId}>
-            <Select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <Select
+              value={groupId}
+              onChange={(e) => {
+                setGroupId(e.target.value);
+                // A group that isn't visible to guests can't offer it: clear it.
+                if (!offersVisitors(s.groups.find((g) => g.id === e.target.value))) setShowToVisitors(false);
+              }}
+            >
               <option value="">Choose one of your groups</option>
               {joinedGroups.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -138,7 +147,7 @@ function Composer() {
               ))}
             </Select>
           </Field>
-          <Choices legend="Post type" options={POST_TYPES} value={type} onChange={setType} error={!type.length ? errs.typeSource : undefined} />
+          <Choices legend="Post type" options={POST_TYPES} value={type} onChange={setType} error={!type.length ? errs.type : undefined} />
           {type[0] && <p className="-mt-3 text-[13px] text-muted">{POST_TYPE_HELP[type[0]]}</p>}
           <Field label="Title" error={errs.title} counter={<Counter value={title} max={150} />}>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What do you want to ask or share?" />
@@ -154,9 +163,9 @@ function Composer() {
         </Panel>
 
         <Panel className="space-y-6 p-5 sm:p-7">
-          <Field label="Source" error={!source ? errs.typeSource : undefined} hint="Where does what you're sharing come from?">
-            <Select value={source} onChange={(e) => setSource(e.target.value as Source)}>
-              <option value="">Choose a source</option>
+          <Field label="Source" optional hint="Where does what you're sharing come from?">
+            <Select value={source} onChange={(e) => setSource(e.target.value as Source | "")}>
+              <option value="">No source</option>
               {sources.map((x) => (
                 <option key={x}>{x}</option>
               ))}
@@ -172,18 +181,23 @@ function Composer() {
           </Field>
           <div>
             <p className="mb-2 flex items-baseline justify-between text-[14px] font-semibold">
-              Topic tags <span className="tabular font-normal text-muted">{tags.length} / 5</span>
+              <span>
+                Topic tags<span className="font-normal text-muted"> (optional)</span>
+              </span>
+              <span className="tabular font-normal text-muted">{tags.length} / 5</span>
             </p>
             <ChipSelect label="Topic tags" options={TOPIC_TAGS} value={tags} onChange={setTags} max={5} />
           </div>
-          {!membersOnly && (
-            <Toggle
-              checked={allowSharing}
-              onChange={setAllowSharing}
-              label="Allow sharing outside Fertility Grove"
-              description="Lets members make a public link to this post. Comments are never shown outside."
-            />
-          )}
+          <PostVisibility
+            group={group}
+            type={type[0]}
+            allowSharing={allowSharing}
+            showToVisitors={showToVisitors}
+            onChange={(v) => {
+              setAllowSharing(v.allowSharing);
+              setShowToVisitors(v.showToVisitors);
+            }}
+          />
         </Panel>
 
         {!s.me.guidelinesAccepted && (
@@ -221,7 +235,7 @@ function Composer() {
           <ul className="mt-2 space-y-2 text-[14px] leading-relaxed text-ink-soft">
             <li>Say where you are: diagnosis, stage, what you&apos;ve tried.</li>
             <li>Pick the post type that matches what you need. Support needed and Just venting tell people you want kindness, not advice.</li>
-            <li>Choose a source so readers know how much weight to give it.</li>
+            <li>Adding a source, if you have one, helps readers know how much weight to give it.</li>
           </ul>
         </Panel>
         <Panel className="p-5 text-[14px] leading-relaxed text-ink-soft">

@@ -17,7 +17,7 @@ export default function SuspendedPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (hydrated && !suspension) router.replace("/home");
+    if (hydrated && !suspension) router.replace("/feed");
   }, [hydrated, suspension, router]);
 
   if (!hydrated || !suspension) return <div className="min-h-dvh bg-ground" />;

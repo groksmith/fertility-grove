@@ -31,6 +31,13 @@ const fail = (error: string, code?: "unconfirmed" | "join" | "credits"): Result 
 let seq = 0;
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
+/** A fixed, unguessable invite code, made once per account (PRD §10).
+    TODO(api): the backend issues it; GET /api/v1/invites/mine returns it. */
+function newInviteCode() {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 8 }, () => abc[Math.floor(Math.random() * abc.length)]).join("");
+}
+
 const DEMO_EMAIL = "annie.m@grove.test";
 export const DEMO_PASSWORD = "sunlight-demo";
 
@@ -62,7 +69,7 @@ function sunlight(s: State, amount: number, label: string): State {
     pendingLevelUp: up ? level : s.pendingLevelUp,
   };
   if (up) {
-    next = notify(next, { kind: "level", text: `You grew into a ${level}`, href: "/profile" });
+    next = notify(next, { kind: "level", text: `You grew into a ${level}`, href: "/dashboard" });
   }
   return next;
 }
@@ -94,7 +101,7 @@ export const auth = {
       step: 1,
       invitedBy,
       password: input.password,
-      me: { ...EMPTY_ME, email, status: input.google ? "active" : "unconfirmed" },
+      me: { ...EMPTY_ME, email, status: input.google ? "active" : "unconfirmed", inviteCode: newInviteCode() },
     });
     return { ok: true as const, duplicate: false };
   },
@@ -179,7 +186,7 @@ export const onboarding = {
     set((s) =>
       notify(
         { ...s, step: 9, me: { ...s.me, level: "Seed", joinedDaysAgo: 0 }, pendingLevelUp: "Seed" },
-        { kind: "level", text: "You planted your Seed. Your tree grows as you help others.", href: "/profile" },
+        { kind: "level", text: "You planted your Seed. Your tree grows as you help others.", href: "/dashboard" },
       ),
     );
   },
@@ -218,13 +225,15 @@ interface PostInput {
   sourceLink: string;
   tags: string[];
   allowSharing: boolean;
+  showToVisitors: boolean;
 }
 
 export function validatePost(p: PostInput) {
-  const errs: Partial<Record<keyof PostInput | "typeSource", string>> = {};
+  const errs: Partial<Record<keyof PostInput, string>> = {};
   if (!p.title.trim()) errs.title = MSG.postTitle;
   if (!p.body.trim()) errs.body = MSG.postBody;
-  if (!p.type || !p.source) errs.typeSource = MSG.postTypeSource;
+  // Source and topic tags are optional; only the post type is required.
+  if (!p.type) errs.type = MSG.postType;
   if (p.source === "From research or guidelines" && !p.sourceLink.trim()) errs.sourceLink = MSG.researchLink;
   else {
     const l = checks.link(p.sourceLink);
@@ -241,6 +250,8 @@ export const posts = {
     if (!s.joined.includes(p.groupId)) return fail("Join this group to post in it.", "join");
     if (s.counters.posts >= 10) return fail(MSG.postLimit);
     const crisis = detectCrisis(`${p.title} ${p.body}`);
+    // Show to visitors only where the group allows guests, and it keeps sharing on.
+    const visitors = p.showToVisitors && !!s.groups.find((g) => g.id === p.groupId && g.visibleToGuests && g.readAccess === "any");
     const id = uid("p");
     set((x) => ({
       ...x,
@@ -254,10 +265,12 @@ export const posts = {
           type: p.type as PostType,
           title: p.title.trim(),
           body: p.body.trim(),
-          source: p.source as Source,
+          source: p.source || undefined,
           sourceLink: p.sourceLink.trim() || undefined,
           tags: p.tags,
-          allowSharing: p.allowSharing,
+          allowSharing: p.allowSharing || visitors,
+          showToVisitors: visitors,
+          crisisPending: crisis === "signal" || undefined,
           minutesAgo: 0,
           up: 0,
           down: 0,
@@ -271,8 +284,23 @@ export const posts = {
     return ok({ id, crisis });
   },
 
-  edit(id: string, patch: Partial<Pick<Post, "title" | "body">>) {
-    set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, ...patch, edited: true } : p)) }));
+  edit(id: string, patch: Partial<Pick<Post, "title" | "body" | "allowSharing" | "showToVisitors">>) {
+    set((s) => ({
+      ...s,
+      posts: s.posts.map((p) => {
+        if (p.id !== id) return p;
+        const group = s.groups.find((g) => g.id === p.groupId);
+        const next = { ...p, ...patch, edited: patch.title !== undefined || patch.body !== undefined ? true : p.edited };
+        next.showToVisitors = next.showToVisitors && !!group?.visibleToGuests && group.readAccess === "any";
+        if (next.showToVisitors) next.allowSharing = true;
+        return next;
+      }),
+    }));
+  },
+
+  /** Appeal a moderator's removal (PRD §19). TODO(api): no posts API yet. */
+  appeal(id: string) {
+    set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, appealed: true } : p)) }));
   },
 
   remove(id: string) {
@@ -369,6 +397,10 @@ export const posts = {
 
   editComment(id: string, body: string) {
     set((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id ? { ...c, body, edited: true } : c)) }));
+  },
+
+  appealComment(id: string) {
+    set((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id ? { ...c, appealed: true } : c)) }));
   },
 
   removeComment(id: string) {
@@ -1004,8 +1036,9 @@ export const settings = {
   acknowledgeLevelUp() {
     set((s) => ({ ...s, pendingLevelUp: undefined }));
   },
+  /** "Hide for 30 days". TODO(api): POST /api/v1/profile/me/completion-card/dismiss. */
   dismissProfileCard() {
-    set((s) => ({ ...s, me: { ...s.me, profileCardDismissed: true } }));
+    set((s) => ({ ...s, me: { ...s.me, profileCardHiddenUntil: Date.now() + 30 * 24 * 60 * 60 * 1000 } }));
   },
   saveArticle(slug: string) {
     set((s) => ({
@@ -1029,7 +1062,7 @@ export const demo = {
   },
   reset() {
     try {
-      window.localStorage.removeItem("fertility-grove-state-v2");
+      window.localStorage.removeItem("fertility-grove-state-v3");
     } catch {
       /* ignore */
     }

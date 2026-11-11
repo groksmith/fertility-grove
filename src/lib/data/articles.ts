@@ -318,78 +318,92 @@ const NUMBERS = "What the numbers do and don't say";
 const SEMEN = "What the semen analysis measures";
 const SELF = "Looking after yourself";
 
-/* What each group should read, by hand and only where a section really covers
-   it: stage and topic groups have no article of their own, so they get the
-   relevant sections of the diagnosis articles. Pregnant after infertility has
+/* What each group should read: up to 3 links per group, picked by admins
+   (PRD v1.2 §8, §20), in their order. Each is shaped like the API's
+   { articleSlug, sectionId, label }.
+   TODO(api): fetch these per group from the backend; this is the mock source.
+   The mock picks only sections that really cover the group: stage and topic
+   groups have no article of their own, so they get the relevant sections of
+   the diagnosis articles. Pregnant after infertility has
    none yet: the nearest section is in the recurrent loss article, which is the
    wrong thing to hand someone who is pregnant. */
-const GROUP_READING: Record<string, { slug: string; section: string; label: string }[]> = {
+export interface ReadingLink {
+  articleSlug: string;
+  sectionId: string;
+  label: string;
+}
+
+const pick = (articleSlug: string, heading: string, label: string): ReadingLink => ({ articleSlug, sectionId: sectionId(heading), label });
+
+const GROUP_READING: Record<string, ReadingLink[]> = {
   "g-endo": [
-    { slug: "endometriosis", section: AFFECT, label: "How endometriosis can affect fertility" },
-    { slug: "endometriosis", section: TREATMENT, label: "Common treatment paths" },
-    { slug: "endometriosis", section: QUESTIONS, label: QUESTIONS },
+    pick("endometriosis", AFFECT, "How endometriosis can affect fertility"),
+    pick("endometriosis", TREATMENT, "Common treatment paths"),
+    pick("endometriosis", QUESTIONS, QUESTIONS),
   ],
   "g-pcos": [
-    { slug: "pcos", section: AFFECT, label: "How PCOS can affect fertility" },
-    { slug: "pcos", section: TREATMENT, label: "Common treatment paths" },
-    { slug: "pcos", section: QUESTIONS, label: QUESTIONS },
+    pick("pcos", AFFECT, "How PCOS can affect fertility"),
+    pick("pcos", TREATMENT, "Common treatment paths"),
+    pick("pcos", QUESTIONS, QUESTIONS),
   ],
   "g-dor": [
-    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: NUMBERS },
-    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "Common treatment paths" },
-    { slug: "diminished-ovarian-reserve", section: QUESTIONS, label: QUESTIONS },
+    pick("diminished-ovarian-reserve", NUMBERS, NUMBERS),
+    pick("diminished-ovarian-reserve", TREATMENT, "Common treatment paths"),
+    pick("diminished-ovarian-reserve", QUESTIONS, QUESTIONS),
   ],
   "g-mf": [
-    { slug: "male-factor", section: SEMEN, label: SEMEN },
-    { slug: "male-factor", section: TREATMENT, label: "Common treatment paths" },
-    { slug: "male-factor", section: QUESTIONS, label: QUESTIONS },
+    pick("male-factor", SEMEN, SEMEN),
+    pick("male-factor", TREATMENT, "Common treatment paths"),
+    pick("male-factor", QUESTIONS, QUESTIONS),
   ],
   "g-rpl": [
-    { slug: "recurrent-pregnancy-loss", section: "What testing can include", label: "What testing can include" },
-    { slug: "recurrent-pregnancy-loss", section: "Support matters", label: "Support matters" },
-    { slug: "recurrent-pregnancy-loss", section: QUESTIONS, label: QUESTIONS },
+    pick("recurrent-pregnancy-loss", "What testing can include", "What testing can include"),
+    pick("recurrent-pregnancy-loss", "Support matters", "Support matters"),
+    pick("recurrent-pregnancy-loss", QUESTIONS, QUESTIONS),
   ],
   "g-unexplained": [
-    { slug: "unexplained-infertility", section: "What it is", label: "What unexplained infertility means" },
-    { slug: "unexplained-infertility", section: TREATMENT, label: "Common treatment paths" },
-    { slug: "unexplained-infertility", section: SELF, label: SELF },
+    pick("unexplained-infertility", "What it is", "What unexplained infertility means"),
+    pick("unexplained-infertility", TREATMENT, "Common treatment paths"),
+    pick("unexplained-infertility", SELF, SELF),
   ],
   "g-waiting": [
-    { slug: "unexplained-infertility", section: "What it is", label: "What standard testing looks at" },
-    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
-    { slug: "male-factor", section: SEMEN, label: SEMEN },
+    pick("unexplained-infertility", "What it is", "What standard testing looks at"),
+    pick("diminished-ovarian-reserve", NUMBERS, "What AMH numbers do and don't say"),
+    pick("male-factor", SEMEN, SEMEN),
   ],
   "g-iui": [
-    { slug: "pcos", section: TREATMENT, label: "Where IUI fits with PCOS" },
-    { slug: "unexplained-infertility", section: TREATMENT, label: "Where IUI fits when the cause is unexplained" },
-    { slug: "male-factor", section: TREATMENT, label: "Where IUI fits with male factor" },
+    pick("pcos", TREATMENT, "Where IUI fits with PCOS"),
+    pick("unexplained-infertility", TREATMENT, "Where IUI fits when the cause is unexplained"),
+    pick("male-factor", TREATMENT, "Where IUI fits with male factor"),
   ],
   "g-ivf": [
-    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
-    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "IVF with low ovarian reserve" },
-    { slug: "endometriosis", section: TREATMENT, label: "IVF with endometriosis" },
+    pick("diminished-ovarian-reserve", NUMBERS, "What AMH numbers do and don't say"),
+    pick("diminished-ovarian-reserve", TREATMENT, "IVF with low ovarian reserve"),
+    pick("endometriosis", TREATMENT, "IVF with endometriosis"),
   ],
   "g-eggfreeze": [
-    { slug: "diminished-ovarian-reserve", section: "What it is", label: "What ovarian reserve means" },
-    { slug: "diminished-ovarian-reserve", section: NUMBERS, label: "What AMH numbers do and don't say" },
+    pick("diminished-ovarian-reserve", "What it is", "What ovarian reserve means"),
+    pick("diminished-ovarian-reserve", NUMBERS, "What AMH numbers do and don't say"),
   ],
   "g-partners": [
-    { slug: "male-factor", section: SEMEN, label: SEMEN },
-    { slug: "male-factor", section: TREATMENT, label: "Treatment paths with male factor" },
-    { slug: "unexplained-infertility", section: SELF, label: SELF },
+    pick("male-factor", SEMEN, SEMEN),
+    pick("male-factor", TREATMENT, "Treatment paths with male factor"),
+    pick("unexplained-infertility", SELF, SELF),
   ],
-  "g-donor": [{ slug: "diminished-ovarian-reserve", section: TREATMENT, label: "Where donor eggs fit in treatment" }],
-  "g-break": [{ slug: "unexplained-infertility", section: SELF, label: SELF }],
-  "g-work": [{ slug: "unexplained-infertility", section: SELF, label: SELF }],
+  "g-donor": [pick("diminished-ovarian-reserve", TREATMENT, "Where donor eggs fit in treatment")],
+  "g-break": [pick("unexplained-infertility", SELF, SELF)],
+  "g-work": [pick("unexplained-infertility", SELF, SELF)],
   "g-spring": [
-    { slug: "diminished-ovarian-reserve", section: TREATMENT, label: "IVF with low ovarian reserve" },
-    { slug: "endometriosis", section: TREATMENT, label: "IVF with endometriosis" },
+    pick("diminished-ovarian-reserve", TREATMENT, "IVF with low ovarian reserve"),
+    pick("endometriosis", TREATMENT, "IVF with endometriosis"),
   ],
 };
 
-/** A group's reading as real links to the sections of its articles. */
+/** A group's reading as real links to the sections of its articles. A link
+    is hidden when its article isn't published or its section is gone. */
 export const readingFor = (groupId: string) =>
-  (GROUP_READING[groupId] ?? []).flatMap(({ slug, section, label }) => {
-    const article = articleBySlug(slug);
-    return article?.sections.some((s) => s.heading === section) ? [{ href: `/learn/${slug}#${sectionId(section)}`, label, article }] : [];
+  (GROUP_READING[groupId] ?? []).slice(0, 3).flatMap(({ articleSlug, sectionId: id, label }) => {
+    const article = articleBySlug(articleSlug);
+    const published = article && (article.status ?? "published") === "published";
+    return published && article.sections.some((s) => sectionId(s.heading) === id) ? [{ href: `/learn/${articleSlug}#${id}`, label, article }] : [];
   });
