@@ -163,16 +163,27 @@ const tabBar = comp("Phone / Tab bar", { layout: "row", width: 390, height: 94, 
     n && F({ name: "badge", absolute: true, x: 56, y: 6, width: 18, height: 18, radius: 999, fill: C.orange, layout: "row", justify: "center", align: "center" }, [T(n, "chip", { color: C.ink, style: "Bold" })]),
   ])));
 
-const sparkle = () => ({
-  type: "svg", name: "AI sparkle", width: 32, height: 32,
-  svg: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="#F89414" d="M13 5c.9 5.4 2.6 7.3 8.5 8.5-5.9 1.2-7.6 3.1-8.5 8.5-.9-5.4-2.6-7.3-8.5-8.5C10.4 12.3 12.1 10.4 13 5Z"/><path fill="#fff" d="M24.5 3.5c.4 2.3 1 2.9 3.3 3.3-2.3.4-2.9 1-3.3 3.3-.4-2.3-1-2.9-3.3-3.3 2.3-.4 2.9-1 3.3-3.3Z"/><path fill="#F89414" d="M24 20c.3 1.8.8 2.3 2.6 2.6-1.8.3-2.3.8-2.6 2.6-.3-1.8-.8-2.3-2.6-2.6 1.8-.3 2.3-.8 2.6-2.6Z"/></svg>`,
-});
-const guideFab = comp("Grove Guide / Desktop", { layout: "row", align: "center", height: 56, h: "fixed", w: "hug", padding: [0, 20, 0, 8], gap: 8, radius: 999, fill: C.accent, shadow: { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 } }, [
-  F({ name: "icon", width: 40, height: 40, layout: "row", justify: "center", align: "center" }, [sparkle()]),
-  T("Grove Guide", "body", { style: "SemiBold", color: C.white, name: "label" }),
-  F({ name: "AI tag", layout: "row", align: "center", height: 20, h: "fixed", w: "hug", padding: [0, 6], radius: 999, fill: "#FFFFFF1A" }, [T("AI", "chip", { color: C.orange, style: "Bold" })]),
+/* The Guide's mark, as GuideMark in AppShell draws it: the brand's orange
+   (31px, at 5,3 in a 40px box), a white sparkle top left for its shine and a
+   small orange one bottom right. */
+const guideMark = () => F({ name: "Guide mark", width: 40, height: 40 }, [
+  Img("brand/orange.png", 31, Math.round(31 * (322 / 297)), { name: "orange", x: 5, y: 3, scaleMode: "FIT" }),
+  {
+    type: "svg", name: "sparkles", width: 40, height: 40, x: 0, y: 0,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><path fill="#FFFFFF" d="M9 7c.8 4.6 2.2 6 7 7-4.8 1-6.2 2.4-7 7-.8-4.6-2.2-6-7-7 4.8-1 6.2-2.4 7-7Z"/><path fill="#F89414" d="M35 30c.4 2.1.9 2.6 3 3-2.1.4-2.6.9-3 3-.4-2.1-.9-2.6-3-3 2.1-.4 2.6-.9 3-3Z"/></svg>`,
+  },
 ]);
-const guideFabPhone = comp("Grove Guide / Phone", { width: 56, height: 56, radius: 999, fill: C.accent, layout: "row", justify: "center", align: "center", shadow: { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 } }, [sparkle()]);
+const FAB_SHADOW = { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 };
+// p-2 round the mark; the label has 4px before it and 12px after, the AI tag 8px from the words.
+const guideFab = comp("Grove Guide / Desktop", { layout: "row", align: "center", height: 56, h: "fixed", w: "hug", padding: [8, 8, 8, 8], gap: 0, radius: 999, fill: C.accent, shadow: FAB_SHADOW }, [
+  guideMark(),
+  Row({ name: "label", gap: 8, padding: [0, 12, 0, 4] }, [
+    T("Grove Guide", "body", { size: 15, style: "SemiBold", color: C.white, name: "text" }),
+    Row({ name: "AI tag", height: 18, h: "fixed", padding: [0, 6], radius: 999, fill: "#FFFFFF1A" }, [T("AI", "chip", { size: 12, color: C.orange, style: "Bold", letterSpacing: 2.5 })]),
+  ]),
+]);
+// Phones show the mark alone; the label also folds away like this while reading.
+const guideFabPhone = comp("Grove Guide / Phone", { width: 56, height: 56, radius: 999, fill: C.accent, layout: "row", justify: "center", align: "center", shadow: FAB_SHADOW }, [guideMark()]);
 
 // ---------------------------------------------------------------- Cards
 const avatarImg = (key, size, tint) => F({ name: "avatar", width: size, height: size, radius: 999, fill: tint, clip: true }, [avatarArt(key, size)]);
@@ -224,7 +235,7 @@ const articleCard = comp("Card / Article", { layout: "column", width: 380, w: "f
 // ---------------------------------------------------------------- Overlays
 const menuItem = (ic, label, danger) => Row({ name: `item ${label}`, width: 208, height: 40, w: "fill", h: "fixed", gap: 10, padding: [0, 12], radius: 8 }, [icon(ic, 16, danger ? C.danger : C.ink), T(label, "small", { style: "Medium", color: danger ? C.danger : C.ink, name: "label" })]);
 const menu = comp("Menu / Account", { layout: "column", width: 224, w: "fixed", h: "hug", padding: 6, radius: 14, fill: C.white, stroke: C.line, shadow: { x: 0, y: 12, blur: 32, spread: -8, alpha: 0.28 } }, [
-  menuItem("user-round", "View profile"), menuItem("settings", "Settings"), menuItem("circle-help", "Help"),
+  menuItem("layout-dashboard", "Dashboard"), menuItem("settings", "Settings"), menuItem("circle-help", "Help"),
   F({ name: "divider", width: 212, height: 1, w: "fill", fill: C.line }),
   menuItem("log-out", "Sign out", true),
 ]);
@@ -235,6 +246,56 @@ const dialog = (name, title, body, primary, primaryFill) => comp(name, { layout:
   Row({ name: "actions", gap: 8 }, primary.map(([label, kind]) =>
     Row({ name: `button ${label}`, height: 44, h: "fixed", padding: [0, 20], radius: 999, fill: kind === "primary" ? (primaryFill || C.accent) : kind === "secondary" ? C.white : null, stroke: kind === "secondary" ? C.lineStrong : undefined }, [T(label, "body", { style: "SemiBold", color: kind === "primary" ? C.white : C.ink, name: "label" })]))),
 ]);
+
+// Guest browsing (PRD v1.2 §10): what a guest sees when they try to take part.
+const signUpPrompt = comp("Dialog / Sign-up prompt (guests)", { layout: "column", width: 520, w: "fixed", h: "hug", padding: 28, gap: 8, radius: 20, fill: C.white, shadow: { x: 0, y: 24, blur: 60, spread: -12, alpha: 0.35 } }, [
+  T("Join Fertility Grove to take part", "pageTitlePhone", { name: "title" }),
+  T("Fertility Grove is invite-only during the beta. Ask a member for an invite link, or leave your email and we'll tell you when it opens.", "body", { color: C.inkSoft, width: 464, name: "body" }),
+  F({ name: "space", width: 10, height: 12 }),
+  Col({ name: "email", gap: 8, w: "fill" }, [
+    T("Your email", "small", { style: "SemiBold", name: "label" }),
+    F({ name: "input", width: 464, height: 48, w: "fill", radius: 10, fill: C.white, stroke: C.lineStrong }),
+  ]),
+  F({ name: "space", width: 10, height: 8 }),
+  Row({ name: "button Let me know", height: 44, h: "fixed", padding: [0, 20], radius: 999, fill: C.accent }, [T("Let me know", "body", { style: "SemiBold", color: C.white, name: "label" })]),
+  F({ name: "space", width: 10, height: 12 }),
+  Row({ name: "sign in", gap: 4 }, [T("Already a member?", "small", { color: C.muted }), T("Sign in", "small", { style: "SemiBold", name: "link" })]),
+]);
+
+// Write a post / Edit post: Show to visitors is on, so sharing is held on.
+const switchOn = (locked) => F({ name: locked ? "switch (locked on)" : "switch", width: 48, height: 28, fill: locked ? "#22222280" : C.accent, radius: 999 }, [
+  F({ name: "knob", width: 20, height: 20, x: 24, y: 4, fill: C.white, radius: 999 }),
+]);
+const visRow = (label, desc, locked) => Row({ name: label, gap: 24, align: "start", w: "fill" }, [
+  Col({ name: "text", gap: 2, w: "fill", grow: true }, [
+    T(label, "body", { style: "SemiBold", color: locked ? C.muted : C.ink, name: "label" }),
+    T(desc, "small", { color: C.muted, width: 420, name: "description" }),
+  ]),
+  switchOn(locked),
+]);
+const postVisibility = comp("Post visibility / Show to visitors on", { layout: "column", gap: 24, width: 520, w: "fixed", h: "hug" }, [
+  visRow("Allow sharing outside Fertility Grove", "Stays on while Show to visitors is on. Comments are never shown outside.", true),
+  Col({ name: "visitors", gap: 12, w: "fill" }, [
+    visRow("Show to visitors", "Anyone can find and read this post, including people without an account, and search engines can list it. Comments stay private. If you turn this off later, search engines may keep a copy for a while.", false),
+    Row({ name: "warning (Support needed, Just venting)", w: "fill", padding: [12, 16], radius: 10, fill: C.tintYellow }, [T("This will be readable by anyone on the internet.", "small", { color: C.yellowInk, name: "text" })]),
+  ]),
+]);
+
+// Dashboard Posts and Replies tabs: a post a moderator removed, seen by its author only.
+const removedPost = comp("Card / Post removed by a moderator", { layout: "column", width: 640, w: "fixed", h: "hug", padding: 24, gap: 8, radius: 20, fill: C.white, stroke: C.line }, [
+  T("In IVF · 2d ago", "small", { color: C.muted, name: "meta" }),
+  Row({ name: "type", height: 24, h: "fixed", padding: [0, 10], radius: 999, fill: C.tintYellow }, [T("Seeking input", "chip", { color: C.yellowInk, style: "SemiBold" })]),
+  T("Clinic abroad offering IVF packages at half the price", "body", { size: 18, style: "SemiBold", name: "title" }),
+  T("A clinic messaged me on Instagram with a package deal and a discount code if I book this week. Has anyone used them?", "body", { color: C.inkSoft, width: 592, name: "excerpt" }),
+  F({ name: "space", width: 10, height: 8 }),
+  F({ name: "divider", width: 592, height: 1, w: "fill", fill: C.line }),
+  Row({ name: "removed", w: "fill", gap: 12, padding: [8, 0, 0, 0] }, [
+    T("Removed by a moderator · Only you can see this", "small", { style: "SemiBold", color: C.coralInk, name: "label", grow: true, w: "fill" }),
+    Row({ name: "button Appeal", height: 36, h: "fixed", padding: [0, 16], radius: 999, fill: C.white, stroke: C.lineStrong }, [T("Appeal", "small", { style: "SemiBold", name: "label" })]),
+    Row({ name: "button Delete", height: 36, h: "fixed", padding: [0, 16], radius: 999 }, [T("Delete", "small", { style: "SemiBold", name: "label" })]),
+  ]),
+]);
+
 const toast = comp("Toast", { layout: "row", align: "center", height: 48, h: "fixed", w: "hug", padding: [0, 20], radius: 999, fill: C.accent, shadow: { x: 0, y: 12, blur: 28, spread: -10, alpha: 0.5 } }, [T("Avatar saved. Change it any time on your profile.", "small", { style: "SemiBold", color: C.white, name: "message" })]);
 
 const sections = {
@@ -243,6 +304,7 @@ const sections = {
       group("Text field", [field("Default"), field("Focused"), field("Error")]),
       group("Search", [search]),
       group("Switch", [toggle(true), toggle(false)], 40),
+      group("Post visibility (Write a post, Edit post)", [postVisibility]),
       group("Checkbox and choice", [checkbox(true), checkbox(false), choice(true), choice(false)], 24),
     ]),
   chips: () =>
@@ -269,6 +331,7 @@ const sections = {
       group("Post", [postCard]),
       group("Group row", [groupRow]),
       group("Settings row and article", [settingsRow(false), settingsRow(true), articleCard], 24),
+      group("Removed post (Dashboard, author only)", [removedPost]),
     ]),
   overlays: () =>
     section("Menus, dialogs and toasts", "Menus open from their trigger with the menu shadow; dialogs are centred on desktop and slide up as a sheet on phones; toasts rise from the bottom centre.", [
@@ -277,6 +340,7 @@ const sections = {
         dialog("Dialog / Sign out", "Sign out of Fertility Grove?", "You can sign back in any time with your email or Google.", [["Sign out", "primary"], ["Cancel", "ghost"]], C.danger),
         dialog("Dialog / Unsaved changes", "You have unsaved changes", "If you leave now, what you've changed on this page won't be kept.", [["Save and leave", "primary"], ["Leave without saving", "secondary"], ["Keep editing", "ghost"]]),
       ], 32),
+      group("Guest sign-up prompt (public pages)", [signUpPrompt]),
       group("Toast", [toast]),
     ]),
   avatars: () =>
