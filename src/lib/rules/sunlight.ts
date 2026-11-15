@@ -1,7 +1,7 @@
 /* Sunlight and tree levels, PRD v2.0 §13. Levels never drop: a member's level
    is the highest threshold they have ever reached. */
 
-import type { TreeLevel } from "../types";
+import type { TreeLevel } from "@/types/domain";
 
 export const LEVELS: { level: TreeLevel; at: number; unlocks: string }[] = [
   { level: "Seed", at: 0, unlocks: "Full access to Fertility Grove." },

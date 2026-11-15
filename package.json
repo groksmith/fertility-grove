@@ -2,11 +2,23 @@
   "name": "fertility-grove",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@1.22.22",
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:check": "NEXT_DIST_DIR=.next-check next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "biome check src/ tests/",
+    "format": "biome check --fix src/ tests/",
+    "typecheck": "tsc --noEmit",
+    "test": "TZ=America/Los_Angeles vitest run",
+    "test:watch": "TZ=America/Los_Angeles vitest",
+    "test:coverage": "TZ=America/Los_Angeles vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "lucide-react": "^1.43.0",
@@ -15,13 +27,29 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@playwright/test": "~1.59.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@testing-library/dom": "^10",
+    "@testing-library/jest-dom": "~6.9.1",
+    "@testing-library/react": "^16",
+    "@testing-library/user-event": "^14",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.4",
+    "@vitejs/plugin-react": "^4",
+    "@vitest/coverage-v8": "^4.1.12",
+    "axe-core": "^4",
+    "fast-check": "^3",
+    "jsdom": "^26",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
+  },
+  "resolutions": {
+    "postcss": "^8.5.28",
+    "source-map-js": "^1.2.2",
+    "vite": "^7.3.7"
   }
 }

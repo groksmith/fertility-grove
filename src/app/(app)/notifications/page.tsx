@@ -4,12 +4,23 @@
    item opens the exact thing it's about. Unread items keep a dot until the
    next visit so the member can see what was new. */
 
+import { Avatar, EmptyState, PageHeader, Panel } from "@/components/shared";
+import { act, sel, useStore } from "@/lib/store";
+import type { Notification, NotificationKind } from "@/types/domain";
+import {
+  AtSign,
+  Bell,
+  HeartHandshake,
+  Mail,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Sprout,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AtSign, Bell, HeartHandshake, MessageCircle, Mail, ShieldCheck, Sparkles, Sprout, UserPlus, Users } from "lucide-react";
-import { Avatar, EmptyState, PageHeader, Panel } from "@/components/ui";
-import { act, sel, useStore } from "@/lib/store";
-import type { Notification, NotificationKind } from "@/lib/types";
 
 const ICON: Record<NotificationKind, React.ElementType> = {
   reply: AtSign,
@@ -40,7 +51,11 @@ function Row({ n, wasUnread }: { n: Notification; wasUnread: boolean }) {
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className={`block text-[15px] leading-snug ${wasUnread ? "font-semibold text-ink" : "text-ink-soft"}`}>{n.text}</span>
+          <span
+            className={`block text-[15px] leading-snug ${wasUnread ? "font-semibold text-ink" : "text-ink-soft"}`}
+          >
+            {n.text}
+          </span>
           <span className="text-[13px] text-muted">{sel.timeAgo(n.minutesAgo)} ago</span>
         </span>
         {wasUnread && (
@@ -68,7 +83,11 @@ export default function NotificationsPage() {
     <div className="max-w-2xl">
       <PageHeader
         title="Notifications"
-        lede={unreadIds.length ? `${unreadIds.length} new since you last looked.` : "Nothing new since you last looked."}
+        lede={
+          unreadIds.length
+            ? `${unreadIds.length} new since you last looked.`
+            : "Nothing new since you last looked."
+        }
       />
       {notifications.length === 0 ? (
         <EmptyState art="bud" title="No notifications yet." />

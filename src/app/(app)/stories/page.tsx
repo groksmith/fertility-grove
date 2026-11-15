@@ -5,13 +5,22 @@
    out of the feed unless the member turns them on. */
 
 import { Spot } from "@/components/art/Scenes";
-import { useState } from "react";
-import { ArrowBigUp, Bookmark, MessageSquare, PenLine } from "lucide-react";
-import { useResult } from "@/components/Safety";
-import { ChipSelect, EmptyState, LinkButton, Name, Panel, SourceLabel, TagChip, TypeChip } from "@/components/ui";
+import { Name } from "@/components/common/Person";
+import { useResult } from "@/components/common/Safety";
+import {
+  ChipSelect,
+  EmptyState,
+  LinkButton,
+  Panel,
+  SourceLabel,
+  TagChip,
+  TypeChip,
+} from "@/components/shared";
+import { WHAT_HELPED } from "@/config/options";
 import { act, sel, useStore } from "@/lib/store";
-import { WHAT_HELPED } from "@/lib/options";
-import type { Story } from "@/lib/types";
+import type { Story } from "@/types/domain";
+import { ArrowBigUp, Bookmark, MessageSquare, PenLine } from "lucide-react";
+import { useState } from "react";
 
 function StoryCard({ story }: { story: Story }) {
   const s = useStore();
@@ -35,7 +44,8 @@ function StoryCard({ story }: { story: Story }) {
       <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-ink">{story.body}</p>
       {story.whatHelped.length > 0 && (
         <p className="mt-3 text-[14px] text-muted">
-          <span className="font-semibold text-ink-soft">What helped:</span> {story.whatHelped.join(", ")}
+          <span className="font-semibold text-ink-soft">What helped:</span>{" "}
+          {story.whatHelped.join(", ")}
         </p>
       )}
       <footer className="mt-4 flex flex-wrap items-center gap-2">
@@ -91,7 +101,8 @@ export default function StoriesPage() {
           <div>
             <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">Success stories</h1>
             <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">
-              Hope from the other side, kept in its own space so you can visit when you&apos;re ready.
+              Hope from the other side, kept in its own space so you can visit when you&apos;re
+              ready.
             </p>
           </div>
         </div>
@@ -105,8 +116,16 @@ export default function StoriesPage() {
           {stories.length === 0 ? (
             <EmptyState
               art="blossom"
-              title={s.stories.length ? "No stories match those filters." : "No stories here yet. When you're ready, yours could be the first."}
-              action={s.stories.length ? undefined : <LinkButton href="/stories/new">Share your story</LinkButton>}
+              title={
+                s.stories.length
+                  ? "No stories match those filters."
+                  : "No stories here yet. When you're ready, yours could be the first."
+              }
+              action={
+                s.stories.length ? undefined : (
+                  <LinkButton href="/stories/new">Share your story</LinkButton>
+                )
+              }
             />
           ) : (
             <ul className="space-y-4">
@@ -127,14 +146,19 @@ export default function StoriesPage() {
             </div>
             <div>
               <p className="mb-2 text-[14px] text-muted">What helped</p>
-              <ChipSelect label="What helped" options={helpedOptions} value={helped} onChange={setHelped} />
+              <ChipSelect
+                label="What helped"
+                options={helpedOptions}
+                value={helped}
+                onChange={setHelped}
+              />
             </div>
           </Panel>
           <Panel className="p-5 text-[14px] leading-relaxed text-ink-soft">
             <h2 className="text-[16px] font-semibold text-ink">In your feed?</h2>
             <p className="mt-1.5">
-              Stories only appear in your feed if you turn on &quot;Show success stories in my feed&quot; in Settings. It&apos;s{" "}
-              {s.me.showStories ? "on" : "off"} for you right now.
+              Stories only appear in your feed if you turn on &quot;Show success stories in my
+              feed&quot; in Settings. It&apos;s {s.me.showStories ? "on" : "off"} for you right now.
             </p>
           </Panel>
         </aside>

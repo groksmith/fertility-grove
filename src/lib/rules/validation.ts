@@ -1,14 +1,13 @@
 /* Field rules and their messages, word for word from PRD v2.0. Each check
    returns the message to show, or undefined when the value passes. */
 
-import { RESERVED_HANDLES } from "../options";
+import { RESERVED_HANDLES } from "@/config/options";
 
 export const MSG = {
   email: "Enter a valid email address.",
   passwordShort: "Use at least 8 characters.",
   passwordLong: "Use 64 characters or fewer.",
-  passwordLeaked:
-    "This password has appeared in a data leak elsewhere. Choose a different one.",
+  passwordLeaked: "This password has appeared in a data leak elsewhere. Choose a different one.",
   age: "You need to be 18 or older to join Fertility Grove.",
   terms: "Please agree to the Terms and Privacy Policy to continue.",
   wrongCredentials: "That email or password isn't right.",
@@ -16,8 +15,7 @@ export const MSG = {
   resetSent: "If there is an account for that email, we have sent a reset link.",
   passwordsDiffer: "Passwords don't match.",
   linkExpired: "This link has expired. Request a new one.",
-  inviteOnly:
-    "Fertility Grove is invite-only during the beta. Ask a member for an invite link.",
+  inviteOnly: "Fertility Grove is invite-only during the beta. Ask a member for an invite link.",
   paused:
     "We've paused new sign-ups for a short time so our team can welcome everyone properly. Leave your email and we'll let you know when we reopen.",
   googleDown: "Google sign-in isn't available right now. Try email instead.",
@@ -38,8 +36,7 @@ export const MSG = {
   handleUnavailable: "That handle isn't available. Try another one.",
 
   selfInvite: "You can't invite your own email.",
-  alreadyPartnered:
-    "You already have a linked partner. Unlink first to invite someone else.",
+  alreadyPartnered: "You already have a linked partner. Unlink first to invite someone else.",
   inviteExpired: "This invite has expired. Ask your partner to send a new one.",
   resendLimit: "You can resend this invite once a day, up to 3 times.",
   noteTitle: "Add a title to your note.",
@@ -51,8 +48,7 @@ export const MSG = {
   researchLink: "Add a link to the research or guideline.",
   badLink: "Enter a full web address, starting with https://",
   postLimit: "You've reached the limit of 10 posts an hour. Try again a little later.",
-  commentLimit:
-    "You've reached the limit of 50 comments an hour. Try again a little later.",
+  commentLimit: "You've reached the limit of 50 comments an hour. Try again a little later.",
   commentEmpty: "Write something before replying.",
   storyMissing: "Add a story type, title, story and source before publishing.",
 
@@ -100,7 +96,14 @@ const LEAKED = new Set([
 /** Handles already in use by seed members, plus a few classics. */
 export const TAKEN_HANDLES = new Set(["hopeful_annie", "maya", "tired_but_trying"]);
 
-const CRISIS_WORDS = ["suicide", "killmyself", "selfharm", "die"];
+/* Crisis words a handle may not contain. Most are refused anywhere in the handle; "die" only as
+   its own part (between underscores or digits, or the whole handle), so "want_to_die" and "die2"
+   are refused while "diego", "soldier_mom" and "audience" are not. */
+const CRISIS_ANYWHERE = ["suicid", "killmyself", "selfharm", "wanttodie", "endmylife"];
+const CRISIS_PARTS = ["die"];
+const hasCrisisWord = (h: string) =>
+  CRISIS_ANYWHERE.some((w) => h.includes(w)) ||
+  h.split(/[_0-9]+/).some((part) => CRISIS_PARTS.includes(part));
 
 export const checks = {
   email(v: string) {
@@ -120,7 +123,7 @@ export const checks = {
     if (h.length < 3 || h.length > 30 || !/^[a-z][a-z0-9_]*$/.test(h)) {
       return MSG.handleFormat;
     }
-    if (RESERVED_HANDLES.includes(h) || CRISIS_WORDS.some((w) => h.includes(w))) {
+    if (RESERVED_HANDLES.includes(h) || hasCrisisWord(h)) {
       return MSG.handleUnavailable;
     }
     if (TAKEN_HANDLES.has(h) || extraTaken.includes(h)) return MSG.handleTaken;
@@ -142,7 +145,7 @@ export const normalizeEmail = (v: string) => v.trim().toLowerCase();
 
 /** Error map helper: drops passing fields so `Object.keys(errs).length` works. */
 export function collect<T extends Record<string, string | undefined>>(errs: T) {
-  return Object.fromEntries(
-    Object.entries(errs).filter(([, v]) => v !== undefined),
-  ) as Partial<Record<keyof T, string>>;
+  return Object.fromEntries(Object.entries(errs).filter(([, v]) => v !== undefined)) as Partial<
+    Record<keyof T, string>
+  >;
 }

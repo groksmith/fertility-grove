@@ -5,10 +5,6 @@
    shared items, family notes and the activity list. Every item is private
    until its owner shares it, and only the owner changes or stops sharing. */
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { BookOpen, CalendarCheck, FileText, Route, StickyNote } from "lucide-react";
-import { useState } from "react";
 import { Spot } from "@/components/art/Scenes";
 import {
   Button,
@@ -23,17 +19,33 @@ import {
   Select,
   Textarea,
   toast,
-} from "@/components/ui";
+} from "@/components/shared";
 import { ARTICLES } from "@/lib/data/articles";
-import { act, sel, useStore, type State } from "@/lib/store";
-import type { FamilyItem, FamilyItemKind } from "@/lib/types";
+import { type State, act, sel, useStore } from "@/lib/store";
+import type { FamilyItem, FamilyItemKind } from "@/types/domain";
+import { BookOpen, CalendarCheck, FileText, Route, StickyNote } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const KIND: Record<FamilyItemKind, { label: string; icon: React.ElementType; cls: string }> = {
-  "appointment-list": { label: "Appointment questions", icon: CalendarCheck, cls: "bg-blue-tint text-blue-ink" },
+  "appointment-list": {
+    label: "Appointment questions",
+    icon: CalendarCheck,
+    cls: "bg-blue-tint text-blue-ink",
+  },
   "journey-summary": { label: "Journey summary", icon: Route, cls: "bg-green-tint text-green-ink" },
   article: { label: "Saved article", icon: BookOpen, cls: "bg-yellow-tint text-yellow-ink" },
-  "guide-answer": { label: "Grove Guide answer", icon: FileText, cls: "bg-blue-tint text-blue-ink" },
-  note: { label: "Family note", icon: StickyNote, cls: "bg-pink-tint text-ink-soft ring-1 ring-inset ring-pink" },
+  "guide-answer": {
+    label: "Grove Guide answer",
+    icon: FileText,
+    cls: "bg-blue-tint text-blue-ink",
+  },
+  note: {
+    label: "Family note",
+    icon: StickyNote,
+    cls: "bg-pink-tint text-ink-soft ring-1 ring-inset ring-pink",
+  },
 };
 
 function itemHref(i: FamilyItem) {
@@ -55,7 +67,10 @@ function Invite({ s }: { s: State }) {
         <Spot kind="seeds" size={160} className="-mt-6 -ml-4" />
         <h2 className="mt-0 text-[22px] font-semibold">Bring your partner in</h2>
         <p className="mt-2 max-w-[56ch] text-[15px] leading-relaxed text-ink-soft">
-          Your partner gets their own private account and their own community. Once you link, you get a family space for two: share appointment questions, your journey summary, saved articles and Guide answers, and keep family notes together. Nothing is shared until you choose to share it, and your messages and Guide chats always stay yours.
+          Your partner gets their own private account and their own community. Once you link, you
+          get a family space for two: share appointment questions, your journey summary, saved
+          articles and Guide answers, and keep family notes together. Nothing is shared until you
+          choose to share it, and your messages and Guide chats always stay yours.
         </p>
         {pending ? (
           <div className="mt-6 rounded-[14px] bg-raised p-4">
@@ -63,10 +78,24 @@ function Invite({ s }: { s: State }) {
               Invite sent to <strong>{inv.email}</strong>. It expires in {14 - inv.daysAgo} days.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={() => { const r = act.partner.resend(); toast(r.ok ? "Invite sent again" : r.error); }}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  const r = act.partner.resend();
+                  toast(r.ok ? "Invite sent again" : r.error);
+                }}
+              >
                 Resend
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => { act.partner.cancel(); toast("Invite cancelled"); }}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  act.partner.cancel();
+                  toast("Invite cancelled");
+                }}
+              >
                 Cancel invite
               </Button>
             </div>
@@ -86,10 +115,28 @@ function Invite({ s }: { s: State }) {
             }}
           >
             <Field label="Partner's email" error={error}>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" autoCapitalize="none" className="sm:max-w-sm" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+                autoCapitalize="none"
+                className="sm:max-w-sm"
+              />
             </Field>
-            <Field label="Personal note" optional hint="Shown only on the invite page, never in the email." counter={<Counter value={note} max={300} />}>
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} max={300} hardStop rows={3} />
+            <Field
+              label="Personal note"
+              optional
+              hint="Shown only on the invite page, never in the email."
+              counter={<Counter value={note} max={300} />}
+            >
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                max={300}
+                hardStop
+                rows={3}
+              />
             </Field>
             <Button type="submit">Send invite</Button>
           </form>
@@ -107,7 +154,10 @@ function Invite({ s }: { s: State }) {
         {pending && (
           <Panel className="bg-yellow-tint p-5">
             <h2 className="text-[16px] font-semibold text-[var(--yellow-700)]">Prototype</h2>
-            <p className="mt-1 text-[14px] text-[var(--yellow-700)]">There&apos;s no second account here. Simulate your partner accepting to see the family space.</p>
+            <p className="mt-1 text-[14px] text-[var(--yellow-700)]">
+              There&apos;s no second account here. Simulate your partner accepting to see the family
+              space.
+            </p>
             <Button size="sm" className="mt-3" onClick={() => act.partner.demoAccept()}>
               Simulate acceptance
             </Button>
@@ -128,7 +178,10 @@ function PastNotes({ s }: { s: State }) {
       <ul className="mt-3 space-y-1">
         {past.map((n) => (
           <li key={n.id}>
-            <Link href={`/family/notes/${n.id}`} className="press block rounded-[10px] px-3 py-2 text-[14px] font-semibold hover:bg-raised">
+            <Link
+              href={`/family/notes/${n.id}`}
+              className="press block rounded-[10px] px-3 py-2 text-[14px] font-semibold hover:bg-raised"
+            >
               {n.title}
             </Link>
           </li>
@@ -140,11 +193,33 @@ function PastNotes({ s }: { s: State }) {
 
 function ShareDialog({ open, onClose, s }: { open: boolean; onClose: () => void; s: State }) {
   const options = [
-    ...(s.me.healthConsent ? [{ id: "journey", label: "My journey summary", kind: "journey-summary" as const, title: "Journey summary", edit: false }] : []),
-    ...s.appointmentLists.map((l) => ({ id: l.id, label: `${l.type} questions`, kind: "appointment-list" as const, title: `${l.type} questions`, edit: true })),
+    ...(s.me.healthConsent
+      ? [
+          {
+            id: "journey",
+            label: "My journey summary",
+            kind: "journey-summary" as const,
+            title: "Journey summary",
+            edit: false,
+          },
+        ]
+      : []),
+    ...s.appointmentLists.map((l) => ({
+      id: l.id,
+      label: `${l.type} questions`,
+      kind: "appointment-list" as const,
+      title: `${l.type} questions`,
+      edit: true,
+    })),
     ...s.savedArticles.map((slug) => {
       const a = ARTICLES.find((x) => x.slug === slug);
-      return { id: slug, label: a?.title ?? slug, kind: "article" as const, title: a?.title ?? slug, edit: false };
+      return {
+        id: slug,
+        label: a?.title ?? slug,
+        kind: "article" as const,
+        title: a?.title ?? slug,
+        edit: false,
+      };
     }),
   ];
   const [pick, setPick] = useState("");
@@ -154,14 +229,22 @@ function ShareDialog({ open, onClose, s }: { open: boolean; onClose: () => void;
   return (
     <Dialog open={open} onClose={onClose} title={`Share with ${s.partner.firstName}`}>
       {options.length === 0 ? (
-        <p className="text-[15px] text-ink-soft">Save an article or make an appointment question list first. You can share those here.</p>
+        <p className="text-[15px] text-ink-soft">
+          Save an article or make an appointment question list first. You can share those here.
+        </p>
       ) : (
         <form
           className="space-y-5"
           onSubmit={(e) => {
             e.preventDefault();
             if (!chosen) return;
-            act.family.share({ kind: chosen.kind, refId: chosen.id, title: chosen.title, access: chosen.edit && access[0] === "Edit" ? "edit" : "view", note: note.trim() || undefined });
+            act.family.share({
+              kind: chosen.kind,
+              refId: chosen.id,
+              title: chosen.title,
+              access: chosen.edit && access[0] === "Edit" ? "edit" : "view",
+              note: note.trim() || undefined,
+            });
             toast(`Shared with ${s.partner.firstName}`);
             onClose();
           }}
@@ -170,7 +253,9 @@ function ShareDialog({ open, onClose, s }: { open: boolean; onClose: () => void;
             <Select value={pick} onChange={(e) => setPick(e.target.value)} data-autofocus>
               <option value="">Choose something</option>
               {options.map((o) => (
-                <option key={o.id} value={o.id}>{o.label}</option>
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
               ))}
             </Select>
           </Field>
@@ -178,14 +263,22 @@ function ShareDialog({ open, onClose, s }: { open: boolean; onClose: () => void;
             <Input value="My partner" readOnly />
           </Field>
           {chosen?.edit ? (
-            <Choices legend="Access" options={["View", "Edit"] as const} value={access} onChange={setAccess} columns={2} />
+            <Choices
+              legend="Access"
+              options={["View", "Edit"] as const}
+              value={access}
+              onChange={setAccess}
+              columns={2}
+            />
           ) : (
             chosen && <p className="text-[14px] text-muted">This can be shared as View only.</p>
           )}
           <Field label="Note" optional counter={<Counter value={note} max={200} />}>
             <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
           </Field>
-          <Button type="submit" disabled={!chosen}>Share</Button>
+          <Button type="submit" disabled={!chosen}>
+            Share
+          </Button>
         </form>
       )}
     </Dialog>
@@ -212,10 +305,26 @@ function NoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
         }}
       >
         <Field label="Title" error={errs.title} counter={<Counter value={title} max={120} />}>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} data-autofocus />
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+            data-autofocus
+          />
         </Field>
-        <Field label="Note" error={errs.body} counter={<Counter value={body} max={5000} />} hint="You can both edit family notes.">
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} max={5000} hardStop rows={6} />
+        <Field
+          label="Note"
+          error={errs.body}
+          counter={<Counter value={body} max={5000} />}
+          hint="You can both edit family notes."
+        >
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            max={5000}
+            hardStop
+            rows={6}
+          />
         </Field>
         <Button type="submit">Save note</Button>
       </form>
@@ -233,8 +342,14 @@ export default function FamilyPage() {
   if (!p.linked) {
     return (
       <>
-        <PageHeader title="Family space" lede="A private space for you and your partner, once you link your accounts." art={<Spot kind="roots" size={88} className="hidden sm:block" />} />
-        {s.partner.notice && <p className="mb-4 rounded-[14px] bg-raised p-4 text-[14px]">{s.partner.notice}</p>}
+        <PageHeader
+          title="Family space"
+          lede="A private space for you and your partner, once you link your accounts."
+          art={<Spot kind="roots" size={88} className="hidden sm:block" />}
+        />
+        {s.partner.notice && (
+          <p className="mb-4 rounded-[14px] bg-raised p-4 text-[14px]">{s.partner.notice}</p>
+        )}
         <Invite s={s} />
       </>
     );
@@ -248,21 +363,36 @@ export default function FamilyPage() {
     <>
       <PageHeader
         title="Family space"
-        lede={latest ? `${latest.text}, ${sel.timeAgo(latest.minutesAgo)} ago.`.replace("just now ago", "just now") : `You and ${p.firstName} share ${items.length} items.`}
+        lede={
+          latest
+            ? `${latest.text}, ${sel.timeAgo(latest.minutesAgo)} ago.`.replace(
+                "just now ago",
+                "just now",
+              )
+            : `You and ${p.firstName} share ${items.length} items.`
+        }
         art={<Spot kind="roots" size={88} className="hidden sm:block" />}
         actions={
           <>
             <Button onClick={() => setShare(true)}>Share something</Button>
-            <Button variant="secondary" onClick={() => setNewNote(true)}>New family note</Button>
+            <Button variant="secondary" onClick={() => setNewNote(true)}>
+              New family note
+            </Button>
           </>
         }
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-labelledby="shared-h" className="min-w-0">
-          <h2 id="shared-h" className="mb-3 text-[18px] font-semibold">Shared between you</h2>
+          <h2 id="shared-h" className="mb-3 text-[18px] font-semibold">
+            Shared between you
+          </h2>
           {items.length === 0 ? (
-            <EmptyState art="roots" title="Nothing shared yet." body="Share an appointment question list or start a family note." />
+            <EmptyState
+              art="roots"
+              title="Nothing shared yet."
+              body="Share an appointment question list or start a family note."
+            />
           ) : (
             <Panel className="p-2">
               <ul>
@@ -273,17 +403,27 @@ export default function FamilyPage() {
                   const mine = i.owner === "me";
                   return (
                     <li key={i.id} className="flex flex-wrap items-center gap-3 rounded-[14px] p-3">
-                      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-[10px] ${k.cls}`}>
+                      <span
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-[10px] ${k.cls}`}
+                      >
                         <Icon size={19} />
                       </span>
                       <span className="min-w-0 flex-1">
                         {href ? (
-                          <Link href={href} className="block truncate text-[15px] font-semibold hover:underline">{i.title}</Link>
+                          <Link
+                            href={href}
+                            className="block truncate text-[15px] font-semibold hover:underline"
+                          >
+                            {i.title}
+                          </Link>
                         ) : (
-                          <span className="block truncate text-[15px] font-semibold">{i.title}</span>
+                          <span className="block truncate text-[15px] font-semibold">
+                            {i.title}
+                          </span>
                         )}
                         <span className="block text-[13px] text-muted">
-                          {k.label} · shared by {mine ? "you" : p.firstName} · {i.access === "edit" ? "Can edit" : "View only"}
+                          {k.label} · shared by {mine ? "you" : p.firstName} ·{" "}
+                          {i.access === "edit" ? "Can edit" : "View only"}
                           {i.note && ` · “${i.note}”`}
                         </span>
                       </span>
@@ -293,19 +433,32 @@ export default function FamilyPage() {
                             <Select
                               aria-label="Access"
                               value={i.access}
-                              onChange={(e) => act.family.setAccess(i.id, e.target.value as "view" | "edit")}
+                              onChange={(e) =>
+                                act.family.setAccess(i.id, e.target.value as "view" | "edit")
+                              }
                               className="!h-9 w-32 text-[14px]"
                             >
                               <option value="view">View only</option>
                               <option value="edit">Can edit</option>
                             </Select>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => { act.family.stopSharing(i.id); toast("Stopped sharing"); }}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              act.family.stopSharing(i.id);
+                              toast("Stopped sharing");
+                            }}
+                          >
                             Stop sharing
                           </Button>
                         </span>
                       ) : (
-                        !mine && <span className="text-[13px] text-muted">Only {p.firstName} can change this</span>
+                        !mine && (
+                          <span className="text-[13px] text-muted">
+                            Only {p.firstName} can change this
+                          </span>
+                        )
                       )}
                     </li>
                   );
@@ -320,20 +473,29 @@ export default function FamilyPage() {
             <div className="flex items-center gap-3">
               <Spot kind="seeds" size={72} />
               <div>
-                <p className="text-[15px] font-semibold">{me.firstName} and {p.firstName}</p>
+                <p className="text-[15px] font-semibold">
+                  {me.firstName} and {p.firstName}
+                </p>
                 <p className="text-[13px] text-muted">Linked partners</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" className="mt-3" onClick={() => setUnlink(true)}>Unlink</Button>
+            <Button variant="ghost" size="sm" className="mt-3" onClick={() => setUnlink(true)}>
+              Unlink
+            </Button>
           </Panel>
           <Panel className="p-5">
             <h2 className="text-[16px] font-semibold">Activity</h2>
             <ol className="mt-3 space-y-3">
               {s.family.activity.slice(0, 12).map((a) => (
                 <li key={a.id} className="flex gap-3 text-[14px] leading-snug">
-                  <span aria-hidden className="mt-1.5 h-2 w-3 shrink-0 rounded-[0_100%_0_100%] bg-[var(--green-300)]" />
+                  <span
+                    aria-hidden
+                    className="mt-1.5 h-2 w-3 shrink-0 rounded-[0_100%_0_100%] bg-[var(--green-300)]"
+                  />
                   <span className="flex-1 text-ink-soft">{a.text}</span>
-                  <span className="tabular shrink-0 text-[12.5px] text-muted">{sel.timeAgo(a.minutesAgo)}</span>
+                  <span className="tabular shrink-0 text-[12.5px] text-muted">
+                    {sel.timeAgo(a.minutesAgo)}
+                  </span>
                 </li>
               ))}
             </ol>
@@ -351,11 +513,21 @@ export default function FamilyPage() {
         description={`Sharing ends at once. You each keep your own items, and family notes are copied into a read-only Past family notes area. ${p.firstName} will be told.`}
       >
         <div className="flex gap-2">
-          <Button variant="danger" onClick={() => { act.partner.unlink(); setUnlink(false); toast("Unlinked"); }}>Unlink</Button>
-          <Button variant="ghost" onClick={() => setUnlink(false)}>Cancel</Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              act.partner.unlink();
+              setUnlink(false);
+              toast("Unlinked");
+            }}
+          >
+            Unlink
+          </Button>
+          <Button variant="ghost" onClick={() => setUnlink(false)}>
+            Cancel
+          </Button>
         </div>
       </Dialog>
     </>
   );
 }
-

@@ -2,7 +2,7 @@
    plain-language sample written for the prototype; the reviewer is fictional
    and labelled as a sample. Real articles are clinician-reviewed before launch. */
 
-import type { Article } from "../types";
+import type { Article } from "@/types/domain";
 
 const REVIEWER = "Dr. Lena Ortiz, MD, Reproductive Endocrinology (sample reviewer)";
 
@@ -55,8 +55,14 @@ export const ARTICLES: Article[] = [
       },
     ],
     sources: [
-      { label: "ACOG: Endometriosis", url: "https://www.acog.org/womens-health/faqs/endometriosis" },
-      { label: "NICHD: About endometriosis", url: "https://www.nichd.nih.gov/health/topics/endometri" },
+      {
+        label: "ACOG: Endometriosis",
+        url: "https://www.acog.org/womens-health/faqs/endometriosis",
+      },
+      {
+        label: "NICHD: About endometriosis",
+        url: "https://www.nichd.nih.gov/health/topics/endometri",
+      },
     ],
     relatedGroups: ["g-endo", "g-ivf"],
   },
@@ -103,8 +109,14 @@ export const ARTICLES: Article[] = [
       },
     ],
     sources: [
-      { label: "ACOG: Polycystic ovary syndrome", url: "https://www.acog.org/womens-health/faqs/polycystic-ovary-syndrome-pcos" },
-      { label: "International PCOS guideline (Monash University)", url: "https://www.monash.edu/medicine/mchri/pcos/guideline" },
+      {
+        label: "ACOG: Polycystic ovary syndrome",
+        url: "https://www.acog.org/womens-health/faqs/polycystic-ovary-syndrome-pcos",
+      },
+      {
+        label: "International PCOS guideline (Monash University)",
+        url: "https://www.monash.edu/medicine/mchri/pcos/guideline",
+      },
     ],
     relatedGroups: ["g-pcos", "g-iui"],
   },
@@ -199,8 +211,14 @@ export const ARTICLES: Article[] = [
       },
     ],
     sources: [
-      { label: "Urology Care Foundation: Male infertility", url: "https://www.urologyhealth.org/urology-a-z/m/male-infertility" },
-      { label: "WHO: Infertility fact sheet", url: "https://www.who.int/news-room/fact-sheets/detail/infertility" },
+      {
+        label: "Urology Care Foundation: Male infertility",
+        url: "https://www.urologyhealth.org/urology-a-z/m/male-infertility",
+      },
+      {
+        label: "WHO: Infertility fact sheet",
+        url: "https://www.who.int/news-room/fact-sheets/detail/infertility",
+      },
     ],
     relatedGroups: ["g-mf", "g-partners"],
   },
@@ -248,7 +266,10 @@ export const ARTICLES: Article[] = [
       },
     ],
     sources: [
-      { label: "ACOG: Repeated miscarriages", url: "https://www.acog.org/womens-health/faqs/repeated-miscarriages" },
+      {
+        label: "ACOG: Repeated miscarriages",
+        url: "https://www.acog.org/womens-health/faqs/repeated-miscarriages",
+      },
       { label: "ASRM ReproductiveFacts", url: "https://www.reproductivefacts.org" },
     ],
     relatedGroups: ["g-rpl", "g-break"],
@@ -306,10 +327,15 @@ export const ARTICLES: Article[] = [
 export const articleBySlug = (slug: string) => ARTICLES.find((a) => a.slug === slug);
 
 /** Each article's painted cover: its topic as one painted subject, on its tint. */
-export const articleCover = (slug: string) => `/brand/learn/${slug}-topic.webp`;
+export const articleCover = (slug: string) => `/assets/brand/learn/${slug}-topic.webp`;
 
 /** The anchor of an article section, e.g. /learn/pcos#common-treatment-paths. */
-export const sectionId = (heading: string) => heading.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const sectionId = (heading: string) =>
+  heading
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 const TREATMENT = "Common treatment paths";
 const QUESTIONS = "Questions to bring to your doctor";
@@ -333,7 +359,11 @@ export interface ReadingLink {
   label: string;
 }
 
-const pick = (articleSlug: string, heading: string, label: string): ReadingLink => ({ articleSlug, sectionId: sectionId(heading), label });
+const pick = (articleSlug: string, heading: string, label: string): ReadingLink => ({
+  articleSlug,
+  sectionId: sectionId(heading),
+  label,
+});
 
 const GROUP_READING: Record<string, ReadingLink[]> = {
   "g-endo": [
@@ -405,5 +435,7 @@ export const readingFor = (groupId: string) =>
   (GROUP_READING[groupId] ?? []).slice(0, 3).flatMap(({ articleSlug, sectionId: id, label }) => {
     const article = articleBySlug(articleSlug);
     const published = article && (article.status ?? "published") === "published";
-    return published && article.sections.some((s) => sectionId(s.heading) === id) ? [{ href: `/learn/${articleSlug}#${id}`, label, article }] : [];
+    return published && article.sections.some((s) => sectionId(s.heading) === id)
+      ? [{ href: `/learn/${articleSlug}#${id}`, label, article }]
+      : [];
   });

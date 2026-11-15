@@ -19,9 +19,9 @@ const SIZES = [
 const TINT = { purple: "#F1E7F1", pink: "#FFE7DE", blue: "#DFF3FF", pinkBg: "#FFE8F3", neutral: "#F5F5F5", green: "#E0F6EB" };
 const TREE = { Seed: "tree-seed", Bush: "tree-bush", Tree: "tree-tree", "Blossom Tree": "tree-blossom", "Orange Tree": "tree-orange" };
 const STAGE = { Seed: "stage-seed", Bush: "stage-bush", Tree: "stage-tree", "Blossom Tree": "stage-blossom", "Orange Tree": "stage-orange" };
-const tree = (lv, s, p = {}) => Img(`brand/art/${TREE[lv]}.webp`, s, s, { name: lv, scaleMode: "FIT", ...p });
-const orange = (w, p = {}) => Img("brand/orange.png", w, Math.round((w * 322) / 297), { name: "Orange", scaleMode: "FIT", ...p });
-const logo = (h) => Img("brand/logo.png", Math.round(h * (1295 / 473)), h, { name: "Logo", scaleMode: "FIT" });
+const tree = (lv, s, p = {}) => Img(`assets/brand/art/${TREE[lv]}.webp`, s, s, { name: lv, scaleMode: "FIT", ...p });
+const orange = (w, p = {}) => Img("assets/brand/orange.png", w, Math.round((w * 322) / 297), { name: "Orange", scaleMode: "FIT", ...p });
+const logo = (h) => Img("assets/brand/logo.png", Math.round(h * (1295 / 473)), h, { name: "Logo", scaleMode: "FIT" });
 const gap = (h) => F({ name: "space", width: 10, height: h });
 
 // Spots (art/Scenes.tsx): pieces on one ground line; x and w are % of width.
@@ -107,7 +107,7 @@ function privacy(v) {
   const itemW = (listW - (cols - 1) * 32) / cols;
   const item = ([t, a]) =>
     Row({ name: t, width: itemW, w: "fixed", gap: 16 }, [
-      Img(`brand/landing/${a}.webp`, art, art, { name: a, scaleMode: "FIT" }),
+      Img(`assets/brand/landing/${a}.webp`, art, art, { name: a, scaleMode: "FIT" }),
       T(t, "body", { size: 16, lineHeight: 1.35, width: itemW - art - 16, free: true }),
     ]);
   const rows = [];
@@ -123,7 +123,7 @@ function privacy(v) {
 function statement(v) {
   const size = v.desk ? 36 : v.phone ? 22 : 28;
   const words = "Tell us where you are once. Meet people on your | forest | path, answers a clinician | pcos | reviewed, and someone who's been there | orange | .";
-  const thumbs = { forest: "brand/landing/stage-trying.webp", pcos: "brand/learn/pcos-topic.webp", orange: "brand/art/tree-orange.webp" };
+  const thumbs = { forest: "assets/brand/landing/stage-trying.webp", pcos: "assets/brand/learn/pcos-topic.webp", orange: "assets/brand/art/tree-orange.webp" };
   const parts = words.split(" | ").flatMap((chunk) =>
     thumbs[chunk]
       ? [Img(thumbs[chunk], Math.round(size * 0.9), Math.round(size * 0.9), { name: `thumb ${chunk}`, radius: 999 })]
@@ -132,7 +132,7 @@ function statement(v) {
   const width = v.desk ? 790 : v.phone ? v.inner : 660;
   const el = v.desk ? { x: v.w - 420 + 144, y: -32, w: 420 } : { x: v.w - 180 + 48, y: -16, w: 180 };
   return Col({ name: "Statement", w: "fill", align: "center", clip: true, padding: [v.desk ? 144 : 96, v.pad] }, [
-    Img("brand/cozy/e-branch-side.webp", el.w, Math.round((el.w * 885) / 1600), { name: "Branch", scaleMode: "FIT", absolute: true, x: el.x, y: el.y }),
+    Img("assets/brand/cozy/e-branch-side.webp", el.w, Math.round((el.w * 885) / 1600), { name: "Branch", scaleMode: "FIT", absolute: true, x: el.x, y: el.y }),
     Row({ name: "Words", width, w: "fixed", wrap: true, gap: Math.round(size * 0.26), rowGap: 0, justify: v.phone ? "start" : "center" }, parts),
   ]);
 }
@@ -186,7 +186,7 @@ function whereAreYou(v) {
   const o = 64;
   const disc = F({ name: "Disc", width: D, height: D }, [
     { type: "ellipse", width: D, height: D, fill: TINT.green, name: "Tint", x: 0, y: 0 },
-    Img("brand/landing/stage-trying.webp", D - inset * 2, D - inset * 2, { name: "A path through an orange grove", radius: 999, x: inset, y: inset }),
+    Img("assets/brand/landing/stage-trying.webp", D - inset * 2, D - inset * 2, { name: "A path through an orange grove", radius: 999, x: inset, y: inset }),
     orange(o, { x: Math.round(D * 0.96) - o, y: Math.round(D * 0.94) - Math.round((o * 322) / 297) }),
   ]);
   const dot = (t) => Row({ name: t, gap: 10 }, [{ type: "ellipse", width: 10, height: 10, fill: C.orange, name: "dot" }, T(t, "body", { size: 16 })]);
@@ -219,7 +219,7 @@ function library(v) {
   const cw = (v.inner - (cols - 1) * 24) / cols;
   const card = ([slug, dx, title, summary, meta, ink]) =>
     Col({ name: title, width: cw, w: "fixed", gap: 0 }, [
-      Img(`brand/learn/${slug}-topic.webp`, cw, Math.round((cw * 9) / 16), { name: "Cover", radius: 20 }),
+      Img(`assets/brand/learn/${slug}-topic.webp`, cw, Math.round((cw * 9) / 16), { name: "Cover", radius: 20 }),
       gap(20),
       T(dx, "small", { style: "SemiBold", color: ink }),
       gap(4),
@@ -257,7 +257,7 @@ function grow(v) {
       v.desk ? Row({ name: "Intro", w: "fill", gap: 152, align: "start" }, [head, para]) : Col({ name: "Intro", w: "fill", gap: 24 }, [head, para]),
       Row({ name: "Levels", w: "fill", gap: g, align: "start" }, levels.map(([lv, at]) =>
         Col({ name: lv, width: cw, w: "fixed", align: "center", gap: 0 }, [
-          Img(`brand/art/${STAGE[lv]}.webp`, cw, cw, { name: lv, scaleMode: "FIT" }),
+          Img(`assets/brand/art/${STAGE[lv]}.webp`, cw, cw, { name: lv, scaleMode: "FIT" }),
           gap(8),
           T(lv, "body", { size: small ? 13 : 16, style: "SemiBold", textAlign: "center", width: cw, free: true }),
           T(`${at} Sunlight`, "small", { size: small ? 13 : 14, color: C.muted, textAlign: "center", width: cw, free: true }),
@@ -283,7 +283,7 @@ function partners(v) {
     gap(36),
     pillBtn("Create account"),
   ]);
-  const photo = Row({ name: "Photo column", width: colW, w: "fixed", justify: "center" }, [Img("brand/landing/partners.webp", D, D, { name: "Two orange trees above a lake", radius: 999 })]);
+  const photo = Row({ name: "Photo column", width: colW, w: "fixed", justify: "center" }, [Img("assets/brand/landing/partners.webp", D, D, { name: "Two orange trees above a lake", radius: 999 })]);
   return Row({ name: "Room for partners too", w: "fill", justify: "center", clip: true, padding: [v.desk ? 144 : 96, v.pad] }, [
     v.desk ? Row({ name: "inner", width: v.inner, w: "fixed", gap: 80 }, [photo, text]) : Col({ name: "inner", width: v.inner, w: "fixed", gap: 40 }, [photo, text]),
   ]);
@@ -301,7 +301,7 @@ function joinBand(v) {
   const lede = T("Invite-only during the beta. Bring the link a member sent you, and we'll take it from there.", "bodyL", { size: 20, lineHeight: 1.35, free: true, width: v.phone ? v.inner : 390 });
   const el = v.desk ? { w: 280, x: 40, y: -80 } : { w: 90, x: v.w - 12 - 90, y: -72 };
   return F({ name: "Join", layout: v.desk ? "row" : "column", w: "fill", h: v.desk ? "fixed" : "hug", height: v.desk ? 468 : undefined, justify: "between", align: v.desk ? "end" : "start", gap: 40, fill: TINT.pink, clip: true, padding: [40, v.pad] }, [
-    Img("brand/cozy/e-branch-hang.webp", el.w, Math.round((el.w * 2005) / 1600), { name: "Branch", scaleMode: "FIT", absolute: true, x: el.x, y: el.y }),
+    Img("assets/brand/cozy/e-branch-hang.webp", el.w, Math.round((el.w * 2005) / 1600), { name: "Branch", scaleMode: "FIT", absolute: true, x: el.x, y: el.y }),
     lede,
     word,
   ]);

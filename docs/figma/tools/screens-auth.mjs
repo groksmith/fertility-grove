@@ -49,12 +49,12 @@ const lines = (items) => Col({ name: "points", w: "fill", gap: 10 }, items.map((
 const panel = (w, h, step) =>
   F({ name: "Grove panel", width: w, height: h, radius: 20, fill: C.white, clip: true, w: "fill", h: "fill" }, [
     Img(WASH, w, h, { name: "wash", x: 0, y: 0, scaleMode: "FILL" }),
-    Img(`brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
+    Img(`assets/brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
   ]);
 
 const header = (pad) =>
   Row({ name: "Header", w: "fill", height: 56, h: "fixed", justify: "between", padding: [0, pad] }, [
-    Img("brand/logo.png", Math.round(40 * (1295 / 473)), 40, { name: "Logo", scaleMode: "FIT" }),
+    Img("assets/brand/logo.png", Math.round(40 * (1295 / 473)), 40, { name: "Logo", scaleMode: "FIT" }),
     T("Help", "small", { style: "SemiBold", color: C.inkSoft }),
   ]);
 
@@ -74,7 +74,7 @@ function authBoard(s, size) {
   const column = (w) =>
     Col({ name: "Column", width: w, w: desktop ? "fill" : "fixed", h: "fill", grow: true, padding: [20, 0, 24, 0], gap: 0 }, [
       header(desktop ? 64 : pad),
-      !desktop && Row({ name: "Tree band", w: "fill", height: 144, h: "fixed", justify: "center" }, [Img(`brand/art/grow-${s.step}.webp`, 144, 144, { name: "tree", scaleMode: "FIT" })]),
+      !desktop && Row({ name: "Tree band", w: "fill", height: 144, h: "fixed", justify: "center" }, [Img(`assets/brand/art/grow-${s.step}.webp`, 144, 144, { name: "tree", scaleMode: "FIT" })]),
       Col({ name: "Main", w: "fill", h: "fill", grow: true, justify: "center", align: "center", padding: [desktop ? 48 : 32, pad] }, [formCol]),
       s.footer && Col({ name: "Footer", w: "fill", align: "center", padding: [0, pad] }, [Col({ name: "inner", width: contentW, w: "fixed" }, [footerLine(...s.footer)])]),
     ]);
@@ -150,7 +150,7 @@ const SCREENS = {
     minH: { "Phone 390": 921 },
     body: () => [
       Col({ name: "Note card", w: "fill", padding: 24, gap: 10, radius: 20, fill: C.white, stroke: C.line }, [
-        Row({ name: "seeds", gap: 4 }, [Img("brand/art/tree-seed.webp", 40, 40, { scaleMode: "FIT", name: "seed" }), Img("brand/art/tree-seed.webp", 40, 40, { scaleMode: "FIT", name: "seed" })]),
+        Row({ name: "seeds", gap: 4 }, [Img("assets/brand/art/tree-seed.webp", 40, 40, { scaleMode: "FIT", name: "seed" }), Img("assets/brand/art/tree-seed.webp", 40, 40, { scaleMode: "FIT", name: "seed" })]),
         T("“I've found people here who get it. I'd love for you to have that too, and for us to keep our appointment questions in one place.”", "body", { width: 300, w: "fill", name: "Note" }),
         T("A note from Annie", "caption", { color: C.muted }),
       ]),

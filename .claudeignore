@@ -1,0 +1,42 @@
+# --- Next.js Specific ---
+.next/
+out/
+build/
+# Ignore heavy cache and server build files
+node_modules/.cache/
+
+# --- Environment & Secrets ---
+# VERY IMPORTANT: Claude shouldn't see your keys (safety + security)
+.env
+.env.*
+!.env.example
+
+# --- Types & Metadata ---
+# Large auto-generated lockfiles eat context
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# --- Media & Assets ---
+# Claude can't "see" these, so reading their binary data is a waste
+public/fonts/
+public/images/
+public/videos/
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.webp
+
+# --- Logs & Performance ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.turbo/
+
+# --- IDE & OS ---
+.vscode/
+.idea/
+.DS_Store

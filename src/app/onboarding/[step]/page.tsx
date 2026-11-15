@@ -4,37 +4,29 @@
    Next is always enabled and shows what's missing; Skip appears only on
    screens 2 and 7. The grove beside the form gains one piece per answer. */
 
-import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { ReferFriend } from "@/components/ReferFriend";
-import { useSignOut } from "@/components/SignOut";
-import { completeOnboarding } from "@/lib/api";
 import { GroupCover } from "@/components/art/Brand";
 import { Backdrop } from "@/components/art/Cozy";
 import { PlantingScene } from "@/components/art/PlantingScene";
 import { TreeArt } from "@/components/art/Tree";
+import { Name, Person } from "@/components/common/Person";
+import { ReferFriend } from "@/components/common/ReferFriend";
+import { useSignOut } from "@/components/common/SignOut";
+import { Logo } from "@/components/shared";
 import {
   Avatar,
   AvatarPicker,
-  HueSwatches,
   Button,
   Choices,
   Counter,
   Field,
+  HueSwatches,
   Input,
-  Name,
   Panel,
-  Person,
   Select,
   Textarea,
   Toggle,
   toast,
-} from "@/components/ui";
-import { ARTICLES } from "@/lib/data/articles";
-import { GUIDE_STARTERS } from "@/lib/data/social";
+} from "@/components/shared";
 import {
   AGE_RANGES,
   COMMUNITIES,
@@ -46,10 +38,17 @@ import {
   PATHS,
   PRONOUNS,
   TREATMENTS,
-} from "@/lib/options";
+} from "@/config/options";
+import { completeOnboarding } from "@/lib/api";
+import { ARTICLES } from "@/lib/data/articles";
+import { GUIDE_STARTERS } from "@/lib/data/social";
 import { MSG, checks } from "@/lib/rules/validation";
-import { act, get, sel, useHydrated, useStore, type Me } from "@/lib/store";
-import type { CommunityId, MessagePolicy } from "@/lib/types";
+import { type Me, act, get, sel, useHydrated, useStore } from "@/lib/store";
+import type { CommunityId, MessagePolicy } from "@/types/domain";
+import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 /* ------------------------------------------------------------- Screens */
 
@@ -84,9 +83,11 @@ const SCREENS: { title: string; why: string; intro?: string }[] = [
     title: "Connections and notifications",
     why: "You can change any of this later. We will never send more than one activity email a day.",
   },
-  { title: "You're all set", why: "Everything here was picked for where you are. Each suggestion says why." },
+  {
+    title: "You're all set",
+    why: "Everything here was picked for where you are. Each suggestion says why.",
+  },
 ];
-
 
 type Draft = Pick<
   Me,
@@ -139,9 +140,17 @@ function initialDraft(): Draft {
     pronounsSelf: me.pronounsSelf,
     ageRange: me.ageRange,
     zip: me.zip,
-    lookingFor: me.lookingFor.length ? me.lookingFor : partner ? ["Support as a partner, or for my partner"] : [],
+    lookingFor: me.lookingFor.length
+      ? me.lookingFor
+      : partner
+        ? ["Support as a partner, or for my partner"]
+        : [],
     // Saved before this was multi-select: a single answer becomes a one-item list.
-    connectStyle: Array.isArray(me.connectStyle) ? me.connectStyle : me.connectStyle ? [me.connectStyle] : [],
+    connectStyle: Array.isArray(me.connectStyle)
+      ? me.connectStyle
+      : me.connectStyle
+        ? [me.connectStyle]
+        : [],
     community: me.community || (partner ? "partners" : ""),
     firstName: me.firstName,
     lastName: me.lastName,
@@ -170,8 +179,15 @@ function suggestion(d: Draft): { pick: CommunityId | null; why: string } {
   const partner = d.stages.includes("I am a partner / spouse");
   const women = ["Female", "Transgender female"].includes(d.gender);
   const men = ["Male", "Transgender male"].includes(d.gender);
-  if (women && !partner) return { pick: "womens", why: "Suggested because of the gender identity you chose." };
-  if ((men || partner) && !women) return { pick: "partners", why: partner ? "Suggested because you're joining as a partner." : "Suggested because of the gender identity you chose." };
+  if (women && !partner)
+    return { pick: "womens", why: "Suggested because of the gender identity you chose." };
+  if ((men || partner) && !women)
+    return {
+      pick: "partners",
+      why: partner
+        ? "Suggested because you're joining as a partner."
+        : "Suggested because of the gender identity you chose.",
+    };
   return { pick: null, why: "Both spaces are open to you. Choose the one that feels right." };
 }
 
@@ -181,11 +197,14 @@ function validate(step: number, d: Draft): Record<string, string> {
     if (!d.stages.length) e.stages = MSG.selectOne;
     if (!d.healthConsent) e.consent = MSG.consent;
   }
-  if (step === 2 && d.diagnoses.includes("Other") && !d.otherDiagnosis.trim()) e.otherDiagnosis = MSG.otherDiagnosis;
+  if (step === 2 && d.diagnoses.includes("Other") && !d.otherDiagnosis.trim())
+    e.otherDiagnosis = MSG.otherDiagnosis;
   if (step === 3) {
     if (!d.gender) e.gender = MSG.gender;
-    if (d.gender === "Prefer to self-describe" && !d.genderSelf.trim()) e.genderSelf = MSG.genderSelf;
-    if (d.pronouns === "Prefer to self-describe" && !d.pronounsSelf.trim()) e.pronounsSelf = MSG.pronounsSelf;
+    if (d.gender === "Prefer to self-describe" && !d.genderSelf.trim())
+      e.genderSelf = MSG.genderSelf;
+    if (d.pronouns === "Prefer to self-describe" && !d.pronounsSelf.trim())
+      e.pronounsSelf = MSG.pronounsSelf;
     const z = checks.zip(d.zip);
     if (z) e.zip = z;
   }
@@ -211,9 +230,20 @@ function patchFor(step: number, d: Draft): Partial<Me> {
         healthConsent: d.healthConsent,
       };
     case 2:
-      return { diagnoses: d.diagnoses, otherDiagnosis: d.diagnoses.includes("Other") ? d.otherDiagnosis.trim() : "", paths: d.paths };
+      return {
+        diagnoses: d.diagnoses,
+        otherDiagnosis: d.diagnoses.includes("Other") ? d.otherDiagnosis.trim() : "",
+        paths: d.paths,
+      };
     case 3:
-      return { gender: d.gender, genderSelf: d.genderSelf.trim(), pronouns: d.pronouns, pronounsSelf: d.pronounsSelf.trim(), ageRange: d.ageRange, zip: d.zip.trim() };
+      return {
+        gender: d.gender,
+        genderSelf: d.genderSelf.trim(),
+        pronouns: d.pronouns,
+        pronounsSelf: d.pronounsSelf.trim(),
+        ageRange: d.ageRange,
+        zip: d.zip.trim(),
+      };
     case 4:
       return { lookingFor: d.lookingFor, connectStyle: d.connectStyle };
     case 5:
@@ -250,12 +280,31 @@ function Step1({ d, set, errs }: StepProps) {
   const treating = d.stages.includes("Pursuing treatment");
   return (
     <div className="space-y-7">
-      <Choices legend="Journey stage" multi options={JOURNEY_STAGES} value={d.stages} onChange={(stages) => set({ stages })} error={errs.stages} />
+      <Choices
+        legend="Journey stage"
+        multi
+        options={JOURNEY_STAGES}
+        value={d.stages}
+        onChange={(stages) => set({ stages })}
+        error={errs.stages}
+      />
       {treating && (
         <div className="space-y-6 rounded-[20px] border border-line bg-panel p-5">
-          <Choices legend="Which treatment?" multi options={TREATMENTS} value={d.treatments} onChange={(treatments) => set({ treatments })} hint="Optional." />
+          <Choices
+            legend="Which treatment?"
+            multi
+            options={TREATMENTS}
+            value={d.treatments}
+            onChange={(treatments) => set({ treatments })}
+            hint="Optional."
+          />
           <Field label="Next treatment or cycle date" optional hint="Only you see this.">
-            <Input type="date" value={d.nextDate} onChange={(e) => set({ nextDate: e.target.value })} className="max-w-[240px]" />
+            <Input
+              type="date"
+              value={d.nextDate}
+              onChange={(e) => set({ nextDate: e.target.value })}
+              className="max-w-[240px]"
+            />
           </Field>
         </div>
       )}
@@ -266,8 +315,11 @@ function Step1({ d, set, errs }: StepProps) {
           label="I agree that Fertility Grove uses my answers about my health to match me with people, groups and information."
           description={
             <>
-              Read our <Link href="/privacy#health-data" className="font-semibold underline" target="_blank">Consumer Health Data Privacy Policy</Link>.
-              You can withdraw this any time in Settings.
+              Read our{" "}
+              <Link href="/privacy#health-data" className="font-semibold underline" target="_blank">
+                Consumer Health Data Privacy Policy
+              </Link>
+              . You can withdraw this any time in Settings.
             </>
           }
           error={errs.consent}
@@ -280,13 +332,35 @@ function Step1({ d, set, errs }: StepProps) {
 function Step2({ d, set, errs }: StepProps) {
   return (
     <div className="space-y-7">
-      <Choices legend="Diagnosis" multi options={DIAGNOSES} value={d.diagnoses} onChange={(diagnoses) => set({ diagnoses })} hint="Optional. Pick everything a doctor has named." />
+      <Choices
+        legend="Diagnosis"
+        multi
+        options={DIAGNOSES}
+        value={d.diagnoses}
+        onChange={(diagnoses) => set({ diagnoses })}
+        hint="Optional. Pick everything a doctor has named."
+      />
       {d.diagnoses.includes("Other") && (
-        <Field label="Other diagnosis" error={errs.otherDiagnosis} counter={<Counter value={d.otherDiagnosis} max={100} />}>
-          <Input value={d.otherDiagnosis} maxLength={100} onChange={(e) => set({ otherDiagnosis: e.target.value })} />
+        <Field
+          label="Other diagnosis"
+          error={errs.otherDiagnosis}
+          counter={<Counter value={d.otherDiagnosis} max={100} />}
+        >
+          <Input
+            value={d.otherDiagnosis}
+            maxLength={100}
+            onChange={(e) => set({ otherDiagnosis: e.target.value })}
+          />
         </Field>
       )}
-      <Choices legend="Path to parenthood" multi options={PATHS} value={d.paths} onChange={(paths) => set({ paths })} hint="Optional." />
+      <Choices
+        legend="Path to parenthood"
+        multi
+        options={PATHS}
+        value={d.paths}
+        onChange={(paths) => set({ paths })}
+        hint="Optional."
+      />
     </div>
   );
 }
@@ -294,16 +368,46 @@ function Step2({ d, set, errs }: StepProps) {
 function Step3({ d, set, errs }: StepProps) {
   return (
     <div className="space-y-7">
-      <Choices legend="Gender identity" options={GENDERS} value={d.gender ? [d.gender] : []} onChange={([gender]) => set({ gender })} error={errs.gender} hint="Private. Never shown on your profile." />
+      <Choices
+        legend="Gender identity"
+        options={GENDERS}
+        value={d.gender ? [d.gender] : []}
+        onChange={([gender]) => set({ gender })}
+        error={errs.gender}
+        hint="Private. Never shown on your profile."
+      />
       {d.gender === "Prefer to self-describe" && (
-        <Field label="How you describe your gender identity" error={errs.genderSelf} counter={<Counter value={d.genderSelf} max={50} />}>
-          <Input value={d.genderSelf} maxLength={50} onChange={(e) => set({ genderSelf: e.target.value })} />
+        <Field
+          label="How you describe your gender identity"
+          error={errs.genderSelf}
+          counter={<Counter value={d.genderSelf} max={50} />}
+        >
+          <Input
+            value={d.genderSelf}
+            maxLength={50}
+            onChange={(e) => set({ genderSelf: e.target.value })}
+          />
         </Field>
       )}
-      <Choices legend="Pronouns" options={PRONOUNS} value={d.pronouns ? [d.pronouns] : []} onChange={([pronouns]) => set({ pronouns })} hint="Optional. Shown next to your name if you add them." columns={3} />
+      <Choices
+        legend="Pronouns"
+        options={PRONOUNS}
+        value={d.pronouns ? [d.pronouns] : []}
+        onChange={([pronouns]) => set({ pronouns })}
+        hint="Optional. Shown next to your name if you add them."
+        columns={3}
+      />
       {d.pronouns === "Prefer to self-describe" && (
-        <Field label="Your pronouns" error={errs.pronounsSelf} counter={<Counter value={d.pronounsSelf} max={30} />}>
-          <Input value={d.pronounsSelf} maxLength={30} onChange={(e) => set({ pronounsSelf: e.target.value })} />
+        <Field
+          label="Your pronouns"
+          error={errs.pronounsSelf}
+          counter={<Counter value={d.pronounsSelf} max={30} />}
+        >
+          <Input
+            value={d.pronounsSelf}
+            maxLength={30}
+            onChange={(e) => set({ pronounsSelf: e.target.value })}
+          />
         </Field>
       )}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -315,8 +419,18 @@ function Step3({ d, set, errs }: StepProps) {
             ))}
           </Select>
         </Field>
-        <Field label="ZIP code" error={errs.zip} hint="Never shown. Helps us match you with people in your region.">
-          <Input inputMode="numeric" autoComplete="postal-code" value={d.zip} onChange={(e) => set({ zip: e.target.value })} maxLength={10} />
+        <Field
+          label="ZIP code"
+          error={errs.zip}
+          hint="Never shown. Helps us match you with people in your region."
+        >
+          <Input
+            inputMode="numeric"
+            autoComplete="postal-code"
+            value={d.zip}
+            onChange={(e) => set({ zip: e.target.value })}
+            maxLength={10}
+          />
         </Field>
       </div>
     </div>
@@ -326,15 +440,30 @@ function Step3({ d, set, errs }: StepProps) {
 function Step4({ d, set, errs }: StepProps) {
   return (
     <div className="space-y-7">
-      <Choices legend="I'm looking for" multi options={LOOKING_FOR} value={d.lookingFor} onChange={(lookingFor) => set({ lookingFor })} error={errs.lookingFor} />
-      <Choices legend="How I like to connect" multi options={CONNECT_STYLES} value={d.connectStyle} onChange={(connectStyle) => set({ connectStyle })} hint="Optional." />
+      <Choices
+        legend="I'm looking for"
+        multi
+        options={LOOKING_FOR}
+        value={d.lookingFor}
+        onChange={(lookingFor) => set({ lookingFor })}
+        error={errs.lookingFor}
+      />
+      <Choices
+        legend="How I like to connect"
+        multi
+        options={CONNECT_STYLES}
+        value={d.connectStyle}
+        onChange={(connectStyle) => set({ connectStyle })}
+        hint="Optional."
+      />
     </div>
   );
 }
 
 function Step5({ d, set, errs }: StepProps) {
   const { pick, why } = suggestion(d);
-  const order: CommunityId[] = pick === "partners" ? ["partners", "womens"] : ["womens", "partners"];
+  const order: CommunityId[] =
+    pick === "partners" ? ["partners", "womens"] : ["womens", "partners"];
   return (
     <fieldset>
       <legend className="sr-only">Community</legend>
@@ -348,16 +477,31 @@ function Step5({ d, set, errs }: StepProps) {
               key={id}
               className={`press flex cursor-pointer gap-4 rounded-[20px] border-2 bg-panel p-5 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
             >
-              <input type="radio" name="community" className="sr-only" checked={on} onChange={() => set({ community: id })} />
-              <span aria-hidden className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent bg-accent" : "border-[var(--grey-300)]"}`}>
+              <input
+                type="radio"
+                name="community"
+                className="sr-only"
+                checked={on}
+                onChange={() => set({ community: id })}
+              />
+              <span
+                aria-hidden
+                className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent bg-accent" : "border-[var(--grey-300)]"}`}
+              >
                 {on && <span className="h-2 w-2 rounded-full bg-white" />}
               </span>
               <span>
                 <span className="flex flex-wrap items-center gap-2 text-[18px] font-semibold text-ink">
                   {c.name}
-                  {pick === id && <span className="rounded-full bg-green-tint px-2.5 py-0.5 text-[12px] font-semibold text-green-ink">Suggested for you</span>}
+                  {pick === id && (
+                    <span className="rounded-full bg-green-tint px-2.5 py-0.5 text-[12px] font-semibold text-green-ink">
+                      Suggested for you
+                    </span>
+                  )}
                 </span>
-                <span className="mt-1 block text-[15px] leading-relaxed text-ink-soft">{c.blurb}</span>
+                <span className="mt-1 block text-[15px] leading-relaxed text-ink-soft">
+                  {c.blurb}
+                </span>
               </span>
             </label>
           );
@@ -372,7 +516,13 @@ function Step5({ d, set, errs }: StepProps) {
   );
 }
 
-function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean; touch: () => void }) {
+function Step6({
+  d,
+  set,
+  errs,
+  touched,
+  touch,
+}: StepProps & { touched: boolean; touch: () => void }) {
   const live = d.handle ? checks.handle(d.handle) : undefined;
   const handleErr = errs.handle ?? (touched ? live : undefined);
   const preview = {
@@ -382,7 +532,12 @@ function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean;
     handle: d.handle || "your_handle",
     showRealName: d.showRealName,
     avatarHue: d.avatarHue,
-    pronouns: d.pronouns && !["Prefer not to say", "Prefer to self-describe"].includes(d.pronouns) ? d.pronouns : d.pronouns === "Prefer to self-describe" ? d.pronounsSelf || undefined : undefined,
+    pronouns:
+      d.pronouns && !["Prefer not to say", "Prefer to self-describe"].includes(d.pronouns)
+        ? d.pronouns
+        : d.pronouns === "Prefer to self-describe"
+          ? d.pronounsSelf || undefined
+          : undefined,
     badges: [],
     level: "Seed" as const,
     sunlight: 0,
@@ -392,15 +547,38 @@ function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean;
     <div className="space-y-7">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="First name" error={errs.names}>
-          <Input autoComplete="given-name" value={d.firstName} maxLength={50} onChange={(e) => set({ firstName: e.target.value })} />
+          <Input
+            autoComplete="given-name"
+            value={d.firstName}
+            maxLength={50}
+            onChange={(e) => set({ firstName: e.target.value })}
+          />
         </Field>
         <Field label="Last name" hint="Only your initial is ever shown.">
-          <Input autoComplete="family-name" value={d.lastName} maxLength={50} onChange={(e) => set({ lastName: e.target.value })} />
+          <Input
+            autoComplete="family-name"
+            value={d.lastName}
+            maxLength={50}
+            onChange={(e) => set({ lastName: e.target.value })}
+          />
         </Field>
       </div>
-      <Field label="Handle" error={handleErr} hint={!handleErr ? "3 to 30 characters: lowercase letters, numbers and underscores, starting with a letter." : undefined}>
+      <Field
+        label="Handle"
+        error={handleErr}
+        hint={
+          !handleErr
+            ? "3 to 30 characters: lowercase letters, numbers and underscores, starting with a letter."
+            : undefined
+        }
+      >
         <div className="relative">
-          <span aria-hidden className="absolute inset-y-0 left-3.5 grid place-items-center text-[15px] text-muted">@</span>
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-3.5 grid place-items-center text-[15px] text-muted"
+          >
+            @
+          </span>
           <Input
             value={d.handle}
             onChange={(e) => set({ handle: e.target.value.toLowerCase().replace(/\s/g, "") })}
@@ -419,13 +597,26 @@ function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean;
         <legend className="mb-2 text-[14px] font-semibold text-ink">How your name shows</legend>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[
-            { real: false, title: "Show my handle instead", body: `Members see @${d.handle || "your_handle"}.` },
+            {
+              real: false,
+              title: "Show my handle instead",
+              body: `Members see @${d.handle || "your_handle"}.`,
+            },
             { real: true, title: "Show my real name", body: `Members see ${initial}` },
           ].map((o) => {
             const on = d.showRealName === o.real;
             return (
-              <label key={o.title} className={`press cursor-pointer rounded-[14px] border-2 bg-panel p-4 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}>
-                <input type="radio" name="display" className="sr-only" checked={on} onChange={() => set({ showRealName: o.real })} />
+              <label
+                key={o.title}
+                className={`press cursor-pointer rounded-[14px] border-2 bg-panel p-4 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
+              >
+                <input
+                  type="radio"
+                  name="display"
+                  className="sr-only"
+                  checked={on}
+                  onChange={() => set({ showRealName: o.real })}
+                />
                 <span className="block text-[15px] font-semibold text-ink">{o.title}</span>
                 <span className="mt-0.5 block text-[14px] text-muted">{o.body}</span>
               </label>
@@ -435,17 +626,44 @@ function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean;
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-[14px] font-semibold text-ink">Photo or avatar <span className="font-normal text-muted">(optional)</span></legend>
-        <AvatarPicker member={{ ...preview, avatarHue: d.avatarHue }} value={d.avatarPreset} onChange={(i) => set({ avatarPreset: i })} size={48} />
+        <legend className="mb-2 text-[14px] font-semibold text-ink">
+          Photo or avatar <span className="font-normal text-muted">(optional)</span>
+        </legend>
+        <AvatarPicker
+          member={{ ...preview, avatarHue: d.avatarHue }}
+          value={d.avatarPreset}
+          onChange={(i) => set({ avatarPreset: i })}
+          size={48}
+        />
         <HueSwatches value={d.avatarHue} onChange={(h) => set({ avatarHue: h })} />
-        <Button variant="secondary" size="sm" disabled title="Photo upload isn't available in the prototype" className="mt-3">
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled
+          title="Photo upload isn't available in the prototype"
+          className="mt-3"
+        >
           Upload from my computer
         </Button>
-        {!d.showRealName && d.avatarPreset < 0 && <p className="mt-2 text-[13px] text-muted">An avatar keeps your handle private and still helps people recognise you.</p>}
+        {!d.showRealName && d.avatarPreset < 0 && (
+          <p className="mt-2 text-[13px] text-muted">
+            An avatar keeps your handle private and still helps people recognise you.
+          </p>
+        )}
       </fieldset>
 
-      <Field label="About me" optional error={errs.aboutMe} counter={<Counter value={d.aboutMe} max={1000} />}>
-        <Textarea value={d.aboutMe} onChange={(e) => set({ aboutMe: e.target.value })} rows={4} placeholder="What brought you here, where you are, what you're hoping to find" />
+      <Field
+        label="About me"
+        optional
+        error={errs.aboutMe}
+        counter={<Counter value={d.aboutMe} max={1000} />}
+      >
+        <Textarea
+          value={d.aboutMe}
+          onChange={(e) => set({ aboutMe: e.target.value })}
+          rows={4}
+          placeholder="What brought you here, where you are, what you're hoping to find"
+        />
       </Field>
 
       <div>
@@ -455,7 +673,11 @@ function Step6({ d, set, errs, touched, touch }: StepProps & { touched: boolean;
             <Avatar member={preview} size={48} />
             <Name member={preview} link={false} />
           </div>
-          {d.aboutMe && <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">{d.aboutMe}</p>}
+          {d.aboutMe && (
+            <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">
+              {d.aboutMe}
+            </p>
+          )}
         </Panel>
       </div>
     </div>
@@ -472,25 +694,70 @@ function Step7({ d, set }: StepProps) {
     <div className="space-y-4">
       <Panel className="space-y-6 p-5 sm:p-6">
         <h2 className="text-[16px] font-semibold">Connections</h2>
-        <Toggle checked={d.suggestMe} onChange={(suggestMe) => set({ suggestMe })} label="Suggest me to members on my path" description="People with a similar journey may see you in their matches." />
+        <Toggle
+          checked={d.suggestMe}
+          onChange={(suggestMe) => set({ suggestMe })}
+          label="Suggest me to members on my path"
+          description="People with a similar journey may see you in their matches."
+        />
         <div>
-          <label htmlFor="who-msg" className="text-[15px] font-semibold text-ink">Who can message me</label>
-          <p className="mt-0.5 text-[14px] text-muted">Others can still send a message request you can accept or delete.</p>
-          <Select id="who-msg" value={d.messagePolicy} onChange={(e) => set({ messagePolicy: e.target.value as MessagePolicy })} className="mt-2 max-w-[280px]">
+          <label htmlFor="who-msg" className="text-[15px] font-semibold text-ink">
+            Who can message me
+          </label>
+          <p className="mt-0.5 text-[14px] text-muted">
+            Others can still send a message request you can accept or delete.
+          </p>
+          <Select
+            id="who-msg"
+            value={d.messagePolicy}
+            onChange={(e) => set({ messagePolicy: e.target.value as MessagePolicy })}
+            className="mt-2 max-w-[280px]"
+          >
             {policies.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
             ))}
           </Select>
         </div>
-        <Toggle checked={d.wantMentor} onChange={(wantMentor) => set({ wantMentor })} label="I'd like a mentor" description="We'll suggest members who have been through it." />
-        <Toggle checked={d.showStories} onChange={(showStories) => set({ showStories })} label="Show success stories in my feed" description="Off means stories stay in their own space." />
-        <Toggle checked={d.shareJourney} onChange={(shareJourney) => set({ shareJourney })} label="Show my diagnosis, stage and path on my profile" description="Off by default. Matching still works when this is off." />
+        <Toggle
+          checked={d.wantMentor}
+          onChange={(wantMentor) => set({ wantMentor })}
+          label="I'd like a mentor"
+          description="We'll suggest members who have been through it."
+        />
+        <Toggle
+          checked={d.showStories}
+          onChange={(showStories) => set({ showStories })}
+          label="Show success stories in my feed"
+          description="Off means stories stay in their own space."
+        />
+        <Toggle
+          checked={d.shareJourney}
+          onChange={(shareJourney) => set({ shareJourney })}
+          label="Show my diagnosis, stage and path on my profile"
+          description="Off by default. Matching still works when this is off."
+        />
       </Panel>
       <Panel className="space-y-6 p-5 sm:p-6">
         <h2 className="text-[16px] font-semibold">Email</h2>
-        <Toggle checked={d.notify.comments} onChange={(comments) => set({ notify: { ...d.notify, comments } })} label="Comments and replies on my posts" description="In your daily update." />
-        <Toggle checked={d.notify.messages} onChange={(messages) => set({ notify: { ...d.notify, messages } })} label="New direct messages" description="In your daily update." />
-        <Toggle checked={d.notify.includeFollows} onChange={(includeFollows) => set({ notify: { ...d.notify, includeFollows } })} label="Include follows, levels and matches in my daily update" />
+        <Toggle
+          checked={d.notify.comments}
+          onChange={(comments) => set({ notify: { ...d.notify, comments } })}
+          label="Comments and replies on my posts"
+          description="In your daily update."
+        />
+        <Toggle
+          checked={d.notify.messages}
+          onChange={(messages) => set({ notify: { ...d.notify, messages } })}
+          label="New direct messages"
+          description="In your daily update."
+        />
+        <Toggle
+          checked={d.notify.includeFollows}
+          onChange={(includeFollows) => set({ notify: { ...d.notify, includeFollows } })}
+          label="Include follows, levels and matches in my daily update"
+        />
       </Panel>
     </div>
   );
@@ -502,7 +769,10 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   const people = sel.peopleMatches(s, 3);
   const mentors = s.me.wantMentor ? sel.mentorMatches(s, 3) : [];
   const j = sel.journey(s);
-  const articles = ARTICLES.filter((a) => a.diagnoses.some((d) => j.diagnoses.includes(d))).concat(ARTICLES).filter((a, i, all) => all.indexOf(a) === i).slice(0, 3);
+  const articles = ARTICLES.filter((a) => a.diagnoses.some((d) => j.diagnoses.includes(d)))
+    .concat(ARTICLES)
+    .filter((a, i, all) => all.indexOf(a) === i)
+    .slice(0, 3);
   const starters = GUIDE_STARTERS[j.diagnoses.find((d) => GUIDE_STARTERS[d]) ?? "default"];
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteErr, setInviteErr] = useState<string>();
@@ -521,9 +791,12 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
         <div className="flex items-center gap-4">
           <TreeArt level="Seed" size={104} animate title="Seed" />
           <div>
-            <p className="text-[17px] font-semibold text-ink">You&apos;ve planted your Seed in Fertility Grove.</p>
+            <p className="text-[17px] font-semibold text-ink">
+              You&apos;ve planted your Seed in Fertility Grove.
+            </p>
             <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-              Your tree grows with Sunlight, each time another member finds you helpful: Seed, Bush, Tree, Blossom Tree, Orange Tree.
+              Your tree grows with Sunlight, each time another member finds you helpful: Seed, Bush,
+              Tree, Blossom Tree, Orange Tree.
             </p>
           </div>
         </div>
@@ -534,7 +807,9 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
 
       {groups.length > 0 && (
         <Panel className="p-5 sm:p-6" aria-labelledby="g8">
-          <h2 id="g8" className="text-[16px] font-semibold">Groups for you</h2>
+          <h2 id="g8" className="text-[16px] font-semibold">
+            Groups for you
+          </h2>
           <ul className="mt-3 space-y-3">
             {groups.map(({ group, why }) => {
               const joined = s.joined.includes(group.id);
@@ -545,7 +820,12 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                     <p className="truncate text-[15px] font-semibold">{group.name}</p>
                     <p className="truncate text-[13px] text-muted">{why}</p>
                   </div>
-                  <Button size="sm" variant={joined ? "quiet" : "secondary"} aria-pressed={joined} onClick={() => act.groups.toggleJoin(group.id)}>
+                  <Button
+                    size="sm"
+                    variant={joined ? "quiet" : "secondary"}
+                    aria-pressed={joined}
+                    onClick={() => act.groups.toggleJoin(group.id)}
+                  >
                     {joined ? "Joined" : "Join"}
                   </Button>
                 </li>
@@ -557,14 +837,21 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
 
       {people.length > 0 && (
         <Panel className="p-5 sm:p-6" aria-labelledby="p8">
-          <h2 id="p8" className="text-[16px] font-semibold">People on your path</h2>
+          <h2 id="p8" className="text-[16px] font-semibold">
+            People on your path
+          </h2>
           <ul className="mt-3 space-y-3">
             {people.map(({ member, why }) => {
               const on = s.following.includes(member.id);
               return (
                 <li key={member.id}>
                   <Person member={member} sub={why}>
-                    <Button size="sm" variant={on ? "quiet" : "secondary"} aria-pressed={on} onClick={() => act.social.toggleFollow(member.id)}>
+                    <Button
+                      size="sm"
+                      variant={on ? "quiet" : "secondary"}
+                      aria-pressed={on}
+                      onClick={() => act.social.toggleFollow(member.id)}
+                    >
                       {on ? "Following" : "Follow"}
                     </Button>
                   </Person>
@@ -577,12 +864,18 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
 
       {mentors.length > 0 && (
         <Panel className="p-5 sm:p-6" aria-labelledby="m8">
-          <h2 id="m8" className="text-[16px] font-semibold">Mentors who have been there</h2>
+          <h2 id="m8" className="text-[16px] font-semibold">
+            Mentors who have been there
+          </h2>
           <ul className="mt-3 space-y-4">
             {mentors.map(({ member, why }) => (
               <li key={member.id}>
                 <Person member={member} sub={why} />
-                {member.mentor && <p className="mt-1.5 pl-[52px] text-[14px] leading-relaxed text-ink-soft line-clamp-2">{member.mentor.bio}</p>}
+                {member.mentor && (
+                  <p className="mt-1.5 pl-[52px] text-[14px] leading-relaxed text-ink-soft line-clamp-2">
+                    {member.mentor.bio}
+                  </p>
+                )}
                 <div className="mt-2 pl-[52px]">
                   <Button size="sm" variant="ghost" onClick={() => finish(`/u/${member.handle}`)}>
                     View profile
@@ -595,7 +888,9 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
       )}
 
       <Panel className="p-5 sm:p-6" aria-labelledby="r8">
-        <h2 id="r8" className="text-[16px] font-semibold">Suggested readings</h2>
+        <h2 id="r8" className="text-[16px] font-semibold">
+          Suggested readings
+        </h2>
         <ul className="mt-3 space-y-3">
           {articles.map((a) => {
             const saved = s.savedArticles.includes(a.slug);
@@ -604,13 +899,22 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                 <div className="min-w-0 flex-1">
                   <p className="text-[15px] font-semibold">{a.title}</p>
                   <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">
-                    {j.diagnoses.some((d) => a.diagnoses.includes(d)) ? `Matched on ${a.diagnosis.toLowerCase()}. ` : "A good place to start. "}
+                    {j.diagnoses.some((d) => a.diagnoses.includes(d))
+                      ? `Matched on ${a.diagnosis.toLowerCase()}. `
+                      : "A good place to start. "}
                     {a.summary}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => finish(`/learn/${a.slug}`)}>Read</Button>
-                  <Button size="sm" variant={saved ? "quiet" : "secondary"} aria-pressed={saved} onClick={() => act.settings.saveArticle(a.slug)}>
+                  <Button size="sm" variant="ghost" onClick={() => finish(`/learn/${a.slug}`)}>
+                    Read
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={saved ? "quiet" : "secondary"}
+                    aria-pressed={saved}
+                    onClick={() => act.settings.saveArticle(a.slug)}
+                  >
                     {saved ? "Saved" : "Save"}
                   </Button>
                 </div>
@@ -624,11 +928,18 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
         <h2 id="q8" className="flex items-center gap-2 text-[16px] font-semibold">
           <Sparkles size={17} className="text-blue-ink" aria-hidden /> Ask the Grove Guide
         </h2>
-        <p className="mt-1 text-[14px] leading-relaxed text-muted">Answers come from our clinician-reviewed library. You can also ask about information you upload, like test results or a letter from your clinic.</p>
+        <p className="mt-1 text-[14px] leading-relaxed text-muted">
+          Answers come from our clinician-reviewed library. You can also ask about information you
+          upload, like test results or a letter from your clinic.
+        </p>
         <ul className="mt-3 space-y-2">
           {starters.map((q) => (
             <li key={q}>
-              <button type="button" onClick={() => finish(`/guide?q=${encodeURIComponent(q)}`)} className="press w-full rounded-[14px] bg-blue-tint px-4 py-3 text-left text-[15px] font-medium text-blue-ink hover:brightness-[0.98]">
+              <button
+                type="button"
+                onClick={() => finish(`/guide?q=${encodeURIComponent(q)}`)}
+                className="press w-full rounded-[14px] bg-blue-tint px-4 py-3 text-left text-[15px] font-medium text-blue-ink hover:brightness-[0.98]"
+              >
                 {q}
               </button>
             </li>
@@ -638,15 +949,27 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
 
       {showInvite && (
         <Panel className="p-5 sm:p-6" aria-labelledby="i8">
-          <h2 id="i8" className="text-[16px] font-semibold">Invite your partner</h2>
-          <p className="mt-1 text-[14px] leading-relaxed text-muted">They get their own private account. You choose what to share with them.</p>
+          <h2 id="i8" className="text-[16px] font-semibold">
+            Invite your partner
+          </h2>
+          <p className="mt-1 text-[14px] leading-relaxed text-muted">
+            They get their own private account. You choose what to share with them.
+          </p>
           {invited ? (
-            <p role="status" className="mt-3 text-[15px] font-semibold text-green-ink">Invite sent to {inviteEmail}.</p>
+            // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
+            <p role="status" className="mt-3 text-[15px] font-semibold text-green-ink">
+              Invite sent to {inviteEmail}.
+            </p>
           ) : (
             <div className="mt-3 flex flex-wrap items-start gap-2">
               <div className="min-w-[220px] flex-1">
                 <Field label="Partner's email" error={inviteErr}>
-                  <Input type="email" autoComplete="off" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+                  <Input
+                    type="email"
+                    autoComplete="off"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
                 </Field>
               </div>
               <Button
@@ -761,32 +1084,43 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
       <div className="flex min-h-dvh flex-col px-4 pt-[max(12px,env(safe-area-inset-top))] sm:px-8 lg:px-14">
         <header>
           <div className="flex h-14 items-center justify-between gap-4">
-          <Logo height={38} priority />
-          <div className="flex items-center gap-4 text-[14px] font-semibold text-ink-soft">
-            <Link href="/help" className="inline-flex items-center gap-1.5 hover:text-ink">
-              <CircleHelp size={16} aria-hidden />
-              Help
-            </Link>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 text-danger hover:underline hover:underline-offset-4"
-              onClick={signOut.ask}
-            >
-              <LogOut size={16} aria-hidden />
-              Sign out
-            </button>
-            {signOut.ui}
-          </div>
+            <Logo height={38} priority />
+            <div className="flex items-center gap-4 text-[14px] font-semibold text-ink-soft">
+              <Link href="/help" className="inline-flex items-center gap-1.5 hover:text-ink">
+                <CircleHelp size={16} aria-hidden />
+                Help
+              </Link>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-danger hover:underline hover:underline-offset-4"
+                onClick={signOut.ask}
+              >
+                <LogOut size={16} aria-hidden />
+                Sign out
+              </button>
+              {signOut.ui}
+            </div>
           </div>
 
-        <div className="mt-2" aria-label={`Step ${step} of 8`} role="progressbar" aria-valuemin={1} aria-valuemax={8} aria-valuenow={step}>
-          <div className="flex gap-1.5">
-            {Array.from({ length: 8 }, (_, i) => (
-              <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i < step ? "bg-accent" : "bg-line"}`} />
-            ))}
+          {/* biome-ignore lint/a11y/useFocusableInteractive: progressbar is a read-only progress indicator, not an operable widget; making it focusable would add a dead tab stop */}
+          <div
+            className="mt-2"
+            aria-label={`Step ${step} of 8`}
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={8}
+            aria-valuenow={step}
+          >
+            <div className="flex gap-1.5">
+              {Array.from({ length: 8 }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i < step ? "bg-accent" : "bg-line"}`}
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-[13px] text-muted">Step {step} of 8</p>
           </div>
-          <p className="mt-2 text-[13px] text-muted">Step {step} of 8</p>
-        </div>
         </header>
 
         <div className="relative -mx-4 mt-4 h-32 overflow-hidden sm:-mx-8 lg:hidden" aria-hidden>
@@ -795,15 +1129,26 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
 
         <main className="mx-auto w-full max-w-[600px] flex-1 py-8 lg:py-12">
           <h1 className="serif text-[36px] leading-[1.08] text-ink sm:text-[44px]">{title}</h1>
-          {screen.intro && <p className="mt-3 text-[16px] leading-relaxed text-ink-soft">{screen.intro}</p>}
+          {screen.intro && (
+            <p className="mt-3 text-[16px] leading-relaxed text-ink-soft">{screen.intro}</p>
+          )}
           <p className="mt-3 flex items-start gap-2 text-[14px] leading-snug text-muted">
             <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
             {screen.why}
           </p>
 
           {errList.length > 0 && (
-            <div ref={summary} tabIndex={-1} role="alert" className="mt-6 rounded-[14px] bg-danger-soft px-4 py-3 text-[14px] text-danger outline-none">
-              <p className="font-semibold">{errList.length === 1 ? "One thing needs your attention" : `${errList.length} things need your attention`}</p>
+            <div
+              ref={summary}
+              tabIndex={-1}
+              role="alert"
+              className="mt-6 rounded-[14px] bg-danger-soft px-4 py-3 text-[14px] text-danger outline-none"
+            >
+              <p className="font-semibold">
+                {errList.length === 1
+                  ? "One thing needs your attention"
+                  : `${errList.length} things need your attention`}
+              </p>
               <ul className="mt-1 list-disc pl-5">
                 {errList.map((e) => (
                   <li key={e}>{e}</li>
@@ -826,7 +1171,15 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
             {step === 3 && <Step3 d={d} set={set} errs={errs} />}
             {step === 4 && <Step4 d={d} set={set} errs={errs} />}
             {step === 5 && <Step5 d={d} set={set} errs={errs} />}
-            {step === 6 && <Step6 d={d} set={set} errs={errs} touched={handleTouched} touch={() => setHandleTouched(true)} />}
+            {step === 6 && (
+              <Step6
+                d={d}
+                set={set}
+                errs={errs}
+                touched={handleTouched}
+                touch={() => setHandleTouched(true)}
+              />
+            )}
             {step === 7 && <Step7 d={d} set={set} errs={errs} />}
             {step === 8 && <Step8 finish={finish} preview={preview} />}
 

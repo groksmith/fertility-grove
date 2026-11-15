@@ -2,7 +2,7 @@
    treatment, then what the member is looking for. Region (from ZIP) is used in
    the background only and never appears in a reason. */
 
-import type { Group, Member } from "../types";
+import type { Group, Member } from "@/types/domain";
 
 export interface Journey {
   diagnoses: string[];
@@ -22,8 +22,15 @@ export function reason(shared: string[]) {
 }
 
 function journeyTerms(j: Journey) {
-  return [...j.diagnoses, ...j.stages, ...j.treatments, ...j.paths].filter(
-    (t) => !["Other", "Prefer not to share", "Not sure yet", "Own eggs and sperm", "Not diagnosed yet"].includes(t),
+  return [...j.diagnoses, ...j.stages, ...j.paths, ...j.treatments].filter(
+    (t) =>
+      ![
+        "Other",
+        "Prefer not to share",
+        "Not sure yet",
+        "Own eggs and sperm",
+        "Not diagnosed yet",
+      ].includes(t),
   );
 }
 
@@ -32,13 +39,11 @@ export function matchGroups(j: Journey, groups: Group[], hidden: string[] = [], 
   const scored = groups
     .filter((g) => g.status === "active" && !hidden.includes(g.id))
     .map((g) => {
-      const shared = terms.filter((t) =>
-        g.tags.some((tag) => lc(tag) === lc(t)),
-      );
-      // Diagnosis matches weigh most, then stage, then the rest.
+      const shared = terms.filter((t) => g.tags.some((tag) => lc(tag) === lc(t)));
+      // Diagnosis matches weigh most, then stage, then the rest (path, treatment).
       const score =
         shared.filter((s) => j.diagnoses.includes(s)).length * 4 +
-        shared.filter((s) => j.stages.includes(s) || j.treatments.includes(s)).length * 2 +
+        shared.filter((s) => j.stages.includes(s)).length * 2 +
         shared.length;
       return { group: g, shared, score };
     });
@@ -71,8 +76,7 @@ export function matchPeople(
     .map((m) => {
       const theirs = [...m.diagnoses, ...m.stages, ...m.paths];
       const shared = terms.filter((t) => theirs.some((x) => lc(x) === lc(t)));
-      const mentorFull =
-        m.mentor && m.mentor.activeMentees + m.mentor.waiting >= m.mentor.capacity;
+      const mentorFull = m.mentor && m.mentor.activeMentees + m.mentor.waiting >= m.mentor.capacity;
       return { member: m, shared, mentorFull };
     })
     .filter((x) => x.shared.length > 0 && (!opts.mentorsOnly || !x.mentorFull))

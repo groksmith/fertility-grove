@@ -1,0 +1,201 @@
+/* Tokens run in three layers: primitives are the brand's raw values, semantic
+   roles say what a value is for, and component tokens pin the few values a
+   component owns. Components reference the semantic and component layers only. */
+
+:root {
+  /* Brand palette: the Fertility Grove palette exactly as approved (v1
+     prototype / Figma). These values are fixed. Never change, re-tint or
+     extend them; everything below only points at them. */
+  --fg-green: #32a765;
+  --fg-green-bright: #42c074;
+  --fg-green-dark: #0a7a3b;
+  --fg-green-ink: #031e0f;
+
+  --fg-coral: #f48265;
+  --fg-coral-dark: #e06a4d;
+
+  --fg-blue: #85c5f9;
+  --fg-blue-dark: #529bd7;
+  --fg-blue-ink: #326a97;
+
+  --fg-yellow: #ffd339;
+  --fg-yellow-soft: #ffee8c;
+  --fg-yellow-ink: #c3a52a;
+
+  --fg-purple: #7546a4;
+  --fg-purple-mid: #a874db;
+  --fg-purple-soft: #e3d1f9;
+
+  --fg-pink: #f97ab3;
+
+  --tint-green: #e0f6eb;
+  --tint-blue: #dff3ff;
+  --tint-pink: #ffe7de;
+  --tint-yellow: #fffbe8;
+  --tint-purple: #f1e7f1;
+  --tint-neutral: #f5f5f5;
+
+  --ink: #090814;
+  --ink-soft: #3d3d3d;
+  --muted-grey: #5c5c5c;
+  --muted-light: #7c7c7c;
+  --line-grey: #ededed;
+  --line-grey-strong: #d6d6d6;
+  --surface: #f8f8f8;
+  --nav: #f5f5f5;
+  --white: #ffffff;
+
+  /* From the live brand (fertilitygrove.com): the logo orange and leaf, the
+     near-black button, and the light greys of the site. Also fixed. */
+  --brand-orange: #f89414;
+  --brand-orange-deep: #e97d03;
+  --brand-leaf: #6c9e3b;
+  --site-ink: #222222;
+  --site-grey: #f3f3f3;
+  --site-line: #e6e6e6;
+  --site-line-strong: #d8d8d8;
+  --site-muted: #666666;
+
+  /* Tag inks from the approved v1 components (readable text on each tint). */
+  --tag-coral-ink: #c24a28;
+  --tag-yellow-ink: #8a6d12;
+  --tag-pink-bg: #ffe8f3;
+  --tag-pink-ink: #c94c88;
+  --error: #c0392b;
+
+  /* Aliases used by components. Each one points at a brand value above. */
+  --green-50: var(--tint-green);
+  --green-300: var(--fg-green-bright);
+  --green-500: var(--fg-green);
+  --green-700: var(--fg-green-dark);
+  --green-900: var(--fg-green-ink);
+  --green-950: var(--fg-green-ink);
+
+  --coral-50: var(--tint-pink);
+  --coral-300: var(--fg-coral);
+  --coral-700: var(--tag-coral-ink);
+
+  --yellow-50: var(--tint-yellow);
+  --yellow-300: var(--fg-yellow);
+  --yellow-700: var(--tag-yellow-ink);
+
+  --blue-50: var(--tint-blue);
+  --blue-300: var(--fg-blue);
+  --blue-700: var(--fg-blue-ink);
+
+  --pink-50: var(--tag-pink-bg);
+  --pink-300: var(--fg-pink);
+  --pink-700: var(--tag-pink-ink);
+
+  --purple-50: var(--tint-purple);
+  --purple-300: var(--fg-purple-mid);
+  --purple-700: var(--fg-purple);
+
+  /* Illustration roles, drawn from the palette only. */
+  --bark-600: var(--muted-grey);
+  --bark-800: var(--ink-soft);
+  --orange-400: var(--fg-coral);
+  --soil-100: var(--line-grey);
+  --stone-100: var(--tint-neutral);
+
+  --ink-950: var(--ink);
+  --grey-700: var(--ink-soft);
+  --grey-600: var(--muted-grey);
+  --grey-300: var(--line-grey-strong);
+  --grey-200: var(--line-grey);
+  --grey-100: var(--tint-neutral);
+  --grey-50: var(--surface);
+  --red-700: var(--error);
+  --red-50: var(--tint-pink);
+
+  /* Semantic: what each value is for. White and light, like the live site:
+     white canvas, light-grey chrome, hairline-separated white cards, the
+     near-black pill for the one primary action, brand orange for the tree. */
+  --ground: var(--white);
+  --panel: var(--white);
+  --raised: var(--site-grey);
+  --chrome: var(--surface);
+  --line: var(--site-line);
+  --line-strong: var(--site-line-strong);
+  --text: var(--ink);
+  --text-soft: var(--ink-soft);
+  --muted: var(--site-muted);
+  --accent: var(--site-ink);
+  --accent-ink: var(--white);
+  --accent-soft: var(--site-grey);
+  --brand: var(--brand-orange);
+  --positive: var(--fg-green-dark);
+  --danger: var(--error);
+  --danger-soft: var(--tint-pink);
+  --focus: var(--site-ink);
+  --grove: var(--fg-green-ink);
+  --grove-deep: var(--fg-green-ink);
+
+  /* Component: one large radius stepping down inside (20 / 10 / 8 / 5). */
+  --r-card: 20px;
+  --r-control: 10px;
+  --r-inner: 8px;
+  --r-chip: 5px;
+  --control-h: 44px;
+
+  /* Motion: strong ease-out for anything entering or responding, an iOS-like
+     curve for sheets. Durations stay under 300ms for UI. */
+  --e-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --e-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --e-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--text);
+  --color-ink-soft: var(--text-soft);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-orange-deep);
+  --color-leaf: var(--brand-leaf);
+  --color-positive: var(--positive);
+  --color-chrome: var(--chrome);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-grove: var(--grove);
+  --color-grove-deep: var(--grove-deep);
+
+  --color-green-tint: var(--green-50);
+  --color-green: var(--green-300);
+  --color-green-ink: var(--green-700);
+  --color-coral-tint: var(--coral-50);
+  --color-coral: var(--coral-300);
+  --color-coral-ink: var(--coral-700);
+  --color-yellow-tint: var(--yellow-50);
+  --color-yellow: var(--yellow-300);
+  --color-yellow-ink: var(--yellow-700);
+  --color-blue-tint: var(--blue-50);
+  --color-blue: var(--blue-300);
+  --color-blue-ink: var(--blue-700);
+  --color-pink-tint: var(--pink-50);
+  --color-pink: var(--pink-300);
+  --color-pink-ink: var(--pink-700);
+  --color-purple-tint: var(--purple-50);
+  --color-purple: var(--purple-300);
+  --color-purple-ink: var(--purple-700);
+  --color-bark: var(--bark-600);
+  --color-orange: var(--orange-400);
+
+  --radius-card: var(--r-card);
+  --radius-control: var(--r-control);
+  --radius-inner: var(--r-inner);
+  --radius-chip: var(--r-chip);
+
+  --ease-out: var(--e-out);
+  --ease-in-out: var(--e-in-out);
+  --ease-drawer: var(--e-drawer);
+
+  --font-sans: var(--font-sans-brand);
+  --font-serif: var(--font-instrument);
+}

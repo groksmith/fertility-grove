@@ -90,7 +90,7 @@ const ZOOM = { orange: 0.86, olive: 0.93, fern: 1.12, swallow: 1.11, mountain: 1
 const avatarArt = (key, size) => {
   const s = Math.round(size * 0.82 * (ZOOM[key] || 1));
   const o = Math.round((size - s) / 2);
-  return Img(`brand/grove-avatars-gouache/${key}.webp`, s, s, { name: "art", x: o, y: o, scaleMode: "FIT" });
+  return Img(`assets/brand/grove-avatars-gouache/${key}.webp`, s, s, { name: "art", x: o, y: o, scaleMode: "FIT" });
 };
 const avatar = (key, i, size = 48) =>
   comp(`Avatar / Grove / ${key}`, { width: size, height: size, radius: 999, fill: TINTS[i % TINTS.length], clip: true }, [avatarArt(key, size)]);
@@ -99,8 +99,8 @@ const initial = (size) =>
 
 // ---------------------------------------------------------------- Navigation
 const LOGO_RATIO = 1295 / 473;
-const logo = (h) => Img("brand/logo.png", Math.round(h * LOGO_RATIO), h, { name: "logo", scaleMode: "FIT" });
-const mark = (s) => Img("brand/orange.png", s, Math.round(s * (322 / 297)), { name: "mark", scaleMode: "FIT" });
+const logo = (h) => Img("assets/brand/logo.png", Math.round(h * LOGO_RATIO), h, { name: "logo", scaleMode: "FIT" });
+const mark = (s) => Img("assets/brand/orange.png", s, Math.round(s * (322 / 297)), { name: "mark", scaleMode: "FIT" });
 
 const NAV = [
   ["newspaper", "Feed"], ["layout-dashboard", "Dashboard"], ["users", "Groups"], ["flower-2", "Success stories"], ["book-open", "Learn"],
@@ -167,7 +167,7 @@ const tabBar = comp("Phone / Tab bar", { layout: "row", width: 390, height: 94, 
    (31px, at 5,3 in a 40px box), a white sparkle top left for its shine and a
    small orange one bottom right. */
 const guideMark = () => F({ name: "Guide mark", width: 40, height: 40 }, [
-  Img("brand/orange.png", 31, Math.round(31 * (322 / 297)), { name: "orange", x: 5, y: 3, scaleMode: "FIT" }),
+  Img("assets/brand/orange.png", 31, Math.round(31 * (322 / 297)), { name: "orange", x: 5, y: 3, scaleMode: "FIT" }),
   {
     type: "svg", name: "sparkles", width: 40, height: 40, x: 0, y: 0,
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><path fill="#FFFFFF" d="M9 7c.8 4.6 2.2 6 7 7-4.8 1-6.2 2.4-7 7-.8-4.6-2.2-6-7-7 4.8-1 6.2-2.4 7-7Z"/><path fill="#F89414" d="M35 30c.4 2.1.9 2.6 3 3-2.1.4-2.6.9-3 3-.4-2.1-.9-2.6-3-3 2.1-.4 2.6-.9 3-3Z"/></svg>`,
@@ -205,7 +205,7 @@ const postCard = comp("Card / Post", { layout: "column", width: 640, w: "fixed",
 ]);
 
 const groupRow = comp("Row / Group", { layout: "row", width: 720, w: "fixed", h: "hug", gap: 16, padding: [16, 0], align: "center" }, [
-  F({ name: "cover", width: 56, height: 56, radius: 10, fill: C.white, stroke: C.line, strokeAlign: "INSIDE", clip: true }, [Img("brand/groups/g-endo.webp", 56, 56, { name: "art" })]),
+  F({ name: "cover", width: 56, height: 56, radius: 10, fill: C.white, stroke: C.line, strokeAlign: "INSIDE", clip: true }, [Img("assets/brand/groups/g-endo.webp", 56, 56, { name: "art" })]),
   Col({ name: "text", gap: 2, grow: true, w: "fill" }, [
     Row({ name: "title row", gap: 8 }, [T("Endometriosis", "h4", { name: "name" }), F({ name: "type", layout: "row", align: "center", height: 24, h: "fixed", w: "hug", padding: [0, 10], radius: 999, fill: C.tintPink, stroke: C.coral }, [T("Diagnosis", "chip", { color: C.coralInk })])]),
     T("Matched on endometriosis", "caption", { style: "SemiBold", color: C.greenInk, name: "why" }),
@@ -222,7 +222,7 @@ const settingsRow = (active) => comp(`Row / Settings / ${active ? "Selected" : "
 ]);
 
 const articleCard = comp("Card / Article", { layout: "column", width: 380, w: "fixed", h: "hug", radius: 20, fill: C.white, stroke: C.line, clip: true }, [
-  Img("brand/learn/endometriosis-topic.webp", 380, 214, { name: "cover", w: "fill" }),
+  Img("assets/brand/learn/endometriosis-topic.webp", 380, 214, { name: "cover", w: "fill" }),
   Col({ name: "body", w: "fill", padding: 20, gap: 4 }, [
     T("Matched on endometriosis", "caption", { style: "SemiBold", color: C.greenInk, name: "why" }),
     T("Endometriosis and fertility", "h4", { size: 17, name: "title" }),

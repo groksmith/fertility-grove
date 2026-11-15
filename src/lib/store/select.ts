@@ -1,11 +1,11 @@
 /* Derived views of the state. Display identity follows PRD §6: a handle by
    default, or first name plus last initial ("Annie M."), never a hidden name. */
 
-import { articleBySlug } from "../data/articles";
-import { NO_DOWNVOTE } from "../options";
-import { total } from "../rules/credits";
-import { matchGroups, matchPeople, type Journey } from "../rules/matching";
-import type { Comment, Member, Post } from "../types";
+import { NO_DOWNVOTE } from "@/config/options";
+import { articleBySlug } from "@/lib/data/articles";
+import { total } from "@/lib/rules/credits";
+import { type Journey, matchGroups, matchPeople } from "@/lib/rules/matching";
+import type { Comment, Member, Post } from "@/types/domain";
 import type { State } from "./state";
 
 export function meAsMember(s: State): Member {
@@ -16,7 +16,12 @@ export function meAsMember(s: State): Member {
     firstName: m.firstName || "You",
     lastInitial: (m.lastName || " ")[0].trim(),
     showRealName: m.showRealName,
-    pronouns: m.pronouns && m.pronouns !== "Prefer not to say" ? (m.pronouns === "Prefer to self-describe" ? m.pronounsSelf : m.pronouns) : undefined,
+    pronouns:
+      m.pronouns && m.pronouns !== "Prefer not to say"
+        ? m.pronouns === "Prefer to self-describe"
+          ? m.pronounsSelf
+          : m.pronouns
+        : undefined,
     avatarHue: m.avatarHue,
     avatar: m.avatarPreset >= 0 ? m.avatarPreset : undefined,
     sunlight: m.sunlight,
@@ -45,7 +50,9 @@ export function person(s: State, id: string): Member | undefined {
   return id === "me" ? meAsMember(s) : s.members.find((m) => m.id === id);
 }
 
-export function displayName(m: Pick<Member, "showRealName" | "firstName" | "lastInitial" | "handle">) {
+export function displayName(
+  m: Pick<Member, "showRealName" | "firstName" | "lastInitial" | "handle">,
+) {
   if (m.showRealName) return m.lastInitial ? `${m.firstName} ${m.lastInitial}.` : m.firstName;
   return `@${m.handle}`;
 }
@@ -93,10 +100,16 @@ export function visiblePosts(s: State) {
 
 export function feed(
   s: State,
-  opts: { tab: "for-you" | "following"; sort: "newest" | "top" | "discussed"; groups: string[]; types: string[] },
+  opts: {
+    tab: "for-you" | "following";
+    sort: "newest" | "top" | "discussed";
+    groups: string[];
+    types: string[];
+  },
 ) {
   const base = visiblePosts(s);
-  const commentsOf = (id: string) => s.comments.filter((c) => c.postId === id && c.status === "published").length;
+  const commentsOf = (id: string) =>
+    s.comments.filter((c) => c.postId === id && c.status === "published").length;
   let items: { post: Post; matched?: string }[];
   if (opts.tab === "following") {
     items = base
@@ -107,7 +120,9 @@ export function feed(
       })
       .map((post) => ({ post }));
   } else {
-    items = base.filter((p) => s.joined.includes(p.groupId) || p.authorId === "me").map((post) => ({ post }));
+    items = base
+      .filter((p) => s.joined.includes(p.groupId) || p.authorId === "me")
+      .map((post) => ({ post }));
     // Up to 3 a day from matched groups the member hasn't joined, never Members-only.
     const matchedIds = groupMatches(s, 5)
       .filter((m) => !s.joined.includes(m.group.id) && m.group.readAccess === "any")
@@ -115,16 +130,23 @@ export function feed(
     const extra = base
       .filter((p) => matchedIds.some((g) => g.id === p.groupId))
       .slice(0, 3)
-      .map((post) => ({ post, matched: `From ${s.groups.find((g) => g.id === post.groupId)?.name}, a group matched to you` }));
+      .map((post) => ({
+        post,
+        matched: `From ${s.groups.find((g) => g.id === post.groupId)?.name}, a group matched to you`,
+      }));
     items = [...items, ...extra];
   }
   if (opts.groups.length) items = items.filter((i) => opts.groups.includes(i.post.groupId));
   if (opts.types.length) items = items.filter((i) => opts.types.includes(i.post.type));
   const week = 7 * 24 * 60;
   if (opts.sort === "top") {
-    items = items.filter((i) => i.post.minutesAgo <= week).sort((a, b) => score(b.post) - score(a.post));
+    items = items
+      .filter((i) => i.post.minutesAgo <= week)
+      .sort((a, b) => score(b.post) - score(a.post));
   } else if (opts.sort === "discussed") {
-    items = items.filter((i) => i.post.minutesAgo <= week).sort((a, b) => commentsOf(b.post.id) - commentsOf(a.post.id));
+    items = items
+      .filter((i) => i.post.minutesAgo <= week)
+      .sort((a, b) => commentsOf(b.post.id) - commentsOf(a.post.id));
   } else {
     items = items.sort((a, b) => a.post.minutesAgo - b.post.minutesAgo);
   }
@@ -174,11 +196,16 @@ export function timeAgo(minutes: number) {
 /** What the "Complete your profile" card lists (PRD §5): what was skipped. */
 export function profileGaps(s: State) {
   const gaps: { key: string; label: string; href: string }[] = [];
-  if (s.me.healthConsent && !s.me.diagnoses.length) gaps.push({ key: "diagnosis", label: "Add a diagnosis", href: "/settings#journey" });
-  if (s.me.healthConsent && !s.me.paths.length) gaps.push({ key: "path", label: "Add your path to parenthood", href: "/settings#journey" });
-  if (!s.me.hasPhoto && s.me.avatarPreset < 0) gaps.push({ key: "photo", label: "Choose a photo or avatar", href: "/dashboard?edit=1" });
-  if (!s.me.aboutMe) gaps.push({ key: "aboutMe", label: "Write a line about you", href: "/dashboard?edit=1" });
-  if (!s.me.myStory) gaps.push({ key: "story", label: "Share your story", href: "/dashboard?edit=1" });
+  if (s.me.healthConsent && !s.me.diagnoses.length)
+    gaps.push({ key: "diagnosis", label: "Add a diagnosis", href: "/settings#journey" });
+  if (s.me.healthConsent && !s.me.paths.length)
+    gaps.push({ key: "path", label: "Add your path to parenthood", href: "/settings#journey" });
+  if (!s.me.hasPhoto && s.me.avatarPreset < 0)
+    gaps.push({ key: "photo", label: "Choose a photo or avatar", href: "/dashboard?edit=1" });
+  if (!s.me.aboutMe)
+    gaps.push({ key: "aboutMe", label: "Write a line about you", href: "/dashboard?edit=1" });
+  if (!s.me.myStory)
+    gaps.push({ key: "story", label: "Share your story", href: "/dashboard?edit=1" });
   return gaps;
 }
 

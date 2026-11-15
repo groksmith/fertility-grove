@@ -1,7 +1,7 @@
 /* Sample groups, from the examples in PRD v2.0 §8. The launch list is an open
    question for Fertility Grove (§27). */
 
-import type { Group } from "../types";
+import type { Group } from "@/types/domain";
 
 export const GROUPS: Group[] = [
   {
@@ -13,7 +13,8 @@ export const GROUPS: Group[] = [
     tags: ["Endometriosis"],
     readAccess: "any",
     visibleToGuests: false,
-    rules: "Share what worked for you as your experience, not as advice. Start posts about surgery details with a short content note.",
+    rules:
+      "Share what worked for you as your experience, not as advice. Start posts about surgery details with a short content note.",
     status: "active",
     community: "both",
     members: 1284,

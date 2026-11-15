@@ -4,12 +4,10 @@
    The finding sits under the title; the feed takes two thirds, and the right
    third is your tree, people on your path and groups matched to you. */
 
-import Link from "next/link";
-import { useState } from "react";
-import { PenLine, SlidersHorizontal, X } from "lucide-react";
 import { GroupCover } from "@/components/art/Brand";
 import { TreeArt } from "@/components/art/Tree";
-import { PostCard } from "@/components/PostCard";
+import { Person } from "@/components/common/Person";
+import { PostCard } from "@/components/common/PostCard";
 import {
   AvatarPicker,
   Button,
@@ -18,15 +16,17 @@ import {
   EmptyState,
   LinkButton,
   Panel,
-  Person,
   Segmented,
   Tabs,
   toast,
-} from "@/components/ui";
+} from "@/components/shared";
+import { POST_TYPES } from "@/config/options";
 import { dismissCompletionCard, profileCompletion } from "@/lib/api";
-import { act, sel, useStore, type State } from "@/lib/store";
-import { POST_TYPES } from "@/lib/options";
 import { nextLevel, progress } from "@/lib/rules/sunlight";
+import { type State, act, sel, useStore } from "@/lib/store";
+import { PenLine, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 type Sort = "newest" | "top" | "discussed";
 
@@ -57,23 +57,37 @@ function TreeCard() {
       </div>
       <div className="p-5">
         <p className="flex items-baseline justify-between text-[14px]">
-          <span className="tabular text-[24px] font-semibold text-ink">{me.sunlight.toLocaleString()}</span>
+          <span className="tabular text-[24px] font-semibold text-ink">
+            {me.sunlight.toLocaleString()}
+          </span>
           <span className="text-muted">Sunlight</span>
         </p>
         {next ? (
           <>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-raised" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Progress to ${next.level}`}>
+            {/* biome-ignore lint/a11y/useFocusableInteractive: progressbar is a read-only progress indicator, not an operable widget; making it focusable would add a dead tab stop */}
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-raised"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Progress to ${next.level}`}
+            >
               <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
             </div>
             <p className="mt-2 text-[13px] text-muted">
-              <span className="tabular">{(next.at - me.sunlight).toLocaleString()}</span> more to {next.level}
+              <span className="tabular">{(next.at - me.sunlight).toLocaleString()}</span> more to{" "}
+              {next.level}
               {next.level === "Blossom Tree" && ", when mentoring opens"}
             </p>
           </>
         ) : (
           <p className="mt-2 text-[13px] text-muted">The top of the grove.</p>
         )}
-        <Link href="/dashboard#sunlight" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
+        <Link
+          href="/dashboard#sunlight"
+          className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline"
+        >
           How you earned it
         </Link>
       </div>
@@ -86,11 +100,15 @@ function PeopleLikeYou() {
   const people = sel.peopleMatches(s, 4);
   return (
     <Panel className="p-5" id="people" aria-labelledby="people-h">
-      <h2 id="people-h" className="text-[16px] font-semibold">People on your path</h2>
+      <h2 id="people-h" className="text-[16px] font-semibold">
+        People on your path
+      </h2>
       {people.length === 0 ? (
         <p className="mt-2 text-[14px] leading-relaxed text-muted">
           We&apos;re still finding people on your path. Check back soon.{" "}
-          <Link href="/groups" className="font-semibold text-accent">Popular groups</Link>
+          <Link href="/groups" className="font-semibold text-accent">
+            Popular groups
+          </Link>
         </p>
       ) : (
         <ul className="mt-3 space-y-4">
@@ -98,13 +116,24 @@ function PeopleLikeYou() {
             <li key={member.id}>
               <Person member={member} sub={why} size={36} />
               <div className="mt-2 flex gap-2 pl-12">
-                <Button size="sm" variant="secondary" onClick={() => { act.social.toggleFollow(member.id); toast(`Following ${sel.displayName(member)}`); }}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    act.social.toggleFollow(member.id);
+                    toast(`Following ${sel.displayName(member)}`);
+                  }}
+                >
                   Follow
                 </Button>
                 <LinkButton size="sm" variant="ghost" href={`/u/${member.handle}`}>
                   View
                 </LinkButton>
-                <button type="button" onClick={() => act.social.notForMe(member.id)} className="ml-auto text-[13px] text-muted hover:text-ink">
+                <button
+                  type="button"
+                  onClick={() => act.social.notForMe(member.id)}
+                  className="ml-auto text-[13px] text-muted hover:text-ink"
+                >
                   Not for me
                 </button>
               </div>
@@ -118,22 +147,37 @@ function PeopleLikeYou() {
 
 function GroupsForYou({ limit = 3 }: { limit?: number }) {
   const s = useStore();
-  const matches = sel.groupMatches(s, 5).filter((m) => !s.joined.includes(m.group.id)).slice(0, limit);
+  const matches = sel
+    .groupMatches(s, 5)
+    .filter((m) => !s.joined.includes(m.group.id))
+    .slice(0, limit);
   if (!matches.length) return null;
   return (
     <Panel className="p-5" aria-labelledby="gfy-h">
-      <h2 id="gfy-h" className="text-[16px] font-semibold">Groups for you</h2>
+      <h2 id="gfy-h" className="text-[16px] font-semibold">
+        Groups for you
+      </h2>
       <ul className="mt-3 space-y-3">
         {matches.map(({ group, why }) => (
           <li key={group.id} className="flex items-center gap-3">
             <GroupCover group={group} size={40} />
             <div className="min-w-0 flex-1">
-              <Link href={`/groups/${group.id}`} className="block truncate text-[14px] font-semibold hover:underline">
+              <Link
+                href={`/groups/${group.id}`}
+                className="block truncate text-[14px] font-semibold hover:underline"
+              >
                 {group.name}
               </Link>
               <p className="truncate text-[12.5px] text-muted">{why}</p>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => { act.groups.toggleJoin(group.id); toast(`Joined ${group.name}`); }}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                act.groups.toggleJoin(group.id);
+                toast(`Joined ${group.name}`);
+              }}
+            >
               Join
             </Button>
           </li>
@@ -165,7 +209,9 @@ function ProfileCard() {
     <Panel className="flex flex-wrap items-center gap-4 p-5">
       <div className="min-w-0 flex-1">
         <h2 className="text-[16px] font-semibold">Complete your profile</h2>
-        <p className="mt-0.5 text-[14px] text-muted">A fuller profile helps the right people find you.</p>
+        <p className="mt-0.5 text-[14px] text-muted">
+          A fuller profile helps the right people find you.
+        </p>
         {needsAvatar && (
           <fieldset className="mt-4">
             <legend className="mb-2 text-[14px] font-semibold text-ink">Pick a grove avatar</legend>
@@ -181,7 +227,10 @@ function ProfileCard() {
                   toast("Avatar saved. Change it any time on your profile.");
                 }}
               />
-              <Link href="/dashboard?edit=1" className="text-[14px] font-semibold text-accent underline underline-offset-2">
+              <Link
+                href="/dashboard?edit=1"
+                className="text-[14px] font-semibold text-accent underline underline-offset-2"
+              >
                 See all 12
               </Link>
             </div>
@@ -189,17 +238,28 @@ function ProfileCard() {
         )}
         {gaps.some((g) => g.key !== "photo") && (
           <ul className="mt-3 flex flex-wrap gap-2">
-            {gaps.filter((g) => g.key !== "photo").map((g) => (
-              <li key={g.key}>
-                <Link href={g.href} className="press inline-flex h-9 items-center rounded-full border border-line-strong bg-white px-3.5 text-[14px] font-semibold text-ink hover:border-ink">
-                  {g.label}
-                </Link>
-              </li>
-            ))}
+            {gaps
+              .filter((g) => g.key !== "photo")
+              .map((g) => (
+                <li key={g.key}>
+                  <Link
+                    href={g.href}
+                    className="press inline-flex h-9 items-center rounded-full border border-line-strong bg-white px-3.5 text-[14px] font-semibold text-ink hover:border-ink"
+                  >
+                    {g.label}
+                  </Link>
+                </li>
+              ))}
           </ul>
         )}
       </div>
-      <button type="button" aria-label="Hide for 30 days" title="Hide for 30 days" onClick={dismissCompletionCard} className="press grid h-10 w-10 place-items-center self-start rounded-full text-muted hover:bg-raised">
+      <button
+        type="button"
+        aria-label="Hide for 30 days"
+        title="Hide for 30 days"
+        onClick={dismissCompletionCard}
+        className="press grid h-10 w-10 place-items-center self-start rounded-full text-muted hover:bg-raised"
+      >
         <X size={18} />
       </button>
     </Panel>
@@ -260,14 +320,30 @@ export default function HomePage() {
 
           {items.length === 0 ? (
             tab === "following" ? (
-              <EmptyState art="birds" title="Follow people to see their new posts here." action={<LinkButton href="#people" variant="secondary">People on your path</LinkButton>} />
+              <EmptyState
+                art="birds"
+                title="Follow people to see their new posts here."
+                action={
+                  <LinkButton href="#people" variant="secondary">
+                    People on your path
+                  </LinkButton>
+                }
+              />
             ) : s.joined.length === 0 ? (
               <div className="space-y-4">
-                <EmptyState art="canopy" title="Your feed fills up as you join groups." body="Here are groups matched to where you are." />
+                <EmptyState
+                  art="canopy"
+                  title="Your feed fills up as you join groups."
+                  body="Here are groups matched to where you are."
+                />
                 <GroupsForYou limit={5} />
               </div>
             ) : (
-              <EmptyState art="sun" title="You're all caught up." action={<LinkButton href="/posts/new">Write a post</LinkButton>} />
+              <EmptyState
+                art="sun"
+                title="You're all caught up."
+                action={<LinkButton href="/posts/new">Write a post</LinkButton>}
+              />
             )
           ) : (
             <ul className="space-y-4">
@@ -292,7 +368,13 @@ export default function HomePage() {
           <div>
             <h3 className="mb-2 text-[14px] font-semibold">Groups</h3>
             {joinedGroups.length ? (
-              <ChipSelect label="Groups" options={joinedGroups.map((g) => g.id)} value={groups} onChange={setGroups} labelOf={(id) => s.groups.find((g) => g.id === id)?.name ?? id} />
+              <ChipSelect
+                label="Groups"
+                options={joinedGroups.map((g) => g.id)}
+                value={groups}
+                onChange={setGroups}
+                labelOf={(id) => s.groups.find((g) => g.id === id)?.name ?? id}
+              />
             ) : (
               <p className="text-[14px] text-muted">Join a group to filter by it.</p>
             )}
@@ -303,7 +385,13 @@ export default function HomePage() {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setFilters(false)}>Show posts</Button>
-            <Button variant="ghost" onClick={() => { setGroups([]); setTypes([]); }}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setGroups([]);
+                setTypes([]);
+              }}
+            >
               Clear
             </Button>
           </div>

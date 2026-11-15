@@ -1,5 +1,5 @@
+import { Landing } from "@/components/common/landing/Landing";
 import type { Metadata } from "next";
-import { Landing } from "@/components/landing/Landing";
 
 export const metadata: Metadata = {
   title: "Fertility Grove: a private community for infertility, and partners",

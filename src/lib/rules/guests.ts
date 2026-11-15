@@ -2,7 +2,7 @@
    guest pages (from the store) and the server's page metadata (from the
    sample data). The backend applies the same rules to its public endpoints. */
 
-import type { Group, Member, Post } from "../types";
+import type { Group, Member, Post } from "@/types/domain";
 
 /** A group guests may browse: visible to guests, readable by any member, live. */
 export const groupOpenToGuests = (g: Group | undefined): boolean =>
@@ -21,11 +21,17 @@ export function guestCanRead(post: Post, group: Group | undefined, author: Membe
 }
 
 /** Who may open /p/[id]: posts shown to visitors, and posts shared by link. */
-export function publicPostState(post: Post | undefined, group: Group | undefined, author: Member | undefined) {
-  if (!post || !author || author.unavailable || post.status !== "published" || post.crisisPending) return "unavailable" as const;
+export function publicPostState(
+  post: Post | undefined,
+  group: Group | undefined,
+  author: Member | undefined,
+) {
+  if (!post || !author || author.unavailable || post.status !== "published" || post.crisisPending)
+    return "unavailable" as const;
   if (guestCanRead(post, group, author)) return "listed" as const;
   // Shared by link only: it opens for anyone with the link, but stays unlisted.
-  if (post.allowSharing && group?.readAccess === "any") return "link-only" as const;
+  if (post.allowSharing && group?.readAccess === "any" && group.status !== "draft")
+    return "link-only" as const;
   return "unavailable" as const;
 }
 

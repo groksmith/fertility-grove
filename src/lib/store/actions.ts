@@ -1,13 +1,13 @@
 /* Every state change in the prototype. Actions enforce the PRD's rules and
    return the PRD's own copy, so screens only decide where to show it. */
 
-import { CREDITS, NO_DOWNVOTE } from "../options";
-import { detectCrisis, type CrisisLevel } from "../rules/crisis";
-import { spend } from "../rules/credits";
-import { appointmentQuestions, askGuide } from "../rules/guide";
-import { keepLevel, levelIndex } from "../rules/sunlight";
-import { MSG, checks, normalizeEmail } from "../rules/validation";
-import { MENTOR_REQUESTS } from "../data/social";
+import { CREDITS, NO_DOWNVOTE } from "@/config/options";
+import { MENTOR_REQUESTS } from "@/lib/data/social";
+import { spend } from "@/lib/rules/credits";
+import { type CrisisLevel, detectCrisis } from "@/lib/rules/crisis";
+import { appointmentQuestions, askGuide } from "@/lib/rules/guide";
+import { keepLevel, levelIndex } from "@/lib/rules/sunlight";
+import { MSG, checks, normalizeEmail } from "@/lib/rules/validation";
 import type {
   FamilyItem,
   GuideChat,
@@ -18,15 +18,22 @@ import type {
   Source,
   StoryType,
   Vote,
-} from "../types";
-import { EMPTY_ME, get, persona, replace, set, type Me, type State } from "./state";
+} from "@/types/domain";
+import { EMPTY_ME, type Me, type State, get, persona, replace, set } from "./state";
 
 export type Result =
   | { ok: true; id?: string; crisis?: CrisisLevel; note?: string }
   | { ok: false; error: string; code?: "unconfirmed" | "join" | "credits" };
 
-const ok = (extra: Omit<Extract<Result, { ok: true }>, "ok"> = {}): Result => ({ ok: true, ...extra });
-const fail = (error: string, code?: "unconfirmed" | "join" | "credits"): Result => ({ ok: false, error, code });
+const ok = (extra: Omit<Extract<Result, { ok: true }>, "ok"> = {}): Result => ({
+  ok: true,
+  ...extra,
+});
+const fail = (error: string, code?: "unconfirmed" | "join" | "credits"): Result => ({
+  ok: false,
+  error,
+  code,
+});
 
 let seq = 0;
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
@@ -48,8 +55,14 @@ function confirmed(): Result | null {
   return me.status === "unconfirmed" ? fail(MSG.unconfirmed(me.email), "unconfirmed") : null;
 }
 
-function notify(s: State, n: Omit<State["notifications"][number], "id" | "minutesAgo" | "read">): State {
-  return { ...s, notifications: [{ id: uid("n"), minutesAgo: 0, read: false, ...n }, ...s.notifications] };
+function notify(
+  s: State,
+  n: Omit<State["notifications"][number], "id" | "minutesAgo" | "read">,
+): State {
+  return {
+    ...s,
+    notifications: [{ id: uid("n"), minutesAgo: 0, read: false, ...n }, ...s.notifications],
+  };
 }
 
 /** Adds Sunlight, keeps the level from ever dropping, and queues the level-up
@@ -77,7 +90,13 @@ function sunlight(s: State, amount: number, label: string): State {
 /* ------------------------------------------------------------------ Auth */
 
 export const auth = {
-  signUp(input: { email: string; password?: string; adult: boolean; terms: boolean; google?: boolean }) {
+  signUp(input: {
+    email: string;
+    password?: string;
+    adult: boolean;
+    terms: boolean;
+    google?: boolean;
+  }) {
     const s = get();
     if (!s.hasInvite) return fail(MSG.inviteOnly);
     if (s.signupsPaused) return fail(MSG.paused);
@@ -101,7 +120,12 @@ export const auth = {
       step: 1,
       invitedBy,
       password: input.password,
-      me: { ...EMPTY_ME, email, status: input.google ? "active" : "unconfirmed", inviteCode: newInviteCode() },
+      me: {
+        ...EMPTY_ME,
+        email,
+        status: input.google ? "active" : "unconfirmed",
+        inviteCode: newInviteCode(),
+      },
     });
     return { ok: true as const, duplicate: false };
   },
@@ -139,7 +163,10 @@ export const auth = {
 
   confirmEmail(): Result {
     if (get().linkExpired) return fail(MSG.linkExpired);
-    set((s) => ({ ...s, me: { ...s.me, status: s.me.status === "unconfirmed" ? "active" : s.me.status } }));
+    set((s) => ({
+      ...s,
+      me: { ...s.me, status: s.me.status === "unconfirmed" ? "active" : s.me.status },
+    }));
     return ok();
   },
 
@@ -176,7 +203,12 @@ export const onboarding = {
       me: {
         ...s.me,
         ...patch,
-        skipped: Array.from(new Set([...s.me.skipped.filter((k) => !Object.keys(patch).includes(k)), ...(skipped ?? [])])),
+        skipped: Array.from(
+          new Set([
+            ...s.me.skipped.filter((k) => !Object.keys(patch).includes(k)),
+            ...(skipped ?? []),
+          ]),
+        ),
       },
       step: Math.max(s.step, step + 1),
     }));
@@ -186,7 +218,11 @@ export const onboarding = {
     set((s) =>
       notify(
         { ...s, step: 9, me: { ...s.me, level: "Seed", joinedDaysAgo: 0 }, pendingLevelUp: "Seed" },
-        { kind: "level", text: "You planted your Seed. Your tree grows as you help others.", href: "/dashboard" },
+        {
+          kind: "level",
+          text: "You planted your Seed. Your tree grows as you help others.",
+          href: "/dashboard",
+        },
       ),
     );
   },
@@ -202,12 +238,17 @@ export const groups = {
         ...s,
         joined: joined ? s.joined.filter((g) => g !== id) : [...s.joined, id],
         muted: joined ? s.muted.filter((g) => g !== id) : s.muted,
-        groups: s.groups.map((g) => (g.id === id ? { ...g, members: g.members + (joined ? -1 : 1) } : g)),
+        groups: s.groups.map((g) =>
+          g.id === id ? { ...g, members: g.members + (joined ? -1 : 1) } : g,
+        ),
       };
     });
   },
   toggleMute(id: string) {
-    set((s) => ({ ...s, muted: s.muted.includes(id) ? s.muted.filter((g) => g !== id) : [...s.muted, id] }));
+    set((s) => ({
+      ...s,
+      muted: s.muted.includes(id) ? s.muted.filter((g) => g !== id) : [...s.muted, id],
+    }));
   },
   notForMe(id: string) {
     set((s) => ({ ...s, notForMe: [...s.notForMe, id] }));
@@ -234,7 +275,8 @@ export function validatePost(p: PostInput) {
   if (!p.body.trim()) errs.body = MSG.postBody;
   // Source and topic tags are optional; only the post type is required.
   if (!p.type) errs.type = MSG.postType;
-  if (p.source === "From research or guidelines" && !p.sourceLink.trim()) errs.sourceLink = MSG.researchLink;
+  if (p.source === "From research or guidelines" && !p.sourceLink.trim())
+    errs.sourceLink = MSG.researchLink;
   else {
     const l = checks.link(p.sourceLink);
     if (l) errs.sourceLink = l;
@@ -251,7 +293,9 @@ export const posts = {
     if (s.counters.posts >= 10) return fail(MSG.postLimit);
     const crisis = detectCrisis(`${p.title} ${p.body}`);
     // Show to visitors only where the group allows guests, and it keeps sharing on.
-    const visitors = p.showToVisitors && !!s.groups.find((g) => g.id === p.groupId && g.visibleToGuests && g.readAccess === "any");
+    const visitors =
+      p.showToVisitors &&
+      !!s.groups.find((g) => g.id === p.groupId && g.visibleToGuests && g.readAccess === "any");
     const id = uid("p");
     set((x) => ({
       ...x,
@@ -284,14 +328,22 @@ export const posts = {
     return ok({ id, crisis });
   },
 
-  edit(id: string, patch: Partial<Pick<Post, "title" | "body" | "allowSharing" | "showToVisitors">>) {
+  edit(
+    id: string,
+    patch: Partial<Pick<Post, "title" | "body" | "allowSharing" | "showToVisitors">>,
+  ) {
     set((s) => ({
       ...s,
       posts: s.posts.map((p) => {
         if (p.id !== id) return p;
         const group = s.groups.find((g) => g.id === p.groupId);
-        const next = { ...p, ...patch, edited: patch.title !== undefined || patch.body !== undefined ? true : p.edited };
-        next.showToVisitors = next.showToVisitors && !!group?.visibleToGuests && group.readAccess === "any";
+        const next = {
+          ...p,
+          ...patch,
+          edited: patch.title !== undefined || patch.body !== undefined ? true : p.edited,
+        };
+        next.showToVisitors =
+          next.showToVisitors && !!group?.visibleToGuests && group.readAccess === "any";
         if (next.showToVisitors) next.allowSharing = true;
         return next;
       }),
@@ -304,7 +356,10 @@ export const posts = {
   },
 
   remove(id: string) {
-    set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, status: "deleted" } : p)) }));
+    set((s) => ({
+      ...s,
+      posts: s.posts.map((p) => (p.id === id ? { ...p, status: "deleted" } : p)),
+    }));
   },
 
   vote(id: string, v: Vote): Result {
@@ -314,7 +369,8 @@ export const posts = {
     const post = s.posts.find((p) => p.id === id);
     if (!post || post.authorId === "me") return fail("You can't vote on your own post.");
     if (!s.joined.includes(post.groupId)) return fail("Join this group to vote.", "join");
-    if (v === -1 && NO_DOWNVOTE.includes(post.type)) return fail("No downvotes on this kind of post.");
+    if (v === -1 && NO_DOWNVOTE.includes(post.type))
+      return fail("No downvotes on this kind of post.");
     set((x) => ({
       ...x,
       posts: x.posts.map((p) => {
@@ -332,10 +388,17 @@ export const posts = {
   },
 
   toggleSave(id: string) {
-    set((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, saved: !p.saved } : p)) }));
+    set((s) => ({
+      ...s,
+      posts: s.posts.map((p) => (p.id === id ? { ...p, saved: !p.saved } : p)),
+    }));
   },
 
-  comment(postId: string, body: string, opts: { parentId?: string; mention?: string; source?: Source } = {}): Result {
+  comment(
+    postId: string,
+    body: string,
+    opts: { parentId?: string; mention?: string; source?: Source } = {},
+  ): Result {
     const gate = confirmed();
     if (gate) return gate;
     const s = get();
@@ -378,7 +441,8 @@ export const posts = {
     const post = c && s.posts.find((p) => p.id === c.postId);
     if (!c || !post || c.authorId === "me") return fail("You can't vote on your own comment.");
     if (!s.joined.includes(post.groupId)) return fail("Join this group to vote.", "join");
-    if (v === -1 && NO_DOWNVOTE.includes(post.type)) return fail("No downvotes on this kind of post.");
+    if (v === -1 && NO_DOWNVOTE.includes(post.type))
+      return fail("No downvotes on this kind of post.");
     set((x) => ({
       ...x,
       comments: x.comments.map((k) => {
@@ -396,25 +460,42 @@ export const posts = {
   },
 
   editComment(id: string, body: string) {
-    set((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id ? { ...c, body, edited: true } : c)) }));
+    set((s) => ({
+      ...s,
+      comments: s.comments.map((c) => (c.id === id ? { ...c, body, edited: true } : c)),
+    }));
   },
 
   appealComment(id: string) {
-    set((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id ? { ...c, appealed: true } : c)) }));
+    set((s) => ({
+      ...s,
+      comments: s.comments.map((c) => (c.id === id ? { ...c, appealed: true } : c)),
+    }));
   },
 
   removeComment(id: string) {
-    set((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id ? { ...c, status: "deleted" } : c)) }));
+    set((s) => ({
+      ...s,
+      comments: s.comments.map((c) => (c.id === id ? { ...c, status: "deleted" } : c)),
+    }));
   },
 };
 
 /* --------------------------------------------------------------- Stories */
 
 export const stories = {
-  create(st: { type: StoryType | ""; title: string; body: string; diagnoses: string[]; whatHelped: string[]; source: Source | "" }): Result {
+  create(st: {
+    type: StoryType | "";
+    title: string;
+    body: string;
+    diagnoses: string[];
+    whatHelped: string[];
+    source: Source | "";
+  }): Result {
     const gate = confirmed();
     if (gate) return gate;
-    if (!st.type || !st.title.trim() || !st.body.trim() || !st.source) return fail(MSG.storyMissing);
+    if (!st.type || !st.title.trim() || !st.body.trim() || !st.source)
+      return fail(MSG.storyMissing);
     const id = uid("s");
     const crisis = detectCrisis(`${st.title} ${st.body}`);
     set((s) => ({
@@ -454,7 +535,10 @@ export const stories = {
     return ok();
   },
   toggleSave(id: string) {
-    set((s) => ({ ...s, stories: s.stories.map((x) => (x.id === id ? { ...x, saved: !x.saved } : x)) }));
+    set((s) => ({
+      ...s,
+      stories: s.stories.map((x) => (x.id === id ? { ...x, saved: !x.saved } : x)),
+    }));
   },
 };
 
@@ -467,7 +551,9 @@ export const social = {
       return {
         ...s,
         following: on ? s.following.filter((x) => x !== id) : [...s.following, id],
-        members: s.members.map((m) => (m.id === id ? { ...m, followers: m.followers + (on ? -1 : 1) } : m)),
+        members: s.members.map((m) =>
+          m.id === id ? { ...m, followers: m.followers + (on ? -1 : 1) } : m,
+        ),
       };
     });
   },
@@ -483,7 +569,8 @@ export const social = {
       followers: s.followers.filter((x) => x !== id),
       conversations: s.conversations.filter((c) => c.memberId !== id || c.kind === "support"),
       mentorRequests: s.mentorRequests.map((r) =>
-        (r.mentorId === id || r.menteeId === id) && (r.status === "accepted" || r.status === "waiting")
+        (r.mentorId === id || r.menteeId === id) &&
+        (r.status === "accepted" || r.status === "waiting")
           ? { ...r, status: "ended", feedbackGiven: true }
           : r,
       ),
@@ -503,10 +590,15 @@ export const social = {
     set((x) => ({
       ...x,
       counters: { ...x.counters, reports: x.counters.reports + 1 },
-      reports: [...x.reports, { id: uid("r"), target, reason, details: details.trim() || undefined, minutesAgo: 0 }],
+      reports: [
+        ...x.reports,
+        { id: uid("r"), target, reason, details: details.trim() || undefined, minutesAgo: 0 },
+      ],
     }));
     if (alsoBlock) social.block(alsoBlock);
-    return ok({ note: reason === "Self-harm or crisis concern" ? MSG.reportCrisisThanks : MSG.reportThanks });
+    return ok({
+      note: reason === "Self-harm or crisis concern" ? MSG.reportCrisisThanks : MSG.reportThanks,
+    });
   },
 };
 
@@ -527,10 +619,20 @@ export const mentors = {
       ...x,
       mentorRequests: [
         ...x.mentorRequests,
-        { id, mentorId, menteeId: "me", message: message.trim(), helpWith, status: "waiting", daysAgo: 0 },
+        {
+          id,
+          mentorId,
+          menteeId: "me",
+          message: message.trim(),
+          helpWith,
+          status: "waiting",
+          daysAgo: 0,
+        },
       ],
       members: x.members.map((m) =>
-        m.id === mentorId && m.mentor ? { ...m, mentor: { ...m.mentor, waiting: m.mentor.waiting + 1 } } : m,
+        m.id === mentorId && m.mentor
+          ? { ...m, mentor: { ...m.mentor, waiting: m.mentor.waiting + 1 } }
+          : m,
       ),
     }));
     return ok({ id, crisis });
@@ -544,7 +646,13 @@ export const mentors = {
       const next: State = {
         ...s,
         mentorRequests: s.mentorRequests.map((x) =>
-          x.id === id ? { ...x, status: accept ? "accepted" : "declined", note: note.trim() || (accept ? undefined : MSG.mentorDecline) } : x,
+          x.id === id
+            ? {
+                ...x,
+                status: accept ? "accepted" : "declined",
+                note: note.trim() || (accept ? undefined : MSG.mentorDecline),
+              }
+            : x,
         ),
       };
       if (!accept) return next;
@@ -559,7 +667,9 @@ export const mentors = {
             unread: false,
             messages: [
               { id: uid("m"), from: "them", body: r.message, minutesAgo: r.daysAgo * 1440 },
-              ...(note.trim() ? [{ id: uid("m"), from: "me" as const, body: note.trim(), minutesAgo: 0 }] : []),
+              ...(note.trim()
+                ? [{ id: uid("m"), from: "me" as const, body: note.trim(), minutesAgo: 0 }]
+                : []),
             ],
           },
           ...next.conversations,
@@ -571,14 +681,18 @@ export const mentors = {
   end(requestId: string) {
     set((s) => ({
       ...s,
-      mentorRequests: s.mentorRequests.map((r) => (r.id === requestId ? { ...r, status: "ended" } : r)),
+      mentorRequests: s.mentorRequests.map((r) =>
+        r.id === requestId ? { ...r, status: "ended" } : r,
+      ),
     }));
   },
 
   feedback(requestId: string) {
     set((s) => ({
       ...s,
-      mentorRequests: s.mentorRequests.map((r) => (r.id === requestId ? { ...r, feedbackGiven: true } : r)),
+      mentorRequests: s.mentorRequests.map((r) =>
+        r.id === requestId ? { ...r, feedbackGiven: true } : r,
+      ),
     }));
   },
 
@@ -588,7 +702,19 @@ export const mentors = {
     if (!m.helpsWith.length) errs.helpsWith = MSG.mentorHelps;
     if (!m.agreed) errs.agreed = MSG.mentorGuidelines;
     if (Object.keys(errs).length) return { ok: false as const, errs };
-    set((s) => ({ ...s, me: { ...s.me, mentoring: { on: true, paused: false, bio: m.bio.trim(), helpsWith: m.helpsWith, capacity: m.capacity } } }));
+    set((s) => ({
+      ...s,
+      me: {
+        ...s.me,
+        mentoring: {
+          on: true,
+          paused: false,
+          bio: m.bio.trim(),
+          helpsWith: m.helpsWith,
+          capacity: m.capacity,
+        },
+      },
+    }));
     return { ok: true as const, errs: {} };
   },
 
@@ -602,7 +728,9 @@ export const mentors = {
       ...s,
       me: { ...s.me, mentoring: { ...s.me.mentoring, on: false } },
       mentorRequests: s.mentorRequests.map((r) =>
-        r.mentorId === "me" && r.status === "waiting" ? { ...r, status: "declined", note: MSG.mentorDecline } : r,
+        r.mentorId === "me" && r.status === "waiting"
+          ? { ...r, status: "declined", note: MSG.mentorDecline }
+          : r,
       ),
     }));
   },
@@ -635,7 +763,8 @@ export const messages = {
     const mode = messages.canStart(memberId);
     if (mode === "unavailable") return fail(MSG.cantReceive);
     if (mode === "none") return fail("This member isn't taking messages.");
-    if (s.me.joinedDaysAgo < 7 && s.counters.newConversations >= 10) return fail(MSG.conversationLimit);
+    if (s.me.joinedDaysAgo < 7 && s.counters.newConversations >= 10)
+      return fail(MSG.conversationLimit);
     if (!body.trim() && !attachedPostId) return fail("Write a message first.");
     const id = uid("cv");
     const crisis = detectCrisis(body);
@@ -651,7 +780,9 @@ export const messages = {
           muted: false,
           unread: false,
           crisisFlagged: crisis !== "none",
-          messages: [{ id: uid("m"), from: "me", body: body.trim(), minutesAgo: 0, attachedPostId }],
+          messages: [
+            { id: uid("m"), from: "me", body: body.trim(), minutesAgo: 0, attachedPostId },
+          ],
         },
         ...x.conversations,
       ],
@@ -667,7 +798,9 @@ export const messages = {
     if (!c) return fail("This conversation isn't available.");
     if (c.request === "outgoing") {
       const m = s.members.find((x) => x.id === c.memberId);
-      return fail(`You can send more once ${m?.showRealName ? m.firstName : `@${m?.handle}`} accepts your message request.`);
+      return fail(
+        `You can send more once ${m?.showRealName ? m.firstName : `@${m?.handle}`} accepts your message request.`,
+      );
     }
     if (!body.trim() && !attachedPostId) return fail("Write a message first.");
     if (body.length > 5000) return fail("Messages can be up to 5,000 characters.");
@@ -679,7 +812,10 @@ export const messages = {
           ...c,
           request: c.request === "incoming" ? undefined : c.request,
           crisisFlagged: c.crisisFlagged || crisis !== "none",
-          messages: [...c.messages, { id: uid("m"), from: "me", body: body.trim(), minutesAgo: 0, attachedPostId }],
+          messages: [
+            ...c.messages,
+            { id: uid("m"), from: "me", body: body.trim(), minutesAgo: 0, attachedPostId },
+          ],
         },
         ...x.conversations.filter((k) => k.id !== id),
       ],
@@ -688,27 +824,43 @@ export const messages = {
   },
 
   acceptRequest(id: string) {
-    set((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, request: undefined } : c)) }));
+    set((s) => ({
+      ...s,
+      conversations: s.conversations.map((c) => (c.id === id ? { ...c, request: undefined } : c)),
+    }));
   },
   /** Deleting a request is silent: the sender is never told. */
   deleteRequest(id: string) {
     set((s) => ({ ...s, conversations: s.conversations.filter((c) => c.id !== id) }));
   },
   toggleMute(id: string) {
-    set((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, muted: !c.muted } : c)) }));
+    set((s) => ({
+      ...s,
+      conversations: s.conversations.map((c) => (c.id === id ? { ...c, muted: !c.muted } : c)),
+    }));
   },
   deleteForMe(id: string) {
     set((s) => ({ ...s, conversations: s.conversations.filter((c) => c.id !== id) }));
   },
   markRead(id: string) {
-    set((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, unread: false } : c)) }));
+    set((s) => ({
+      ...s,
+      conversations: s.conversations.map((c) => (c.id === id ? { ...c, unread: false } : c)),
+    }));
   },
   /** Edit and delete only within 15 minutes of sending. */
   editMessage(convId: string, msgId: string, body: string) {
     set((s) => ({
       ...s,
       conversations: s.conversations.map((c) =>
-        c.id === convId ? { ...c, messages: c.messages.map((m) => (m.id === msgId && m.minutesAgo <= 15 ? { ...m, body, edited: true } : m)) } : c,
+        c.id === convId
+          ? {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === msgId && m.minutesAgo <= 15 ? { ...m, body, edited: true } : m,
+              ),
+            }
+          : c,
       ),
     }));
   },
@@ -716,7 +868,14 @@ export const messages = {
     set((s) => ({
       ...s,
       conversations: s.conversations.map((c) =>
-        c.id === convId ? { ...c, messages: c.messages.map((m) => (m.id === msgId && m.minutesAgo <= 15 ? { ...m, deleted: true, body: "" } : m)) } : c,
+        c.id === convId
+          ? {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === msgId && m.minutesAgo <= 15 ? { ...m, deleted: true, body: "" } : m,
+              ),
+            }
+          : c,
       ),
     }));
   },
@@ -751,7 +910,11 @@ export const guide = {
       let next: State = { ...x, credits, guideChats: chats };
       const total = credits.free + credits.purchased;
       if (turn.cost > 0 && total <= CREDITS.lowWarning) {
-        next = notify(next, { kind: "credits", text: `You have ${total} Grove Guide credits left`, href: "/credits" });
+        next = notify(next, {
+          kind: "credits",
+          text: `You have ${total} Grove Guide credits left`,
+          href: "/credits",
+        });
       }
       return next;
     });
@@ -761,7 +924,14 @@ export const guide = {
     set((s) => ({
       ...s,
       guideChats: s.guideChats.map((c) =>
-        c.id === chatId ? { ...c, turns: c.turns.map((t) => (t.id === turnId ? { ...t, rating, ratingReason: reason } : t)) } : c,
+        c.id === chatId
+          ? {
+              ...c,
+              turns: c.turns.map((t) =>
+                t.id === turnId ? { ...t, rating, ratingReason: reason } : t,
+              ),
+            }
+          : c,
       ),
     }));
   },
@@ -785,14 +955,24 @@ export const guide = {
       ...x,
       credits: { ...x.credits, ...next },
       appointmentLists: [
-        { id, type, date: date || undefined, onMind: onMind.trim() || undefined, questions: appointmentQuestions(type, onMind), daysAgo: 0 },
+        {
+          id,
+          type,
+          date: date || undefined,
+          onMind: onMind.trim() || undefined,
+          questions: appointmentQuestions(type, onMind),
+          daysAgo: 0,
+        },
         ...x.appointmentLists,
       ],
     }));
     return ok({ id });
   },
   updateList(id: string, questions: State["appointmentLists"][number]["questions"]) {
-    set((s) => ({ ...s, appointmentLists: s.appointmentLists.map((l) => (l.id === id ? { ...l, questions } : l)) }));
+    set((s) => ({
+      ...s,
+      appointmentLists: s.appointmentLists.map((l) => (l.id === id ? { ...l, questions } : l)),
+    }));
   },
   deleteList(id: string) {
     set((s) => ({ ...s, appointmentLists: s.appointmentLists.filter((l) => l.id !== id) }));
@@ -816,12 +996,21 @@ export const credits = {
         purchased: x.credits.purchased + (outcome === "paid" ? pack.credits : 0),
         packsToday: x.credits.packsToday + (outcome === "paid" ? 1 : 0),
         purchases: [
-          { id: uid("pu"), packId, credits: pack.credits, price: pack.price, status: outcome, daysAgo: 0 },
+          {
+            id: uid("pu"),
+            packId,
+            credits: pack.credits,
+            price: pack.price,
+            status: outcome,
+            daysAgo: 0,
+          },
           ...x.credits.purchases,
         ],
       },
     }));
-    return outcome === "paid" ? ok() : fail("Your payment didn't go through, and no credits were added. Please try again.");
+    return outcome === "paid"
+      ? ok()
+      : fail("Your payment didn't go through, and no credits were added. Please try again.");
   },
 };
 
@@ -837,7 +1026,16 @@ export const partner = {
     const crisis = detectCrisis(note);
     set((x) => ({
       ...x,
-      partner: { ...x.partner, invite: { email: normalizeEmail(email), note: note.trim() || undefined, status: "pending", resends: 0, daysAgo: 0 } },
+      partner: {
+        ...x.partner,
+        invite: {
+          email: normalizeEmail(email),
+          note: note.trim() || undefined,
+          status: "pending",
+          resends: 0,
+          daysAgo: 0,
+        },
+      },
     }));
     return ok({ crisis });
   },
@@ -845,11 +1043,20 @@ export const partner = {
     const inv = get().partner.invite;
     if (!inv) return fail("There's no invite to resend.");
     if (inv.resends >= 3) return fail(MSG.resendLimit);
-    set((s) => ({ ...s, partner: { ...s.partner, invite: { ...inv, resends: inv.resends + 1, daysAgo: 0 } } }));
+    set((s) => ({
+      ...s,
+      partner: { ...s.partner, invite: { ...inv, resends: inv.resends + 1, daysAgo: 0 } },
+    }));
     return ok();
   },
   cancel() {
-    set((s) => ({ ...s, partner: { ...s.partner, invite: s.partner.invite && { ...s.partner.invite, status: "cancelled" } } }));
+    set((s) => ({
+      ...s,
+      partner: {
+        ...s.partner,
+        invite: s.partner.invite && { ...s.partner.invite, status: "cancelled" },
+      },
+    }));
   },
   /** Demo: the invited partner accepts. Links accounts and opens the family space. */
   demoAccept() {
@@ -857,10 +1064,23 @@ export const partner = {
       notify(
         {
           ...s,
-          partner: { linked: true, firstName: "Alex", showsBadge: true, invite: s.partner.invite && { ...s.partner.invite, status: "accepted" } },
+          partner: {
+            linked: true,
+            firstName: "Alex",
+            showsBadge: true,
+            invite: s.partner.invite && { ...s.partner.invite, status: "accepted" },
+          },
           family: {
             items: [
-              { id: uid("fi"), kind: "note", refId: "fn-1", title: "Questions for Thursday's consult", owner: "partner", access: "edit", daysAgo: 0 },
+              {
+                id: uid("fi"),
+                kind: "note",
+                refId: "fn-1",
+                title: "Questions for Thursday's consult",
+                owner: "partner",
+                access: "edit",
+                daysAgo: 0,
+              },
             ],
             notes: [
               {
@@ -868,17 +1088,31 @@ export const partner = {
                 title: "Questions for Thursday's consult",
                 body: "Ask about recovery time after excision.\nCan I be in the room for the retrieval?\nWhat does the clinic's after-hours line cover?",
                 versions: [
-                  { id: uid("v"), title: "Questions for Thursday's consult", body: "Ask about recovery time after excision.", by: "partner", minutesAgo: 120 },
+                  {
+                    id: uid("v"),
+                    title: "Questions for Thursday's consult",
+                    body: "Ask about recovery time after excision.",
+                    by: "partner",
+                    minutesAgo: 120,
+                  },
                 ],
               },
             ],
             activity: [
-              { id: uid("a"), text: "Alex started a family note: Questions for Thursday's consult", minutesAgo: 0 },
+              {
+                id: uid("a"),
+                text: "Alex started a family note: Questions for Thursday's consult",
+                minutesAgo: 0,
+              },
               { id: uid("a"), text: "You and Alex linked your accounts", minutesAgo: 0 },
             ],
           },
         },
-        { kind: "partner", text: "Alex accepted your invite. Your family space is ready.", href: "/family" },
+        {
+          kind: "partner",
+          text: "Alex accepted your invite. Your family space is ready.",
+          href: "/family",
+        },
       ),
     );
   },
@@ -889,7 +1123,14 @@ export const partner = {
       family: {
         items: s.family.items.filter((i) => i.owner === "me" && i.kind !== "note").map((i) => i),
         notes: s.family.notes.map((n) => ({ ...n, past: true })),
-        activity: [{ id: uid("a"), text: "You unlinked from your partner. Sharing has ended.", minutesAgo: 0 }, ...s.family.activity],
+        activity: [
+          {
+            id: uid("a"),
+            text: "You unlinked from your partner. Sharing has ended.",
+            minutesAgo: 0,
+          },
+          ...s.family.activity,
+        ],
       },
     }));
   },
@@ -903,8 +1144,18 @@ export const family = {
       ...s,
       family: {
         ...s.family,
-        items: [{ ...item, id: uid("fi"), owner: "me", daysAgo: 0 }, ...s.family.items.filter((i) => i.refId !== item.refId)],
-        activity: [{ id: uid("a"), text: `You shared ${item.title} (${item.access === "edit" ? "can edit" : "view only"})`, minutesAgo: 0 }, ...s.family.activity],
+        items: [
+          { ...item, id: uid("fi"), owner: "me", daysAgo: 0 },
+          ...s.family.items.filter((i) => i.refId !== item.refId),
+        ],
+        activity: [
+          {
+            id: uid("a"),
+            text: `You shared ${item.title} (${item.access === "edit" ? "can edit" : "view only"})`,
+            minutesAgo: 0,
+          },
+          ...s.family.activity,
+        ],
       },
     }));
   },
@@ -914,7 +1165,14 @@ export const family = {
       family: {
         ...s.family,
         items: s.family.items.map((i) => (i.id === id && i.owner === "me" ? { ...i, access } : i)),
-        activity: [{ id: uid("a"), text: `You changed access to ${access === "edit" ? "can edit" : "view only"}`, minutesAgo: 0 }, ...s.family.activity],
+        activity: [
+          {
+            id: uid("a"),
+            text: `You changed access to ${access === "edit" ? "can edit" : "view only"}`,
+            minutesAgo: 0,
+          },
+          ...s.family.activity,
+        ],
       },
     }));
   },
@@ -927,7 +1185,10 @@ export const family = {
         family: {
           ...s.family,
           items: s.family.items.filter((i) => i.id !== id),
-          activity: [{ id: uid("a"), text: `You stopped sharing ${item.title}`, minutesAgo: 0 }, ...s.family.activity],
+          activity: [
+            { id: uid("a"), text: `You stopped sharing ${item.title}`, minutesAgo: 0 },
+            ...s.family.activity,
+          ],
         },
       };
     });
@@ -941,9 +1202,23 @@ export const family = {
     set((s) => ({
       ...s,
       family: {
-        items: [{ id: uid("fi"), kind: "note", refId: id, title: title.trim(), owner: "me", access: "edit", daysAgo: 0 }, ...s.family.items],
+        items: [
+          {
+            id: uid("fi"),
+            kind: "note",
+            refId: id,
+            title: title.trim(),
+            owner: "me",
+            access: "edit",
+            daysAgo: 0,
+          },
+          ...s.family.items,
+        ],
         notes: [{ id, title: title.trim(), body: body.trim(), versions: [] }, ...s.family.notes],
-        activity: [{ id: uid("a"), text: `You started a family note: ${title.trim()}`, minutesAgo: 0 }, ...s.family.activity],
+        activity: [
+          { id: uid("a"), text: `You started a family note: ${title.trim()}`, minutesAgo: 0 },
+          ...s.family.activity,
+        ],
       },
     }));
     return { ok: true as const, id, errs: {} };
@@ -955,10 +1230,21 @@ export const family = {
         ...s.family,
         notes: s.family.notes.map((n) =>
           n.id === id
-            ? { ...n, title, body, versions: [{ id: uid("v"), title: n.title, body: n.body, by: "me", minutesAgo: 0 }, ...n.versions] }
+            ? {
+                ...n,
+                title,
+                body,
+                versions: [
+                  { id: uid("v"), title: n.title, body: n.body, by: "me", minutesAgo: 0 },
+                  ...n.versions,
+                ],
+              }
             : n,
         ),
-        activity: [{ id: uid("a"), text: `You edited ${title}`, minutesAgo: 0 }, ...s.family.activity],
+        activity: [
+          { id: uid("a"), text: `You edited ${title}`, minutesAgo: 0 },
+          ...s.family.activity,
+        ],
       },
     }));
   },
@@ -971,9 +1257,20 @@ export const family = {
           if (n.id !== noteId) return n;
           const v = n.versions.find((x) => x.id === versionId);
           if (!v) return n;
-          return { ...n, title: v.title, body: v.body, versions: [{ id: uid("v"), title: n.title, body: n.body, by: "me", minutesAgo: 0 }, ...n.versions] };
+          return {
+            ...n,
+            title: v.title,
+            body: v.body,
+            versions: [
+              { id: uid("v"), title: n.title, body: n.body, by: "me", minutesAgo: 0 },
+              ...n.versions,
+            ],
+          };
         }),
-        activity: [{ id: uid("a"), text: "You restored an earlier version of a note", minutesAgo: 0 }, ...s.family.activity],
+        activity: [
+          { id: uid("a"), text: "You restored an earlier version of a note", minutesAgo: 0 },
+          ...s.family.activity,
+        ],
       },
     }));
   },
@@ -997,7 +1294,9 @@ export const settings = {
     if (!backToOld && s.me.handleChangedDaysAgo !== undefined && s.me.handleChangedDaysAgo < 30) {
       const d = new Date();
       d.setDate(d.getDate() + (30 - s.me.handleChangedDaysAgo));
-      return fail(MSG.handleCooldown(d.toLocaleDateString("en-US", { month: "long", day: "numeric" })));
+      return fail(
+        MSG.handleCooldown(d.toLocaleDateString("en-US", { month: "long", day: "numeric" })),
+      );
     }
     const e = checks.handle(h);
     if (e) return fail(e);
@@ -1017,7 +1316,17 @@ export const settings = {
     set((s) => ({
       ...s,
       useProfileAnswers: false,
-      me: { ...s.me, healthConsent: false, stages: [], treatments: [], nextDate: "", diagnoses: [], otherDiagnosis: "", paths: [], shareJourney: false },
+      me: {
+        ...s.me,
+        healthConsent: false,
+        stages: [],
+        treatments: [],
+        nextDate: "",
+        diagnoses: [],
+        otherDiagnosis: "",
+        paths: [],
+        shareJourney: false,
+      },
     }));
   },
   giveConsent() {
@@ -1028,7 +1337,12 @@ export const settings = {
     window.setTimeout(() => set((s) => ({ ...s, dataExport: "ready" })), 2500);
   },
   deleteAccount(deletePosts: boolean) {
-    set((s) => ({ ...s, signedIn: false, deletion: { daysLeft: 14, deletePosts }, me: { ...s.me, status: "deletion-pending" } }));
+    set((s) => ({
+      ...s,
+      signedIn: false,
+      deletion: { daysLeft: 14, deletePosts },
+      me: { ...s.me, status: "deletion-pending" },
+    }));
   },
   restoreAccount() {
     set((s) => ({ ...s, signedIn: true, deletion: undefined, me: { ...s.me, status: "active" } }));
@@ -1038,12 +1352,17 @@ export const settings = {
   },
   /** "Hide for 30 days". TODO(api): POST /api/v1/profile/me/completion-card/dismiss. */
   dismissProfileCard() {
-    set((s) => ({ ...s, me: { ...s.me, profileCardHiddenUntil: Date.now() + 30 * 24 * 60 * 60 * 1000 } }));
+    set((s) => ({
+      ...s,
+      me: { ...s.me, profileCardHiddenUntil: Date.now() + 30 * 24 * 60 * 60 * 1000 },
+    }));
   },
   saveArticle(slug: string) {
     set((s) => ({
       ...s,
-      savedArticles: s.savedArticles.includes(slug) ? s.savedArticles.filter((x) => x !== slug) : [...s.savedArticles, slug],
+      savedArticles: s.savedArticles.includes(slug)
+        ? s.savedArticles.filter((x) => x !== slug)
+        : [...s.savedArticles, slug],
     }));
   },
   rateArticle(slug: string, v: "yes" | "no") {
@@ -1088,7 +1407,10 @@ export const demo = {
       ...s,
       suspension: {
         reason: "Sharing someone's private information (Community guideline 4)",
-        until: new Date(Date.now() + 7 * 864e5).toLocaleDateString("en-US", { month: "long", day: "numeric" }),
+        until: new Date(Date.now() + 7 * 864e5).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+        }),
       },
     }));
   },
@@ -1101,11 +1423,21 @@ export const demo = {
       const r = s.mentorRequests.find((x) => x.menteeId === "me" && x.status === "waiting");
       if (!r) return s;
       const mentor = s.members.find((m) => m.id === r.mentorId);
-      const name = mentor ? (mentor.showRealName ? `${mentor.firstName} ${mentor.lastInitial}.` : `@${mentor.handle}`) : "The mentor";
+      const name = mentor
+        ? mentor.showRealName
+          ? `${mentor.firstName} ${mentor.lastInitial}.`
+          : `@${mentor.handle}`
+        : "The mentor";
       let next: State = {
         ...s,
         mentorRequests: s.mentorRequests.map((x) =>
-          x.id === r.id ? { ...x, status: outcome, note: outcome === "declined" ? MSG.mentorDecline : undefined } : x,
+          x.id === r.id
+            ? {
+                ...x,
+                status: outcome,
+                note: outcome === "declined" ? MSG.mentorDecline : undefined,
+              }
+            : x,
         ),
       };
       if (outcome === "accepted") {
@@ -1120,7 +1452,12 @@ export const demo = {
               unread: true,
               messages: [
                 { id: uid("m"), from: "me", body: r.message, minutesAgo: 60 },
-                { id: uid("m"), from: "them", body: "I'd be glad to. Tell me a little about where you are this week.", minutesAgo: 0 },
+                {
+                  id: uid("m"),
+                  from: "them",
+                  body: "I'd be glad to. Tell me a little about where you are this week.",
+                  minutesAgo: 0,
+                },
               ],
             },
             ...next.conversations,
@@ -1133,7 +1470,12 @@ export const demo = {
           : outcome === "declined"
             ? `${name} can't take on someone new right now`
             : `Your request to ${name} expired without a reply. This usually means they're busy. You can ask another mentor.`;
-      return notify(next, { kind: "mentor", text, href: outcome === "accepted" ? "/messages" : "/mentors", actorId: r.mentorId });
+      return notify(next, {
+        kind: "mentor",
+        text,
+        href: outcome === "accepted" ? "/messages" : "/mentors",
+        actorId: r.mentorId,
+      });
     });
   },
   /** break-ui: swap in realistic worst-case values at the data boundary, each
@@ -1147,28 +1489,59 @@ export const demo = {
         m.id === "m-hannah"
           ? { ...m, handle: "aleksandra_wisniewska_kowalcz", showRealName: false }
           : m.id === "m-chloe"
-            ? { ...m, firstName: "Aleksandra-Wiśniewska", lastInitial: "K", showRealName: true, pronouns: "she/they", badges: ["mentor", "partner"] }
+            ? {
+                ...m,
+                firstName: "Aleksandra-Wiśniewska",
+                lastInitial: "K",
+                showRealName: true,
+                pronouns: "she/they",
+                badges: ["mentor", "partner"],
+              }
             : m.id === "m-jules"
               ? { ...m, firstName: "Jo", lastInitial: "N", showRealName: true }
               : m,
       ),
       posts: s.posts.map((p) =>
         p.id === "p-4"
-          ? { ...p, title: title.slice(0, 150), tags: ["IVF", "AMH", "Egg retrieval", "Insurance", "Work and treatment"], up: 1284 }
+          ? {
+              ...p,
+              title: title.slice(0, 150),
+              tags: ["IVF", "AMH", "Egg retrieval", "Insurance", "Work and treatment"],
+              up: 1284,
+            }
           : p.id === "p-2"
-            ? { ...p, source: "From research or guidelines", sourceLink: "https://www.reproductivefacts.org/news-and-publications/fact-sheets-and-infographics/what-is-a-normal-fertilization-rate-after-ivf-with-icsi/" }
+            ? {
+                ...p,
+                source: "From research or guidelines",
+                sourceLink:
+                  "https://www.reproductivefacts.org/news-and-publications/fact-sheets-and-infographics/what-is-a-normal-fertilization-rate-after-ivf-with-icsi/",
+              }
             : p,
       ),
       groups: s.groups.map((g) =>
         g.id === "g-dor"
-          ? { ...g, name: "Diminished ovarian reserve and premature ovarian insufficiency".slice(0, 60) }
+          ? {
+              ...g,
+              name: "Diminished ovarian reserve and premature ovarian insufficiency".slice(0, 60),
+            }
           : g.id === "g-eggfreeze"
             ? { ...g, members: 1, postsThisWeek: 0 }
             : g,
       ),
       conversations: s.conversations.map((c) =>
         c.id === "cv-chloe"
-          ? { ...c, messages: [...c.messages, { id: "wc-1", from: "them", body: "This one helped me: https://www.reproductivefacts.org/news-and-publications/fact-sheets-and-infographics/endometriosis-does-it-cause-infertility/", minutesAgo: 1 }] }
+          ? {
+              ...c,
+              messages: [
+                ...c.messages,
+                {
+                  id: "wc-1",
+                  from: "them",
+                  body: "This one helped me: https://www.reproductivefacts.org/news-and-publications/fact-sheets-and-infographics/endometriosis-does-it-cause-infertility/",
+                  minutesAgo: 1,
+                },
+              ],
+            }
           : c,
       ),
     }));
@@ -1176,6 +1549,9 @@ export const demo = {
 
   /** Re-seed the accepted request so the mentoring thread demo always works. */
   seedMentoring() {
-    set((s) => ({ ...s, mentorRequests: s.mentorRequests.length ? s.mentorRequests : MENTOR_REQUESTS }));
+    set((s) => ({
+      ...s,
+      mentorRequests: s.mentorRequests.length ? s.mentorRequests : MENTOR_REQUESTS,
+    }));
   },
 };
