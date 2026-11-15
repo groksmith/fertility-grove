@@ -3,40 +3,119 @@
    table: crisis first, then emergency, dosing, diagnosis, off-topic, emotional
    support, then a library answer or an honest "no reviewed answer yet". */
 
-import { ARTICLES } from "../data/articles";
-import { APPOINTMENT_TYPES, CREDITS } from "../options";
-import type { AppointmentQuestion, GuideReplyKind, GuideTurn } from "../types";
-import { detectCrisis } from "./crisis";
+import { APPOINTMENT_TYPES, CREDITS } from "@/config/options";
+import { ARTICLES } from "@/lib/data/articles";
+import type { AppointmentQuestion, GuideReplyKind, GuideTurn } from "@/types/domain";
+import { detectCrisis, normalizeText } from "./crisis";
 
-const has = (q: string, words: string[]) => words.some((w) => q.includes(w));
+/* Keywords match at the start of a word, never inside one, so "endo" finds "endo" but not
+   "vendor", and "mg" finds "50mg" but not "mgmt". A plain keyword is a whole word (plurals
+   included: "egg" finds "eggs", "loss" finds "losses"); a keyword ending in `*` is a stem
+   ("ovulat*" finds "ovulate", "ovulation"). */
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const patterns = new Map<string, RegExp>();
+function keyword(word: string) {
+  let re = patterns.get(word);
+  if (!re) {
+    const stem = word.endsWith("*");
+    const body = escapeRegExp(stem ? word.slice(0, -1) : word);
+    re = new RegExp(`(?<![a-z])${body}${stem ? "" : "(?:e?s)?(?![a-z])"}`);
+    patterns.set(word, re);
+  }
+  return re;
+}
+const has = (q: string, words: string[]) => words.some((w) => keyword(w).test(q));
 
 const KEYWORDS: Record<string, string[]> = {
-  endometriosis: ["endo", "endometrio", "excision", "laparoscop"],
-  pcos: ["pcos", "polycystic", "letrozole", "clomid", "ovulat"],
-  "diminished-ovarian-reserve": ["amh", "ovarian reserve", "dor", "antral", "donor egg", "low reserve", "retrieval"],
-  "male-factor": ["semen", "sperm", "motility", "morphology", "icsi", "urolog", "male factor"],
-  "recurrent-pregnancy-loss": ["loss", "miscarr", "rpl", "recurrent"],
+  endometriosis: ["endo", "endometrio*", "excision", "laparoscop*"],
+  pcos: ["pcos", "polycystic", "letrozole", "clomid", "ovulat*"],
+  "diminished-ovarian-reserve": [
+    "amh",
+    "ovarian reserve",
+    "dor",
+    "antral",
+    "donor egg",
+    "low reserve",
+    "retrieval",
+  ],
+  "male-factor": ["semen", "sperm", "motility", "morphology", "icsi", "urolog*", "male factor"],
+  "recurrent-pregnancy-loss": ["loss", "miscarr*", "rpl", "recurrent"],
   "unexplained-infertility": ["unexplained", "iui", "normal tests", "no cause", "workup", "ivf"],
 };
 
+/** Every word an article answers to: a question the library can answer is never off-topic. */
+const LIBRARY_WORDS = Object.values(KEYWORDS).flat();
+
 const FERTILITY_WORDS = [
-  "fertil", "ivf", "iui", "egg", "sperm", "embryo", "transfer", "cycle", "ovul", "pregnan",
-  "amh", "clinic", "doctor", "test", "period", "hormone", "uterus", "conceive", "treatment",
-  "consult", "diagnos", "endo", "pcos", "loss", "partner",
+  "fertil*",
+  "infertil*",
+  "ivf",
+  "iui",
+  "egg",
+  "sperm",
+  "embryo",
+  "transfer*",
+  "cycle",
+  "ovul*",
+  "pregnan*",
+  "amh",
+  "clinic",
+  "doctor",
+  "test*",
+  "period",
+  "hormon*",
+  "uterus",
+  "conceiv*",
+  "treatment",
+  "consult*",
+  "diagnos*",
+  "endo*",
+  "pcos",
+  "loss",
+  "partner",
+  ...LIBRARY_WORDS,
 ];
 
 function classify(q: string): GuideReplyKind {
   if (detectCrisis(q) !== "none") return "crisis";
-  if (has(q, ["heavy bleeding", "severe pain", "can't breathe", "fainted", "emergency", "ohss"])) return "emergency";
-  if (has(q, ["dose", "dosage", "how much should i take", "mg", "skip my injection", "stop taking", "double up"])) return "dosing";
-  if (has(q, ["do i have", "diagnose me", "what's wrong with me", "is it my", "am i infertile"])) return "diagnosis";
-  if (has(q, ["sad", "scared", "alone", "overwhelmed", "hopeless", "exhausted", "can't cope", "crying"])) return "emotional";
+  if (has(q, ["heavy bleeding", "severe pain", "can't breathe", "fainted", "emergency", "ohss"]))
+    return "emergency";
+  if (
+    has(q, [
+      "dose",
+      "dosage",
+      "dosing",
+      "how much should i take",
+      "mg",
+      "skip my injection",
+      "stop taking",
+      "double up",
+    ])
+  )
+    return "dosing";
+  if (has(q, ["do i have", "diagnose me", "what's wrong with me", "is it my", "am i infertile"]))
+    return "diagnosis";
+  if (
+    has(q, [
+      "sad",
+      "sadness",
+      "scared",
+      "alone",
+      "lonely",
+      "overwhelmed",
+      "hopeless",
+      "exhausted",
+      "can't cope",
+      "crying",
+    ])
+  )
+    return "emotional";
   if (!has(q, FERTILITY_WORDS)) return "off-topic";
   return "answer";
 }
 
 export function askGuide(question: string, profileDiagnoses: string[]): GuideTurn {
-  const q = question.toLowerCase();
+  const q = normalizeText(question);
   const kind = classify(q);
   const id = `gt-${Date.now()}`;
   const base = { id, question, citations: [], groups: [] as string[] };
@@ -108,7 +187,11 @@ export function askGuide(question: string, profileDiagnoses: string[]): GuideTur
   // Library answer: the best-matching article, falling back to the profile's.
   let best = ARTICLES.find((a) => has(q, KEYWORDS[a.slug] ?? []));
   if (!best && profileDiagnoses.length) {
-    best = ARTICLES.find((a) => a.diagnoses.some((d) => profileDiagnoses.includes(d)) && has(q, ["what", "how", "why", "should"]));
+    best = ARTICLES.find(
+      (a) =>
+        a.diagnoses.some((d) => profileDiagnoses.includes(d)) &&
+        has(q, ["what", "how", "why", "should"]),
+    );
   }
   if (!best) {
     return {
@@ -122,7 +205,10 @@ export function askGuide(question: string, profileDiagnoses: string[]): GuideTur
       groups: ["g-waiting"],
     };
   }
-  const paras = best.sections.slice(0, 3).flatMap((s) => s.body).slice(0, 3);
+  const paras = best.sections
+    .slice(0, 3)
+    .flatMap((s) => s.body)
+    .slice(0, 3);
   return {
     ...base,
     kind: "answer",
@@ -175,7 +261,11 @@ export function appointmentQuestions(type: string, onMind?: string): Appointment
   const out: AppointmentQuestion[] = [];
   let i = 0;
   if (onMind?.trim()) {
-    out.push({ id: `aq-${i++}`, topic: "What's on my mind", text: `I've been wondering about this: ${onMind.trim().slice(0, 220)}. What would you suggest?` });
+    out.push({
+      id: `aq-${i++}`,
+      topic: "What's on my mind",
+      text: `I've been wondering about this: ${onMind.trim().slice(0, 220)}. What would you suggest?`,
+    });
   }
   for (const t of topics) {
     for (const text of BANK[t]) {

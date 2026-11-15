@@ -2,9 +2,12 @@
    one post sits below the −5 collapse line, and one is from a verified
    clinician. Times are minutes ago so the feed reads as a live morning. */
 
-import type { Comment, Post, Story } from "../types";
+import type { Comment, Post, Story } from "@/types/domain";
 
-const p = (x: Omit<Post, "myVote" | "saved" | "status" | "allowSharing" | "showToVisitors" | "tags"> & Partial<Post>): Post => ({
+const p = (
+  x: Omit<Post, "myVote" | "saved" | "status" | "allowSharing" | "showToVisitors" | "tags"> &
+    Partial<Post>,
+): Post => ({
   myVote: 0,
   saved: false,
   status: "published",
@@ -236,22 +239,135 @@ const c = (x: Omit<Comment, "myVote" | "status" | "down"> & Partial<Comment>): C
 });
 
 export const COMMENTS: Comment[] = [
-  c({ id: "c-1", postId: "p-1", authorId: "m-maya", body: "I did excision first. Six weeks before my clinic cleared me to stim, and my retrieval was much less painful than I feared. Every case is different, but ask both doctors what they're each hoping to gain.", source: "Personal experience", minutesAgo: 80, up: 11 }),
-  c({ id: "c-2", postId: "p-1", authorId: "m-chloe", body: "Went straight to IVF because my endometrioma was small. No regrets, but I'd love to hear from people who did both.", minutesAgo: 60, up: 4 }),
-  c({ id: "c-3", postId: "p-1", authorId: "m-lena", body: "Both approaches are reasonable depending on symptoms, age and imaging. A good question for your RE: what would surgery change about your IVF plan?", source: "Clinician input", minutesAgo: 50, up: 19 }),
-  c({ id: "c-4", postId: "p-1", authorId: ME_ID, parentId: "c-1", mention: "maya_after_endo", body: "Six weeks is less than I expected. Thank you.", minutesAgo: 20, up: 2 }),
-  c({ id: "c-5", postId: "p-2", authorId: "m-dana", body: "My first round was four eggs and two embryos. The twenty-egg posts are real but they're not the average. Please be kind to yourself.", minutesAgo: 130, up: 16 }),
-  c({ id: "c-6", postId: "p-2", authorId: "m-ari", body: "Mine was 7 retrieved, 4 fertilized. Same feeling. Sending you a lot of patience.", minutesAgo: 100, up: 5 }),
-  c({ id: "c-7", postId: "p-4", authorId: "m-maya", body: "I had a flare on my transfer day too, and that transfer is the baby kicking me right now. Thinking of you.", minutesAgo: 22, up: 9 }),
-  c({ id: "c-8", postId: "p-4", authorId: "m-chloe", body: "Heating pad crew. You're doing everything right.", minutesAgo: 15, up: 3 }),
-  c({ id: "c-9", postId: "p-5", authorId: "m-rosa", body: "The car minutes are real. You're allowed to feel both.", minutesAgo: 190, up: 12 }),
-  c({ id: "c-10", postId: "p-6", authorId: "m-sam", body: "They repeated the analysis, did bloodwork for hormones and an ultrasound. Ask about DNA fragmentation testing and whether lifestyle changes are worth trying for three months first.", source: "Personal experience", minutesAgo: 240, up: 7 }),
-  c({ id: "c-11", postId: "p-8", authorId: "m-noah", body: "Bring snacks for both of you, handle the paperwork so she doesn't have to, and plan nothing for the rest of the day. Just being there counts more than you think.", minutesAgo: 540, up: 21 }),
-  c({ id: "c-12", postId: "p-9", authorId: "m-dana", body: "Ask what your antral follicle count is, what protocol they'd suggest, and how many retrievals they'd expect you to need. Write it all down; the appointment goes fast.", minutesAgo: 60, up: 8 }),
-  c({ id: "c-13", postId: "p-11", authorId: "m-lena", body: "There's no good evidence any supplement doubles egg numbers in a month. Some are reasonable to discuss with your doctor; please check before adding several at once.", source: "Clinician input", minutesAgo: 1300, up: 33 }),
-  c({ id: "c-14", postId: "p-12", authorId: "m-priya", body: "I told my manager I had 'recurring medical appointments' and left it there. It was enough.", minutesAgo: 1500, up: 10 }),
+  c({
+    id: "c-1",
+    postId: "p-1",
+    authorId: "m-maya",
+    body: "I did excision first. Six weeks before my clinic cleared me to stim, and my retrieval was much less painful than I feared. Every case is different, but ask both doctors what they're each hoping to gain.",
+    source: "Personal experience",
+    minutesAgo: 80,
+    up: 11,
+  }),
+  c({
+    id: "c-2",
+    postId: "p-1",
+    authorId: "m-chloe",
+    body: "Went straight to IVF because my endometrioma was small. No regrets, but I'd love to hear from people who did both.",
+    minutesAgo: 60,
+    up: 4,
+  }),
+  c({
+    id: "c-3",
+    postId: "p-1",
+    authorId: "m-lena",
+    body: "Both approaches are reasonable depending on symptoms, age and imaging. A good question for your RE: what would surgery change about your IVF plan?",
+    source: "Clinician input",
+    minutesAgo: 50,
+    up: 19,
+  }),
+  c({
+    id: "c-4",
+    postId: "p-1",
+    authorId: ME_ID,
+    parentId: "c-1",
+    mention: "maya_after_endo",
+    body: "Six weeks is less than I expected. Thank you.",
+    minutesAgo: 20,
+    up: 2,
+  }),
+  c({
+    id: "c-5",
+    postId: "p-2",
+    authorId: "m-dana",
+    body: "My first round was four eggs and two embryos. The twenty-egg posts are real but they're not the average. Please be kind to yourself.",
+    minutesAgo: 130,
+    up: 16,
+  }),
+  c({
+    id: "c-6",
+    postId: "p-2",
+    authorId: "m-ari",
+    body: "Mine was 7 retrieved, 4 fertilized. Same feeling. Sending you a lot of patience.",
+    minutesAgo: 100,
+    up: 5,
+  }),
+  c({
+    id: "c-7",
+    postId: "p-4",
+    authorId: "m-maya",
+    body: "I had a flare on my transfer day too, and that transfer is the baby kicking me right now. Thinking of you.",
+    minutesAgo: 22,
+    up: 9,
+  }),
+  c({
+    id: "c-8",
+    postId: "p-4",
+    authorId: "m-chloe",
+    body: "Heating pad crew. You're doing everything right.",
+    minutesAgo: 15,
+    up: 3,
+  }),
+  c({
+    id: "c-9",
+    postId: "p-5",
+    authorId: "m-rosa",
+    body: "The car minutes are real. You're allowed to feel both.",
+    minutesAgo: 190,
+    up: 12,
+  }),
+  c({
+    id: "c-10",
+    postId: "p-6",
+    authorId: "m-sam",
+    body: "They repeated the analysis, did bloodwork for hormones and an ultrasound. Ask about DNA fragmentation testing and whether lifestyle changes are worth trying for three months first.",
+    source: "Personal experience",
+    minutesAgo: 240,
+    up: 7,
+  }),
+  c({
+    id: "c-11",
+    postId: "p-8",
+    authorId: "m-noah",
+    body: "Bring snacks for both of you, handle the paperwork so she doesn't have to, and plan nothing for the rest of the day. Just being there counts more than you think.",
+    minutesAgo: 540,
+    up: 21,
+  }),
+  c({
+    id: "c-12",
+    postId: "p-9",
+    authorId: "m-dana",
+    body: "Ask what your antral follicle count is, what protocol they'd suggest, and how many retrievals they'd expect you to need. Write it all down; the appointment goes fast.",
+    minutesAgo: 60,
+    up: 8,
+  }),
+  c({
+    id: "c-13",
+    postId: "p-11",
+    authorId: "m-lena",
+    body: "There's no good evidence any supplement doubles egg numbers in a month. Some are reasonable to discuss with your doctor; please check before adding several at once.",
+    source: "Clinician input",
+    minutesAgo: 1300,
+    up: 33,
+  }),
+  c({
+    id: "c-14",
+    postId: "p-12",
+    authorId: "m-priya",
+    body: "I told my manager I had 'recurring medical appointments' and left it there. It was enough.",
+    minutesAgo: 1500,
+    up: 10,
+  }),
   // Removed by a moderator: listed for its author only, on the Dashboard Replies tab.
-  c({ id: "c-15", postId: "p-2", authorId: ME_ID, body: "Ask your clinic for the name of the lab director and message them directly. Mine gave me their personal number and fixed everything.", minutesAgo: 2900, up: 0, down: 2, status: "removed" }),
+  c({
+    id: "c-15",
+    postId: "p-2",
+    authorId: ME_ID,
+    body: "Ask your clinic for the name of the lab director and message them directly. Mine gave me their personal number and fixed everything.",
+    minutesAgo: 2900,
+    up: 0,
+    down: 2,
+    status: "removed",
+  }),
 ];
 
 export const STORIES: Story[] = [

@@ -1,14 +1,31 @@
 import { GroupCover } from "@/components/art/Brand";
-import { AppIcon, Logo, LogoOrange } from "@/components/Logo";
 import { OnboardingScene, Spot, type SpotKind } from "@/components/art/Scenes";
 import { TreeArt, TreeGlyph } from "@/components/art/Tree";
+import { AppIcon, Logo, LogoOrange } from "@/components/shared";
 import { GROUPS } from "@/lib/data/groups";
-import type { TreeLevel } from "@/lib/types";
+import type { TreeLevel } from "@/types/domain";
 
 export const metadata = { title: "Illustration sheet · Fertility Grove", robots: { index: false } };
 
 const LEVELS: TreeLevel[] = ["Seed", "Bush", "Tree", "Blossom Tree", "Orange Tree"];
-const SPOTS: SpotKind[] = ["canopy", "plate", "lantern", "birds", "blossom", "shelter", "roots", "seeds", "sun", "sprout", "seedlings", "lens", "bud", "bookmark", "envelope", "letter"];
+const SPOTS: SpotKind[] = [
+  "canopy",
+  "plate",
+  "lantern",
+  "birds",
+  "blossom",
+  "shelter",
+  "roots",
+  "seeds",
+  "sun",
+  "sprout",
+  "seedlings",
+  "lens",
+  "bud",
+  "bookmark",
+  "envelope",
+  "letter",
+];
 
 /** Internal reference sheet for the illustration system. */
 export default function ArtSheet() {

@@ -3,13 +3,10 @@
 /* Write a post (PRD §9). Fields, limits and messages follow the spec word for
    word. The first post asks the member to accept the community guidelines. */
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { PostVisibility, offersVisitors } from "@/components/PostVisibility";
-import { useUnsavedGuard } from "@/components/UnsavedGuard";
 import { Spot } from "@/components/art/Scenes";
-import { useResult } from "@/components/Safety";
+import { PostVisibility, offersVisitors } from "@/components/common/PostVisibility";
+import { useResult } from "@/components/common/Safety";
+import { useUnsavedGuard } from "@/components/shared";
 import {
   Button,
   Checkbox,
@@ -24,10 +21,13 @@ import {
   Panel,
   Select,
   Textarea,
-} from "@/components/ui";
-import { act, validatePost, useStore } from "@/lib/store";
-import { POST_TYPES, POST_TYPE_HELP, SOURCES, TOPIC_TAGS } from "@/lib/options";
-import type { PostType, Source } from "@/lib/types";
+} from "@/components/shared";
+import { POST_TYPES, POST_TYPE_HELP, SOURCES, TOPIC_TAGS } from "@/config/options";
+import { act, useStore, validatePost } from "@/lib/store";
+import type { PostType, Source } from "@/types/domain";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 const GUIDELINES = [
   "Share your own experience. Say when something is your opinion or came from your doctor.",
@@ -55,7 +55,9 @@ function Composer() {
   const [agreed, setAgreed] = useState(false);
   const [errs, setErrs] = useState<Record<string, string | undefined>>({});
   const [done, setDone] = useState<string | null>(null);
-  const guard = useUnsavedGuard({ dirty: !done && !!(title.trim() || body.trim() || sourceLink.trim() || tags.length) });
+  const guard = useUnsavedGuard({
+    dirty: !done && !!(title.trim() || body.trim() || sourceLink.trim() || tags.length),
+  });
   const { handle, ui } = useResult();
 
   const group = s.groups.find((g) => g.id === groupId);
@@ -99,12 +101,23 @@ function Composer() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const visitors = showToVisitors && offersVisitors(group);
-    const input = { groupId, type: type[0] ?? "", title, body, source, sourceLink, tags, allowSharing: (allowSharing || visitors) && !membersOnly, showToVisitors: visitors };
+    const input = {
+      groupId,
+      type: type[0] ?? "",
+      title,
+      body,
+      source,
+      sourceLink,
+      tags,
+      allowSharing: (allowSharing || visitors) && !membersOnly,
+      showToVisitors: visitors,
+    };
     const v: Record<string, string | undefined> = { ...validatePost(input) };
     if (!groupId) v.groupId = "Choose a group to post in.";
     if (title.length > 150) v.title = "Titles can be up to 150 characters.";
     if (body.length > 5000) v.body = "Posts can be up to 5,000 characters.";
-    if (!s.me.guidelinesAccepted && !agreed) v.agreed = "Please accept the community guidelines to post.";
+    if (!s.me.guidelinesAccepted && !agreed)
+      v.agreed = "Please accept the community guidelines to post.";
     setErrs(v);
     if (Object.values(v).some(Boolean)) {
       document.getElementById("post-errors")?.focus();
@@ -117,11 +130,22 @@ function Composer() {
   const errorList = Object.values(errs).filter(Boolean) as string[];
 
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <form
+      onSubmit={submit}
+      noValidate
+      className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+    >
       <div className="min-w-0 space-y-4">
         {errorList.length > 0 && (
-          <div id="post-errors" tabIndex={-1} role="alert" className="rounded-[20px] bg-danger-soft px-5 py-4 text-[14px] text-danger outline-none">
-            <p className="font-semibold">Check {errorList.length === 1 ? "this" : "these"} before posting:</p>
+          <div
+            id="post-errors"
+            tabIndex={-1}
+            role="alert"
+            className="rounded-[20px] bg-danger-soft px-5 py-4 text-[14px] text-danger outline-none"
+          >
+            <p className="font-semibold">
+              Check {errorList.length === 1 ? "this" : "these"} before posting:
+            </p>
             <ul className="mt-1 list-disc pl-5">
               {Array.from(new Set(errorList)).map((e) => (
                 <li key={e}>{e}</li>
@@ -136,7 +160,8 @@ function Composer() {
               onChange={(e) => {
                 setGroupId(e.target.value);
                 // A group that isn't visible to guests can't offer it: clear it.
-                if (!offersVisitors(s.groups.find((g) => g.id === e.target.value))) setShowToVisitors(false);
+                if (!offersVisitors(s.groups.find((g) => g.id === e.target.value)))
+                  setShowToVisitors(false);
               }}
             >
               <option value="">Choose one of your groups</option>
@@ -147,10 +172,20 @@ function Composer() {
               ))}
             </Select>
           </Field>
-          <Choices legend="Post type" options={POST_TYPES} value={type} onChange={setType} error={!type.length ? errs.type : undefined} />
+          <Choices
+            legend="Post type"
+            options={POST_TYPES}
+            value={type}
+            onChange={setType}
+            error={!type.length ? errs.type : undefined}
+          />
           {type[0] && <p className="-mt-3 text-[13px] text-muted">{POST_TYPE_HELP[type[0]]}</p>}
           <Field label="Title" error={errs.title} counter={<Counter value={title} max={150} />}>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What do you want to ask or share?" />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What do you want to ask or share?"
+            />
           </Field>
           <Field
             label="Your post"
@@ -177,7 +212,14 @@ function Composer() {
             error={errs.sourceLink}
             hint="A full web address, starting with https://"
           >
-            <Input value={sourceLink} onChange={(e) => setSourceLink(e.target.value)} inputMode="url" type="url" autoCapitalize="none" placeholder="https://" />
+            <Input
+              value={sourceLink}
+              onChange={(e) => setSourceLink(e.target.value)}
+              inputMode="url"
+              type="url"
+              autoCapitalize="none"
+              placeholder="https://"
+            />
           </Field>
           <div>
             <p className="mb-2 flex items-baseline justify-between text-[14px] font-semibold">
@@ -186,7 +228,13 @@ function Composer() {
               </span>
               <span className="tabular font-normal text-muted">{tags.length} / 5</span>
             </p>
-            <ChipSelect label="Topic tags" options={TOPIC_TAGS} value={tags} onChange={setTags} max={5} />
+            <ChipSelect
+              label="Topic tags"
+              options={TOPIC_TAGS}
+              value={tags}
+              onChange={setTags}
+              max={5}
+            />
           </div>
           <PostVisibility
             group={group}
@@ -234,12 +282,18 @@ function Composer() {
           <h2 className="mt-2 text-[16px] font-semibold">Getting good replies</h2>
           <ul className="mt-2 space-y-2 text-[14px] leading-relaxed text-ink-soft">
             <li>Say where you are: diagnosis, stage, what you&apos;ve tried.</li>
-            <li>Pick the post type that matches what you need. Support needed and Just venting tell people you want kindness, not advice.</li>
-            <li>Adding a source, if you have one, helps readers know how much weight to give it.</li>
+            <li>
+              Pick the post type that matches what you need. Support needed and Just venting tell
+              people you want kindness, not advice.
+            </li>
+            <li>
+              Adding a source, if you have one, helps readers know how much weight to give it.
+            </li>
           </ul>
         </Panel>
         <Panel className="p-5 text-[14px] leading-relaxed text-ink-soft">
-          If you&apos;re struggling right now, you can call or text <strong className="text-ink">988</strong> any time.{" "}
+          If you&apos;re struggling right now, you can call or text{" "}
+          <strong className="text-ink">988</strong> any time.{" "}
           <Link href="/help" className="font-semibold text-accent hover:underline">
             Crisis resources
           </Link>
@@ -254,7 +308,10 @@ function Composer() {
 export default function NewPostPage() {
   return (
     <>
-      <PageHeader title="Write a post" lede="Ask, share or vent. Your post goes to one of your groups." />
+      <PageHeader
+        title="Write a post"
+        lede="Ask, share or vent. Your post goes to one of your groups."
+      />
       <Suspense>
         <Composer />
       </Suspense>

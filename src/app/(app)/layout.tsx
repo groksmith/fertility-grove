@@ -5,12 +5,12 @@
    /login (or a group's or post's public page, when guests may read it), and
    anyone mid-onboarding back to the next unfinished screen. */
 
+import { AppShell } from "@/components/common/AppShell";
+import { LevelUp } from "@/components/common/LevelUp";
+import { publicGroup, publicPost } from "@/lib/api";
+import { type State, useHydrated, useStore } from "@/lib/store";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AppShell } from "@/components/AppShell";
-import { LevelUp } from "@/components/LevelUp";
-import { publicGroup, publicPost } from "@/lib/api";
-import { useHydrated, useStore, type State } from "@/lib/store";
 
 /** Signed out on a group or post that guests may read: show its public page
     instead of asking them to sign in (PRD v1.2 §10). */

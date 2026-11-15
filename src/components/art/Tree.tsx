@@ -6,24 +6,24 @@
    and ground so the five read as a growth plate. `TreeGlyph` is the 16px mark
    beside every name, coloured from that art. */
 
+import type { TreeLevel } from "@/types/domain";
 import Image from "next/image";
-import type { TreeLevel } from "@/lib/types";
 
 export const TREE_SRC: Record<TreeLevel, string> = {
-  Seed: "/brand/art/tree-seed.webp",
-  Bush: "/brand/art/tree-bush.webp",
-  Tree: "/brand/art/tree-tree.webp",
-  "Blossom Tree": "/brand/art/tree-blossom.webp",
-  "Orange Tree": "/brand/art/tree-orange.webp",
+  Seed: "/assets/brand/art/tree-seed.webp",
+  Bush: "/assets/brand/art/tree-bush.webp",
+  Tree: "/assets/brand/art/tree-tree.webp",
+  "Blossom Tree": "/assets/brand/art/tree-blossom.webp",
+  "Orange Tree": "/assets/brand/art/tree-orange.webp",
 };
 
 /** The same five at one scale, standing on one ground line. */
 export const STAGE_SRC: Record<TreeLevel, string> = {
-  Seed: "/brand/art/stage-seed.webp",
-  Bush: "/brand/art/stage-bush.webp",
-  Tree: "/brand/art/stage-tree.webp",
-  "Blossom Tree": "/brand/art/stage-blossom.webp",
-  "Orange Tree": "/brand/art/stage-orange.webp",
+  Seed: "/assets/brand/art/stage-seed.webp",
+  Bush: "/assets/brand/art/stage-bush.webp",
+  Tree: "/assets/brand/art/stage-tree.webp",
+  "Blossom Tree": "/assets/brand/art/stage-blossom.webp",
+  "Orange Tree": "/assets/brand/art/stage-orange.webp",
 };
 
 export function TreeArt({
@@ -40,8 +40,18 @@ export function TreeArt({
   const cls = animate ? "grow-part" : "";
   if (typeof size === "string") {
     return (
-      <span className="relative block aspect-square w-full" style={{ maxWidth: size === "100%" ? undefined : size }}>
-        <Image src={TREE_SRC[level]} alt={title ?? ""} aria-hidden={title ? undefined : true} fill sizes="240px" className={`object-contain ${cls}`} />
+      <span
+        className="relative block aspect-square w-full"
+        style={{ maxWidth: size === "100%" ? undefined : size }}
+      >
+        <Image
+          src={TREE_SRC[level]}
+          alt={title ?? ""}
+          aria-hidden={title ? undefined : true}
+          fill
+          sizes="240px"
+          className={`object-contain ${cls}`}
+        />
       </span>
     );
   }
@@ -70,7 +80,7 @@ const G = {
 /** The small tree beside a name. Bold silhouettes so it reads at 14–20px. */
 export function TreeGlyph({ level, size = 16 }: { level: TreeLevel; size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden className="shrink-0">
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" className="shrink-0">
       {level === "Seed" && (
         <g>
           <path d="M8 14.5 L8 8.5" stroke={G.trunk} strokeWidth="1.5" strokeLinecap="round" />

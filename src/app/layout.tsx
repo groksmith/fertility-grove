@@ -18,9 +18,8 @@ const instrument = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "Fertility Grove",
-  openGraph: { images: ["/brand/og.png"] },
-  description:
-    "A private community for people going through infertility, and their partners.",
+  openGraph: { images: ["/assets/brand/og.png"] },
+  description: "A private community for people going through infertility, and their partners.",
 };
 
 export const viewport: Viewport = {

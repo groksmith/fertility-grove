@@ -4,10 +4,10 @@
    return. Every body marked TODO(api) becomes a request; the screens that
    call it shouldn't need to change. */
 
-import { act, get, sel, type State } from "../store";
-import { groupOpenToGuests, guestCanRead, publicAuthor, publicPostState } from "../rules/guests";
-import { checks } from "../rules/validation";
-import type { Group, Member, Post } from "../types";
+import { groupOpenToGuests, guestCanRead, publicAuthor, publicPostState } from "@/lib/rules/guests";
+import { checks } from "@/lib/rules/validation";
+import { type State, act, get, sel } from "@/lib/store";
+import type { Group, Member, Post } from "@/types/domain";
 
 /* ------------------------------------------------------------------ Invites */
 
@@ -58,7 +58,10 @@ export function completeOnboarding() {
 export function profileCompletion(s: State, now = Date.now()) {
   const missingProfileItems = sel.profileGaps(s).map((g) => g.key);
   const hidden = (s.me.profileCardHiddenUntil ?? 0) > now;
-  return { showProfileCompletionCard: missingProfileItems.length > 0 && !hidden, missingProfileItems };
+  return {
+    showProfileCompletionCard: missingProfileItems.length > 0 && !hidden,
+    missingProfileItems,
+  };
 }
 
 /** POST /api/v1/profile/me/completion-card/dismiss: hides it for 30 days, on
@@ -109,11 +112,21 @@ function toPublic(s: State, post: Post, listed: boolean): PublicPost | null {
   const group = s.groups.find((g) => g.id === post.groupId);
   const author = sel.person(s, post.authorId);
   if (!group || !author) return null;
-  return { post, group, author: publicAuthor(author), replies: sel.commentCount(s, post.id), listed };
+  return {
+    post,
+    group,
+    author: publicAuthor(author),
+    replies: sel.commentCount(s, post.id),
+    listed,
+  };
 }
 
 const readable = (s: State, p: Post) =>
-  guestCanRead(p, s.groups.find((g) => g.id === p.groupId), sel.person(s, p.authorId));
+  guestCanRead(
+    p,
+    s.groups.find((g) => g.id === p.groupId),
+    sel.person(s, p.authorId),
+  );
 
 /** The groups guests can browse. TODO(api): not built yet. */
 export function guestGroups(s: State) {
@@ -141,7 +154,11 @@ export function publicGroup(s: State, id: string) {
     TODO(api): not built yet (GET, no sign-in). */
 export function publicPost(s: State, id: string): PublicPost | null {
   const post = s.posts.find((p) => p.id === id);
-  const state = publicPostState(post, post && s.groups.find((g) => g.id === post.groupId), post && sel.person(s, post.authorId));
+  const state = publicPostState(
+    post,
+    post && s.groups.find((g) => g.id === post.groupId),
+    post && sel.person(s, post.authorId),
+  );
   if (!post || state === "unavailable") return null;
   return toPublic(s, post, state === "listed");
 }

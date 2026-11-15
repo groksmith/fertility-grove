@@ -2,20 +2,19 @@
    store that persists it to localStorage. No backend: every action in
    ./actions.ts edits this object. */
 
-import { useSyncExternalStore } from "react";
-import { ARTICLES } from "../data/articles";
-import { GROUPS } from "../data/groups";
-import { MEMBERS } from "../data/members";
-import { COMMENTS, POSTS, STORIES } from "../data/posts";
+import { CREDITS } from "@/config/options";
+import { ARTICLES } from "@/lib/data/articles";
+import { GROUPS } from "@/lib/data/groups";
+import { MEMBERS } from "@/lib/data/members";
+import { COMMENTS, POSTS, STORIES } from "@/lib/data/posts";
 import {
   CONVERSATIONS,
   DEMO_SUNLIGHT,
   MENTOR_REQUESTS,
   NOTIFICATIONS,
   SUNLIGHT_HISTORY,
-} from "../data/social";
-import { CREDITS } from "../options";
-import { levelFor } from "../rules/sunlight";
+} from "@/lib/data/social";
+import { levelFor } from "@/lib/rules/sunlight";
 import type {
   AccountStatus,
   AppointmentList,
@@ -25,8 +24,8 @@ import type {
   FamilyActivity,
   FamilyItem,
   FamilyNote,
-  GuideChat,
   Group,
+  GuideChat,
   Hue,
   Member,
   MentorRequest,
@@ -39,7 +38,8 @@ import type {
   Story,
   SunlightEvent,
   TreeLevel,
-} from "../types";
+} from "@/types/domain";
+import { useSyncExternalStore } from "react";
 
 export interface Me {
   email: string;
@@ -255,7 +255,12 @@ const MENTOR_ME: Me = {
   sunlight: 812,
   level: "Blossom Tree",
   history: [
-    { id: "sh-m1", label: "Upvotes on “What I wish I'd known before my first retrieval”", amount: 541, daysAgo: 1 },
+    {
+      id: "sh-m1",
+      label: "Upvotes on “What I wish I'd known before my first retrieval”",
+      amount: 541,
+      daysAgo: 1,
+    },
     ...SUNLIGHT_HISTORY,
   ],
   mentoring: {
@@ -402,7 +407,7 @@ export function set(fn: (s: State) => State) {
   } catch {
     /* prototype: ignore */
   }
-  listeners.forEach((l) => l());
+  for (const l of listeners) l();
 }
 
 export function replace(next: State) {

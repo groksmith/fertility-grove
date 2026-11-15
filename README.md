@@ -11,7 +11,7 @@ you make is kept in this browser's `localStorage`. Reset any time from
 ## Run it
 
 ```bash
-npm install && npm run dev
+yarn install && yarn dev
 ```
 
 Open http://localhost:3000 for the landing page, or http://localhost:3000/demo to
@@ -107,18 +107,18 @@ The PRD leaves these open (§18, §27), so the prototype uses labelled samples:
 ## Design
 
 - **Brand, from fertilitygrove.com:**
-  - The orange logo (`public/brand/`, `src/components/Logo.tsx`).
+  - The orange logo (`public/assets/brand/`, `src/components/shared/Logo.tsx`).
   - The white and light look, with the near-black pill button.
   - Instrument Serif + Instrument Sans.
-  - The site's colours plus the approved v1 palette (tokens in `src/app/globals.css`).
+  - The site's colours plus the approved v1 palette (tokens in `src/styles/theme.css`).
   - The logo and palette are fixed.
-- **Artwork:** the brand's own watercolour orange tree, taken from the growth film on the live site (`public/brand/art/`, made by a small script from `tree-grow.mp4`). It is used for:
+- **Artwork:** the brand's own watercolour orange tree, taken from the growth film on the live site (`public/assets/brand/art/`, made by a small script from `tree-grow.mp4`). It is used for:
   - the five tree levels (the Blossom Tree has white orange blossoms);
   - the onboarding grove, which grows one stage per answer;
   - empty-state pictures and group covers.
   - The full sheet is at `/art`.
 - **Landing page:** follows the live site's hero, with the growth film playing once beside the headline.
-- **Imagery:** photographs from the Fertility Grove design files (`public/photos/`), and the botanical plate *Citrus limonum* by Rungiah (1851), public domain via Wikimedia Commons (`public/plates/credits.json`).
+- **Imagery:** photographs from the Fertility Grove design files (`public/assets/photos/`), and the botanical plate *Citrus limonum* by Rungiah (1851), public domain via Wikimedia Commons (`public/assets/plates/credits.json`).
 - **Accessibility:** axe-core (WCAG 2.2 AA) reports no violations on any of the 41 routes checked, at desktop and phone widths.
 
 ### Design skills used
@@ -137,8 +137,22 @@ Skipped as not applicable:
 - `slides`, `banner-design`, `brandkit`: they produce decks and marketing assets.
 - `ask-sonner`: there is no toast library; toasts are hand-built.
 
+## Quality checks
+
+```bash
+yarn typecheck   # tsc
+yarn lint        # Biome (yarn format to fix)
+yarn test        # Vitest: PRD rules + architecture
+yarn test:e2e    # Playwright: every route renders cleanly
+```
+
+CI runs all four on every pull request. Conventions (folder layout, dependency
+flow, naming, imports) match `pharos-web` and are written up in
+`.claude/CLAUDE.md`.
+
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · lucide-react.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · lucide-react ·
+Biome · Vitest · Playwright · yarn.
 Nothing is medical advice, no payments are processed, and no data leaves the
 browser.

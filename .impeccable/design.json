@@ -142,7 +142,7 @@
    "name": "Logo",
    "kind": "custom",
    "description": "The brand logo from fertilitygrove.com: orange with leaf beside 'fertility GROVE'.",
-   "html": "<img class=\"ds-logo\" src=\"/brand/logo.png\" alt=\"Fertility Grove\">",
+   "html": "<img class=\"ds-logo\" src=\"/assets/brand/logo.png\" alt=\"Fertility Grove\">",
    "css": ".ds-logo{height:46px;width:auto}"
   },
   {

@@ -38,7 +38,7 @@ export type SpotKind =
 
 type Piece = { src: string; x: number; w: number; flip?: boolean };
 
-const ORANGE = "/brand/orange.png";
+const ORANGE = "/assets/brand/orange.png";
 
 /* Each spot is pieces standing on one ground line; x and w are % of width. */
 const SPOTS: Record<SpotKind, Piece[]> = {
@@ -83,41 +83,90 @@ const SPOTS: Record<SpotKind, Piece[]> = {
    message on its way, opened with the letter showing when there's one to read.
    Two birds on a branch are for people who haven't talked yet. */
 const PAINTED: Partial<Record<SpotKind, string>> = {
-  birds: "/brand/cozy/e-birds.webp",
-  envelope: "/brand/messages/envelope-sealed.webp",
-  letter: "/brand/messages/letter-open.webp",
+  birds: "/assets/brand/cozy/e-birds.webp",
+  envelope: "/assets/brand/messages/envelope-sealed.webp",
+  letter: "/assets/brand/messages/letter-open.webp",
 };
 
-export function Spot({ kind, size = 160, className = "" }: { kind: SpotKind; size?: number; className?: string }) {
+export function Spot({
+  kind,
+  size = 160,
+  className = "",
+}: { kind: SpotKind; size?: number; className?: string }) {
   const h = Math.round((size * 3) / 4);
   if (kind === "plate") {
     return (
-      <span aria-hidden className={`relative block shrink-0 overflow-hidden rounded-[0_40%_0_40%] ${className}`} style={{ width: h, height: h }}>
-        <Image src="/plates/citrus-limonum-rungiah.jpg" alt="" fill sizes={`${h}px`} className="object-cover object-[45%_35%]" />
+      <span
+        aria-hidden
+        className={`relative block shrink-0 overflow-hidden rounded-[0_40%_0_40%] ${className}`}
+        style={{ width: h, height: h }}
+      >
+        <Image
+          src="/assets/plates/citrus-limonum-rungiah.jpg"
+          alt=""
+          fill
+          sizes={`${h}px`}
+          className="object-cover object-[45%_35%]"
+        />
       </span>
     );
   }
   const painted = PAINTED[kind];
   if (painted) {
     return (
-      <span aria-hidden className={`relative block shrink-0 ${className}`} style={{ width: size, height: h }}>
-        <Image src={painted} alt="" fill sizes={`${size * 2}px`} quality={90} className="object-contain object-bottom" />
+      <span
+        aria-hidden
+        className={`relative block shrink-0 ${className}`}
+        style={{ width: size, height: h }}
+      >
+        <Image
+          src={painted}
+          alt=""
+          fill
+          sizes={`${size * 2}px`}
+          quality={90}
+          className="object-contain object-bottom"
+        />
       </span>
     );
   }
   if (kind === "lantern" || kind === "bookmark") {
     // The orange from the logo, for the Guide and saved things.
     return (
-      <span aria-hidden className={`relative flex shrink-0 items-end justify-center ${className}`} style={{ width: size, height: h }}>
-        <Image src={ORANGE} alt="" width={Math.round(h * 0.62)} height={Math.round(h * 0.67)} className="object-contain" />
+      <span
+        aria-hidden
+        className={`relative flex shrink-0 items-end justify-center ${className}`}
+        style={{ width: size, height: h }}
+      >
+        <Image
+          src={ORANGE}
+          alt=""
+          width={Math.round(h * 0.62)}
+          height={Math.round(h * 0.67)}
+          className="object-contain"
+        />
       </span>
     );
   }
   return (
-    <span aria-hidden className={`relative block shrink-0 ${className}`} style={{ width: size, height: h }}>
+    <span
+      aria-hidden
+      className={`relative block shrink-0 ${className}`}
+      style={{ width: size, height: h }}
+    >
       {SPOTS[kind].map((p, i) => (
-        <span key={i} className="absolute bottom-0" style={{ left: `${p.x}%`, width: `${p.w}%`, aspectRatio: "1" }}>
-          <Image src={p.src} alt="" fill sizes={`${Math.round((size * p.w) / 100)}px`} className={`object-contain object-bottom ${p.flip ? "-scale-x-100" : ""}`} />
+        <span
+          key={i}
+          className="absolute bottom-0"
+          style={{ left: `${p.x}%`, width: `${p.w}%`, aspectRatio: "1" }}
+        >
+          <Image
+            src={p.src}
+            alt=""
+            fill
+            sizes={`${Math.round((size * p.w) / 100)}px`}
+            className={`object-contain object-bottom ${p.flip ? "-scale-x-100" : ""}`}
+          />
         </span>
       ))}
     </span>

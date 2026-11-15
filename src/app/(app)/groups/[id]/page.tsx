@@ -5,19 +5,29 @@
    groups list, with its painted cover and the people who've posted in it; the
    feed below takes two thirds. */
 
+import { GroupCover, groupHue } from "@/components/art/Brand";
+import { Spot } from "@/components/art/Scenes";
+import { PostCard } from "@/components/common/PostCard";
+import {
+  Avatar,
+  Button,
+  ChipSelect,
+  EmptyState,
+  LinkButton,
+  Menu,
+  Panel,
+  Segmented,
+  toast,
+} from "@/components/shared";
+import { POST_TYPES } from "@/config/options";
+import { articleCover, readingFor } from "@/lib/data/articles";
+import { act, sel, useStore } from "@/lib/store";
+import type { PostType } from "@/types/domain";
+import { ArrowRight, BellOff, Check, ChevronDown, Lock, PenLine } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowRight, BellOff, Check, ChevronDown, Lock, PenLine } from "lucide-react";
-import { GroupCover, groupHue } from "@/components/art/Brand";
-import { Spot } from "@/components/art/Scenes";
-import { PostCard } from "@/components/PostCard";
-import { Avatar, Button, ChipSelect, EmptyState, LinkButton, Menu, Panel, Segmented, toast } from "@/components/ui";
-import { articleCover, readingFor } from "@/lib/data/articles";
-import { act, sel, useStore } from "@/lib/store";
-import { POST_TYPES } from "@/lib/options";
-import type { PostType } from "@/lib/types";
 
 type Sort = "newest" | "top" | "discussed";
 
@@ -35,7 +45,11 @@ export default function GroupPage() {
         art="lens"
         title="This group isn't available."
         body="It may have been archived or renamed."
-        action={<LinkButton href="/groups" variant="secondary">Browse groups</LinkButton>}
+        action={
+          <LinkButton href="/groups" variant="secondary">
+            Browse groups
+          </LinkButton>
+        }
       />
     );
   }
@@ -45,7 +59,9 @@ export default function GroupPage() {
   const archived = group.status === "archived";
   const locked = group.readAccess === "members-only" && !joined;
   const hue = groupHue(group);
-  const match = sel.groupMatches(s, 16).find((m) => m.group.id === group.id && m.why !== "Popular in the grove");
+  const match = sel
+    .groupMatches(s, 16)
+    .find((m) => m.group.id === group.id && m.why !== "Popular in the grove");
 
   const commentsOf = (pid: string) => sel.commentCount(s, pid);
   const reading = readingFor(group.id);
@@ -53,7 +69,9 @@ export default function GroupPage() {
   // The tags people actually use here, most used first. A post shows if it has any of the ones picked.
   const tagCounts = new Map<string, number>();
   for (const p of groupPosts) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
-  const tagOptions = [...tagCounts.keys()].sort((a, b) => tagCounts.get(b)! - tagCounts.get(a)! || a.localeCompare(b));
+  const tagOptions = [...tagCounts.keys()].sort(
+    (a, b) => tagCounts.get(b)! - tagCounts.get(a)! || a.localeCompare(b),
+  );
   const activeTags = picked.filter((t) => tagCounts.has(t));
   // Faces in the header (PRD §8): only members who posted here, most recent
   // poster first, up to 5, never padded with other members. Never you, anyone
@@ -62,24 +80,40 @@ export default function GroupPage() {
   // TODO(api): the group endpoint will return these; this derives them from the mock.
   const faces = locked
     ? []
-    : [...new Set(
-        s.posts
-          .filter((p) => p.groupId === group.id && p.status === "published")
-          .sort((a, b) => a.minutesAgo - b.minutesAgo)
-          .map((p) => p.authorId),
-      )]
+    : [
+        ...new Set(
+          s.posts
+            .filter((p) => p.groupId === group.id && p.status === "published")
+            .sort((a, b) => a.minutesAgo - b.minutesAgo)
+            .map((p) => p.authorId),
+        ),
+      ]
         .flatMap((a) => s.members.find((m) => m.id === a) ?? [])
-        .filter((m) => !m.unavailable && !m.badges.includes("team") && !s.blocked.includes(m.id) && !m.blocks?.includes("me"))
+        .filter(
+          (m) =>
+            !m.unavailable &&
+            !m.badges.includes("team") &&
+            !s.blocked.includes(m.id) &&
+            !m.blocks?.includes("me"),
+        )
         .slice(0, 5);
   // Filters combine: a post shows if it is one of the picked types and has any of the picked tags.
-  let posts = groupPosts.filter((p) => (!types.length || types.includes(p.type)) && (!activeTags.length || p.tags.some((t) => activeTags.includes(t))));
+  let posts = groupPosts.filter(
+    (p) =>
+      (!types.length || types.includes(p.type)) &&
+      (!activeTags.length || p.tags.some((t) => activeTags.includes(t))),
+  );
   const filtering = types.length > 0 || activeTags.length > 0;
   const clearFilters = () => {
     setTypes([]);
     setPicked([]);
   };
-  if (sort === "top") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => sel.score(b) - sel.score(a));
-  else if (sort === "discussed") posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => commentsOf(b.id) - commentsOf(a.id));
+  if (sort === "top")
+    posts = posts.filter((p) => p.minutesAgo <= 10080).sort((a, b) => sel.score(b) - sel.score(a));
+  else if (sort === "discussed")
+    posts = posts
+      .filter((p) => p.minutesAgo <= 10080)
+      .sort((a, b) => commentsOf(b.id) - commentsOf(a.id));
   else posts = [...posts].sort((a, b) => a.minutesAgo - b.minutesAgo);
 
   const join = () => {
@@ -93,7 +127,9 @@ export default function GroupPage() {
         <GroupCover group={group} size={104} />
         <div className="min-w-0 flex-1 basis-[220px]">
           <h1 className="serif text-[28px] leading-[1.1] lg:text-[32px]">{group.name}</h1>
-          <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">{group.description}</p>
+          <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">
+            {group.description}
+          </p>
           {match && <p className="mt-2 text-[13px] font-semibold text-green-ink">{match.why}</p>}
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             {faces.length > 0 && (
@@ -109,8 +145,10 @@ export default function GroupPage() {
               <span className="font-semibold" style={{ color: `var(--${hue}-700)` }}>
                 {group.type} group
               </span>
-              ·<strong className="font-semibold text-ink">{group.members.toLocaleString()}</strong> {group.members === 1 ? "member" : "members"} ·
-              <strong className="font-semibold text-ink">{group.postsThisWeek}</strong> {group.postsThisWeek === 1 ? "post" : "posts"} this week
+              ·<strong className="font-semibold text-ink">{group.members.toLocaleString()}</strong>{" "}
+              {group.members === 1 ? "member" : "members"} ·
+              <strong className="font-semibold text-ink">{group.postsThisWeek}</strong>{" "}
+              {group.postsThisWeek === 1 ? "post" : "posts"} this week
               {group.readAccess === "members-only" && (
                 <span className="inline-flex items-center gap-1">
                   · <Lock size={12} aria-hidden /> Members-only
@@ -120,51 +158,58 @@ export default function GroupPage() {
             </p>
           </div>
         </div>
-          <div className="flex flex-wrap gap-2">
-            {archived ? null : joined ? (
-              <>
-                <LinkButton href={`/posts/new?group=${group.id}`}>
-                  <PenLine size={16} /> Write a post
-                </LinkButton>
-                <Menu
-                  label="Group membership"
-                  trigger={(p) => (
-                    <Button {...p} variant="secondary">
-                      <Check size={16} /> Joined <ChevronDown size={15} />
-                    </Button>
-                  )}
-                  items={[
-                    {
-                      label: muted ? "Unmute notifications" : "Mute notifications",
-                      icon: <BellOff size={15} />,
-                      onSelect: () => {
-                        act.groups.toggleMute(group.id);
-                        toast(muted ? "Notifications back on" : "Muted. Posts stay in your feed; notifications stop.");
-                      },
+        <div className="flex flex-wrap gap-2">
+          {archived ? null : joined ? (
+            <>
+              <LinkButton href={`/posts/new?group=${group.id}`}>
+                <PenLine size={16} /> Write a post
+              </LinkButton>
+              <Menu
+                label="Group membership"
+                trigger={(p) => (
+                  <Button {...p} variant="secondary">
+                    <Check size={16} /> Joined <ChevronDown size={15} />
+                  </Button>
+                )}
+                items={[
+                  {
+                    label: muted ? "Unmute notifications" : "Mute notifications",
+                    icon: <BellOff size={15} />,
+                    onSelect: () => {
+                      act.groups.toggleMute(group.id);
+                      toast(
+                        muted
+                          ? "Notifications back on"
+                          : "Muted. Posts stay in your feed; notifications stop.",
+                      );
                     },
-                    {
-                      label: "Leave group",
-                      danger: true,
-                      onSelect: () => {
-                        act.groups.toggleJoin(group.id);
-                        toast(`You left ${group.name}. Your own posts stay in the group.`);
-                      },
+                  },
+                  {
+                    label: "Leave group",
+                    danger: true,
+                    onSelect: () => {
+                      act.groups.toggleJoin(group.id);
+                      toast(`You left ${group.name}. Your own posts stay in the group.`);
                     },
-                  ]}
-                />
-              </>
-            ) : (
-              <Button onClick={join}>Join group</Button>
-            )}
-          </div>
+                  },
+                ]}
+              />
+            </>
+          ) : (
+            <Button onClick={join}>Join group</Button>
+          )}
+        </div>
       </header>
 
       {locked ? (
         <Panel className="flex flex-col items-center px-6 py-12 text-center">
           <Spot kind="canopy" size={168} />
-          <h2 className="mt-4 text-[18px] font-semibold">Any member can join this group and read posts.</h2>
+          <h2 className="mt-4 text-[18px] font-semibold">
+            Any member can join this group and read posts.
+          </h2>
           <p className="mt-1.5 max-w-[46ch] text-[15px] text-ink-soft">
-            Posts here are only visible to people who&apos;ve joined, so the group stays a little more private.
+            Posts here are only visible to people who&apos;ve joined, so the group stays a little
+            more private.
           </p>
           <Button className="mt-5" onClick={join}>
             Join to read posts
@@ -186,7 +231,11 @@ export default function GroupPage() {
               />
               <span className="flex items-center gap-3 text-[14px]">
                 {filtering && (
-                  <button type="button" onClick={clearFilters} className="press font-semibold text-accent underline underline-offset-2">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="press font-semibold text-accent underline underline-offset-2"
+                  >
                     Clear filters
                   </button>
                 )}
@@ -197,19 +246,35 @@ export default function GroupPage() {
             </div>
             {groupPosts.length > 0 && (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-x-3">
-                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">Filter by post type</span>
-                <ChipSelect label="Filter by post type" options={POST_TYPES} value={types} onChange={setTypes} />
+                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">
+                  Filter by post type
+                </span>
+                <ChipSelect
+                  label="Filter by post type"
+                  options={POST_TYPES}
+                  value={types}
+                  onChange={setTypes}
+                />
               </div>
             )}
             {tagOptions.length > 1 && (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-x-3">
-                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">Filter by tag</span>
-                <ChipSelect label="Filter by tag" options={tagOptions} value={activeTags} onChange={setPicked} />
+                <span className="shrink-0 text-[14px] text-muted sm:w-32 sm:leading-9">
+                  Filter by tag
+                </span>
+                <ChipSelect
+                  label="Filter by tag"
+                  options={tagOptions}
+                  value={activeTags}
+                  onChange={setPicked}
+                />
               </div>
             )}
             {!joined && !archived && (
               <Panel className="flex flex-wrap items-center gap-3 px-5 py-4">
-                <p className="flex-1 text-[14px] text-ink-soft">Join this group to post, comment and vote.</p>
+                <p className="flex-1 text-[14px] text-ink-soft">
+                  Join this group to post, comment and vote.
+                </p>
                 <Button size="sm" onClick={join}>
                   Join
                 </Button>
@@ -218,7 +283,11 @@ export default function GroupPage() {
             {posts.length === 0 && filtering ? (
               <EmptyState
                 art="sprout"
-                title={sort === "newest" ? "No posts match those filters." : "No posts match those filters this week."}
+                title={
+                  sort === "newest"
+                    ? "No posts match those filters."
+                    : "No posts match those filters this week."
+                }
                 action={
                   <Button variant="secondary" onClick={clearFilters}>
                     Clear filters
@@ -229,7 +298,11 @@ export default function GroupPage() {
               <EmptyState
                 art="sprout"
                 title="No posts yet. Start the conversation."
-                action={joined && !archived ? <LinkButton href={`/posts/new?group=${group.id}`}>Write a post</LinkButton> : undefined}
+                action={
+                  joined && !archived ? (
+                    <LinkButton href={`/posts/new?group=${group.id}`}>Write a post</LinkButton>
+                  ) : undefined
+                }
               />
             ) : (
               <ul className="space-y-4">
@@ -242,40 +315,78 @@ export default function GroupPage() {
             )}
           </div>
           <aside className="space-y-4">
-            <Panel className="relative overflow-hidden border-transparent p-5" style={{ background: `var(--${hue}-50)` }}>
-              <Image src="/brand/cozy/e-branch-side.webp" alt="" aria-hidden width={104} height={58} className="pointer-events-none absolute -top-2 -right-4" />
+            <Panel
+              className="relative overflow-hidden border-transparent p-5"
+              style={{ background: `var(--${hue}-50)` }}
+            >
+              <Image
+                src="/assets/brand/cozy/e-branch-side.webp"
+                alt=""
+                aria-hidden
+                width={104}
+                height={58}
+                className="pointer-events-none absolute -top-2 -right-4"
+              />
               <h2 className="text-[16px] font-semibold">Who it&apos;s for</h2>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{group.whoFor}</p>
             </Panel>
             <Panel className="p-5">
               <h2 className="text-[16px] font-semibold">Group rules</h2>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
-                {group.rules ?? "Be kind, share your own experience, and keep medical details general. The community guidelines apply here too."}
+                {group.rules ??
+                  "Be kind, share your own experience, and keep medical details general. The community guidelines apply here too."}
               </p>
-              <Link href="/help#guidelines" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
+              <Link
+                href="/help#guidelines"
+                className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline"
+              >
                 Community guidelines
               </Link>
             </Panel>
-            <section aria-labelledby="group-reading" className="rounded-[20px] border border-yellow bg-yellow-tint p-4 sm:p-5">
+            <section
+              aria-labelledby="group-reading"
+              className="rounded-[20px] border border-yellow bg-yellow-tint p-4 sm:p-5"
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <h2 id="group-reading" className="text-[16px] font-semibold">
                   From the library
                 </h2>
-                <Link href="/learn" className="inline-flex items-center gap-1 text-[14px] font-semibold text-ink underline decoration-brand underline-offset-[3px]">
-                  {reading.length ? "All articles" : "Browse clinician-reviewed articles"} <ArrowRight size={15} aria-hidden />
+                <Link
+                  href="/learn"
+                  className="inline-flex items-center gap-1 text-[14px] font-semibold text-ink underline decoration-brand underline-offset-[3px]"
+                >
+                  {reading.length ? "All articles" : "Browse clinician-reviewed articles"}{" "}
+                  <ArrowRight size={15} aria-hidden />
                 </Link>
               </div>
               {reading.length > 0 && (
                 <ul className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-2">
                   {reading.map((r) => (
                     <li key={r.href}>
-                      <Link href={r.href} className="press group flex h-full items-center gap-3 rounded-[14px] bg-white p-2.5 ring-1 ring-yellow ring-inset">
-                        <span aria-hidden className="relative block aspect-[4/3] w-14 shrink-0 overflow-hidden rounded-[8px]">
-                          <Image src={articleCover(r.article.slug)} alt="" fill sizes="112px" quality={90} className="object-cover" />
+                      <Link
+                        href={r.href}
+                        className="press group flex h-full items-center gap-3 rounded-[14px] bg-white p-2.5 ring-1 ring-yellow ring-inset"
+                      >
+                        <span
+                          aria-hidden
+                          className="relative block aspect-[4/3] w-14 shrink-0 overflow-hidden rounded-[8px]"
+                        >
+                          <Image
+                            src={articleCover(r.article.slug)}
+                            alt=""
+                            fill
+                            sizes="112px"
+                            quality={90}
+                            className="object-cover"
+                          />
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-[14px] leading-snug font-semibold text-ink underline decoration-brand underline-offset-[3px]">{r.label}</span>
-                          <span className="mt-1 block text-[13px] leading-snug text-muted">{r.article.title}</span>
+                          <span className="block text-[14px] leading-snug font-semibold text-ink underline decoration-brand underline-offset-[3px]">
+                            {r.label}
+                          </span>
+                          <span className="mt-1 block text-[13px] leading-snug text-muted">
+                            {r.article.title}
+                          </span>
                         </span>
                       </Link>
                     </li>

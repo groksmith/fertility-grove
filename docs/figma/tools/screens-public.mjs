@@ -13,7 +13,7 @@ const SIZES = [
 ];
 
 const TREE = { Seed: "tree-seed", Bush: "tree-bush", Tree: "tree-tree", "Blossom Tree": "tree-blossom", "Orange Tree": "tree-orange" };
-const tree = (level, size, props = {}) => Img(`brand/art/${TREE[level]}.webp`, size, size, { name: level, scaleMode: "FIT", ...props });
+const tree = (level, size, props = {}) => Img(`assets/brand/art/${TREE[level]}.webp`, size, size, { name: level, scaleMode: "FIT", ...props });
 
 // Spot art: trees standing on one ground line (art/Scenes.tsx).
 const SPOTS = {
@@ -49,7 +49,7 @@ function reading(size, { title, lede, nav = ["Help", "Sign in"], mainMax = 760, 
     phone,
     node: [
       Row({ name: "Header", width: Math.min(1100, size.w), w: "fixed", height: 64, h: "fixed", justify: "between", padding: [0, pad] }, [
-        Img("brand/logo.png", Math.round(40 * (1295 / 473)), 40, { name: "Logo", scaleMode: "FIT" }),
+        Img("assets/brand/logo.png", Math.round(40 * (1295 / 473)), 40, { name: "Logo", scaleMode: "FIT" }),
         Row({ name: "Nav", gap: 20 }, nav.map((n) => T(n, "small", { style: "SemiBold", color: C.inkSoft }))),
       ]),
       Col({ name: "Main", width: mainW, w: "fixed", padding: [phone ? 32 : 56, pad, 80, pad], gap: 0 }, [

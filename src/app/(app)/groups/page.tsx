@@ -3,20 +3,27 @@
 /* Groups. The screen's question: which groups are for me? Matched groups come
    first with the reason they were suggested, then every other active group. */
 
-import Link from "next/link";
-import { useState } from "react";
-import { Check, Lock, Search } from "lucide-react";
 import { GroupCover, groupHue } from "@/components/art/Brand";
 import { Spot } from "@/components/art/Scenes";
-import { Button, EmptyState, PageHeader, Panel, toast } from "@/components/ui";
-import { act, sel, useStore } from "@/lib/store";
-import type { Group } from "@/lib/types";
+import { Button, EmptyState, PageHeader, Panel, toast } from "@/components/shared";
 import { hueInk } from "@/lib/hue";
+import { act, sel, useStore } from "@/lib/store";
+import type { Group } from "@/types/domain";
+import { Check, Lock, Search } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 function TypeLabel({ group }: { group: Group }) {
   const hue = groupHue(group);
   return (
-    <span className="inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold" style={{ background: `var(--${hue}-50)`, color: hueInk(hue), boxShadow: `inset 0 0 0 1px var(--${hue}-300)` }}>
+    <span
+      className="inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold"
+      style={{
+        background: `var(--${hue}-50)`,
+        color: hueInk(hue),
+        boxShadow: `inset 0 0 0 1px var(--${hue}-300)`,
+      }}
+    >
       {group.type}
     </span>
   );
@@ -27,12 +34,20 @@ function GroupRow({ group, why }: { group: Group; why?: string }) {
   return (
     // Phone: cover beside the text, the button under it. Wider: the button on the right.
     <li className="grid grid-cols-[56px_minmax(0,1fr)] items-start gap-x-3.5 gap-y-3 py-4 sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center sm:gap-x-4">
-      <Link href={`/groups/${group.id}`} tabIndex={-1} aria-hidden className="row-span-2 sm:row-span-1">
+      <Link
+        href={`/groups/${group.id}`}
+        tabIndex={-1}
+        aria-hidden
+        className="row-span-2 sm:row-span-1"
+      >
         <GroupCover group={group} size={56} />
       </Link>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/groups/${group.id}`} className="text-[16px] font-semibold text-ink hover:underline">
+          <Link
+            href={`/groups/${group.id}`}
+            className="text-[16px] font-semibold text-ink hover:underline"
+          >
             {group.name}
           </Link>
           <TypeLabel group={group} />
@@ -43,9 +58,12 @@ function GroupRow({ group, why }: { group: Group; why?: string }) {
           )}
         </div>
         {why && <p className="mt-0.5 text-[13px] font-semibold text-green-ink">{why}</p>}
-        <p className="mt-0.5 line-clamp-2 text-[14px] leading-snug text-ink-soft">{group.description}</p>
+        <p className="mt-0.5 line-clamp-2 text-[14px] leading-snug text-ink-soft">
+          {group.description}
+        </p>
         <p className="tabular mt-1 text-[13px] text-muted">
-          {sel.plural(group.members, "member")} · {sel.plural(group.postsThisWeek, "post")} this week
+          {sel.plural(group.members, "member")} · {sel.plural(group.postsThisWeek, "post")} this
+          week
         </p>
       </div>
       <Button
@@ -78,7 +96,9 @@ export default function GroupsPage() {
   const term = q.trim().toLowerCase();
   const fits = (g: Group) => !term || `${g.name} ${g.description}`.toLowerCase().includes(term);
   const matched = matches.filter((m) => fits(m.group));
-  const rest = s.groups.filter((g) => g.status === "active" && !matchedIds.includes(g.id) && fits(g));
+  const rest = s.groups.filter(
+    (g) => g.status === "active" && !matchedIds.includes(g.id) && fits(g),
+  );
   const joinedCount = s.joined.length;
 
   return (
@@ -106,14 +126,22 @@ export default function GroupsPage() {
       </label>
 
       {matched.length === 0 && rest.length === 0 ? (
-        <EmptyState art="lens" title="No groups match that yet." body="Try different words, or ask in a group you're already in." />
+        <EmptyState
+          art="lens"
+          title="No groups match that yet."
+          body="Try different words, or ask in a group you're already in."
+        />
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0 space-y-6">
             {matched.length > 0 && (
               <Panel className="px-5 pt-5 pb-1 sm:px-6" aria-labelledby="matched-h">
-                <h2 id="matched-h" className="text-[18px] font-semibold">Matched to you</h2>
-                <p className="mt-0.5 text-[14px] text-muted">Suggested from your diagnosis, stage and path.</p>
+                <h2 id="matched-h" className="text-[18px] font-semibold">
+                  Matched to you
+                </h2>
+                <p className="mt-0.5 text-[14px] text-muted">
+                  Suggested from your diagnosis, stage and path.
+                </p>
                 <ul className="divide-y divide-line">
                   {matched.map((m) => (
                     <GroupRow key={m.group.id} group={m.group} why={m.why} />
@@ -123,7 +151,9 @@ export default function GroupsPage() {
             )}
             {rest.length > 0 && (
               <Panel className="px-5 pt-5 pb-1 sm:px-6" aria-labelledby="all-h">
-                <h2 id="all-h" className="text-[18px] font-semibold">All groups</h2>
+                <h2 id="all-h" className="text-[18px] font-semibold">
+                  All groups
+                </h2>
                 <p className="mt-0.5 text-[14px] text-muted">
                   <span className="tabular">{rest.length}</span> more in both communities
                 </p>
@@ -140,22 +170,29 @@ export default function GroupsPage() {
               <h2 className="text-[16px] font-semibold">Three kinds of group</h2>
               <ul className="mt-3 space-y-3 text-[14px] leading-snug text-ink-soft">
                 <li>
-                  <span className="font-semibold text-coral-ink">Diagnosis</span> groups gather people with the same diagnosis.
+                  <span className="font-semibold text-coral-ink">Diagnosis</span> groups gather
+                  people with the same diagnosis.
                 </li>
                 <li>
-                  <span className="font-semibold text-blue-ink">Stage</span> groups follow where you are: testing, IUI, IVF, pregnant after infertility.
+                  <span className="font-semibold text-blue-ink">Stage</span> groups follow where you
+                  are: testing, IUI, IVF, pregnant after infertility.
                 </li>
                 <li>
-                  <span className="font-semibold text-yellow-ink">Topic</span> groups cover what cuts across: partners, donors, work, taking a break.
+                  <span className="font-semibold text-yellow-ink">Topic</span> groups cover what
+                  cuts across: partners, donors, work, taking a break.
                 </li>
               </ul>
             </Panel>
             <Panel className="p-5">
               <h2 className="text-[16px] font-semibold">Pregnancy news has its own space</h2>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
-                Good news lives in Success stories, so nobody comes across it before they&apos;re ready.
+                Good news lives in Success stories, so nobody comes across it before they&apos;re
+                ready.
               </p>
-              <Link href="/stories" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
+              <Link
+                href="/stories"
+                className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline"
+              >
                 Visit Success stories
               </Link>
             </Panel>

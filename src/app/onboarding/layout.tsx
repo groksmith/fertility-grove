@@ -1,4 +1,4 @@
-import { Toaster } from "@/components/ui";
+import { Toaster } from "@/components/shared";
 
 export const metadata = { title: "Getting started · Fertility Grove" };
 

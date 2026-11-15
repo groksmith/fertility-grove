@@ -13,7 +13,7 @@
    Every fruit goes through the same stages (green, greenish, ripe), and a
    blossom gives way to the fruit that grows from it.
 
-   Pieces are painted separately (public/brand/gift/, prompts in
+   Pieces are painted separately (public/assets/brand/gift/, prompts in
    scripts/art/prompts-gift/) so each can move. Everything runs on CSS
    transitions, so clicking quickly through steps retargets instead of
    restarting. Under reduced motion it all simply appears. */
@@ -21,7 +21,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const DIR = "/brand/gift";
+const DIR = "/assets/brand/gift";
 
 /** Where blossoms sit on the canopy, as % of the tree picture, in the order they open. */
 const SPOTS = [
@@ -77,7 +77,9 @@ let lastStep: number | undefined;
 
 export function GiftTree({ step }: { step: number }) {
   const target = Math.max(0, Math.min(8, step));
-  const [s, setS] = useState(() => (lastStep !== undefined && lastStep < target ? lastStep : target));
+  const [s, setS] = useState(() =>
+    lastStep !== undefined && lastStep < target ? lastStep : target,
+  );
   useEffect(() => {
     lastStep = target;
     const id = requestAnimationFrame(() => requestAnimationFrame(() => setS(target)));
@@ -90,23 +92,55 @@ export function GiftTree({ step }: { step: number }) {
 
   return (
     <div className="absolute bottom-[3%] left-1/2 aspect-[1100/1636] h-[88%] -translate-x-1/2">
-      <Image src={`${DIR}/tree.webp`} alt="" fill sizes="(min-width: 1024px) 40vw, 30vw" quality={90} priority className="object-contain" />
+      <Image
+        src={`${DIR}/tree.webp`}
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 40vw, 30vw"
+        quality={90}
+        priority
+        className="object-contain"
+      />
 
       {SPOTS.map((p, k) => {
         const spot = spotOf(k, s);
         // Several buds or blossoms change at once on a step, so each comes a beat after the one before.
         const wave = `${80 + k * 70}ms`;
         return (
-          <span key={k} className="absolute block w-[11%]" style={{ left: `${p.x}%`, top: `${p.y}%`, transform: `translate(-50%, -50%) rotate(${p.r}deg)` }}>
-            <span className="gift-bud" data-state={spot === "none" ? "none" : spot === "bud" ? "bud" : "gone"} style={{ transitionDelay: spot === "bud" ? wave : "0ms" }}>
-              <Image src={`${DIR}/bud.webp`} alt="" width={200} height={552} className="mx-auto h-auto w-[38%]" />
+          <span
+            key={k}
+            className="absolute block w-[11%]"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              transform: `translate(-50%, -50%) rotate(${p.r}deg)`,
+            }}
+          >
+            <span
+              className="gift-bud"
+              data-state={spot === "none" ? "none" : spot === "bud" ? "bud" : "gone"}
+              style={{ transitionDelay: spot === "bud" ? wave : "0ms" }}
+            >
+              <Image
+                src={`${DIR}/bud.webp`}
+                alt=""
+                width={200}
+                height={552}
+                className="mx-auto h-auto w-[38%]"
+              />
             </span>
             <span
               className="gift-bloom absolute inset-0 grid place-items-center"
               data-open={spot === "open" ? "" : undefined}
               style={{ transitionDelay: spot === "open" ? wave : full ? beat(k) : "0ms" }}
             >
-              <Image src={`${DIR}/blossom.webp`} alt="" width={240} height={222} className="h-auto w-full" />
+              <Image
+                src={`${DIR}/blossom.webp`}
+                alt=""
+                width={240}
+                height={222}
+                className="h-auto w-full"
+              />
             </span>
           </span>
         );
@@ -130,9 +164,30 @@ export function GiftTree({ step }: { step: number }) {
             }
           >
             {/* Three paintings of the same fruit, cross-faded as it ripens. */}
-            <Image src={`${DIR}/fruitlet.webp`} alt="" width={220} height={269} className="gift-ripen h-auto w-full" style={{ opacity: !stage || stage === "green" ? 1 : 0 }} />
-            <Image src={`${DIR}/fruit.webp`} alt="" width={220} height={268} className="gift-ripen absolute inset-0 h-auto w-full" style={{ opacity: stage === "greenish" ? 1 : 0 }} />
-            <Image src={`${DIR}/orange.webp`} alt="" width={220} height={253} className="gift-ripen absolute inset-0 h-auto w-full" style={{ opacity: stage === "ripe" ? 1 : 0 }} />
+            <Image
+              src={`${DIR}/fruitlet.webp`}
+              alt=""
+              width={220}
+              height={269}
+              className="gift-ripen h-auto w-full"
+              style={{ opacity: !stage || stage === "green" ? 1 : 0 }}
+            />
+            <Image
+              src={`${DIR}/fruit.webp`}
+              alt=""
+              width={220}
+              height={268}
+              className="gift-ripen absolute inset-0 h-auto w-full"
+              style={{ opacity: stage === "greenish" ? 1 : 0 }}
+            />
+            <Image
+              src={`${DIR}/orange.webp`}
+              alt=""
+              width={220}
+              height={253}
+              className="gift-ripen absolute inset-0 h-auto w-full"
+              style={{ opacity: stage === "ripe" ? 1 : 0 }}
+            />
           </span>
         );
       })}

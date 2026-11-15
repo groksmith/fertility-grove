@@ -1,11 +1,32 @@
 /* Sample members. Every person here is fictional; the clinician and the
    Founding mentor are labelled as samples wherever their badge shows. */
 
-import type { Member } from "../types";
-import { levelFor } from "../rules/sunlight";
+import { levelFor } from "@/lib/rules/sunlight";
+import type { Member } from "@/types/domain";
 
-type Seed = Omit<Member, "level" | "follows" | "messagePolicy" | "suggestMe" | "shareJourney" | "badges" | "followers" | "joinedDaysAgo"> &
-  Partial<Pick<Member, "follows" | "messagePolicy" | "suggestMe" | "shareJourney" | "badges" | "followers" | "joinedDaysAgo">>;
+type Seed = Omit<
+  Member,
+  | "level"
+  | "follows"
+  | "messagePolicy"
+  | "suggestMe"
+  | "shareJourney"
+  | "badges"
+  | "followers"
+  | "joinedDaysAgo"
+> &
+  Partial<
+    Pick<
+      Member,
+      | "follows"
+      | "messagePolicy"
+      | "suggestMe"
+      | "shareJourney"
+      | "badges"
+      | "followers"
+      | "joinedDaysAgo"
+    >
+  >;
 
 function m(s: Seed): Member {
   return {
@@ -86,7 +107,8 @@ export const MEMBERS: Member[] = [
     paths: ["Donor eggs"],
     followers: 402,
     messagePolicy: "anyone",
-    aboutMe: "Low AMH at 34, donor eggs at 38. Happy to talk about the grief and the hope of choosing donor conception.",
+    aboutMe:
+      "Low AMH at 34, donor eggs at 38. Happy to talk about the grief and the hope of choosing donor conception.",
     mentor: {
       bio: "Four retrievals with my own eggs, then donor eggs. I can help with the donor decision, low AMH results, and telling family.",
       helpsWith: ["Diminished ovarian reserve", "Donor eggs", "IVF"],
@@ -140,7 +162,8 @@ export const MEMBERS: Member[] = [
     paths: [],
     followers: 530,
     messagePolicy: "following",
-    aboutMe: "Fertility specialist. I answer general questions here; I can't give advice about your own care.",
+    aboutMe:
+      "Fertility specialist. I answer general questions here; I can't give advice about your own care.",
   }),
   m({
     id: "m-sam",
@@ -158,7 +181,8 @@ export const MEMBERS: Member[] = [
     paths: ["Own eggs and sperm"],
     followers: 41,
     messagePolicy: "anyone",
-    aboutMe: "Low motility, ICSI round two. Mostly here so my wife isn't the only one carrying this.",
+    aboutMe:
+      "Low motility, ICSI round two. Mostly here so my wife isn't the only one carrying this.",
   }),
   m({
     id: "m-jules",
@@ -294,7 +318,8 @@ export const MEMBERS: Member[] = [
     paths: ["Surrogacy or gestational carrier"],
     followers: 133,
     messagePolicy: "anyone",
-    aboutMe: "Husband, dad through surrogacy after five years. Partners deserve somewhere to talk too.",
+    aboutMe:
+      "Husband, dad through surrogacy after five years. Partners deserve somewhere to talk too.",
     mentor: {
       bio: "Five years of treatment as the partner who held the folder. I can help partners feel less helpless and talk through surrogacy.",
       helpsWith: ["I am a partner / spouse", "Surrogacy or gestational carrier"],

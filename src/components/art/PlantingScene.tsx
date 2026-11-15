@@ -8,7 +8,7 @@
    own painting with the shoot grown on it, so the seed never changes size.
 
    The soil is eight paintings of one mound, made together as a storyboard so
-   they line up (public/brand/planting/, prompts in scripts/art/prompts-planting/),
+   they line up (public/assets/brand/planting/, prompts in scripts/art/prompts-planting/),
    stacked so each fades in over the last at the moment its cause lands. Props
    act on their own step (keyed to data-step in globals.css). Each onboarding
    step is its own page, so the scene remembers the last one and plays only the
@@ -19,7 +19,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const DIR = "/brand/planting";
+const DIR = "/assets/brand/planting";
 
 /* When each soil layer arrives, in ms: [delay, duration]. Timed to its cause:
    2 on the trowel's first strike, 3 as the last seed lands, 5 slowly under the water. */
@@ -71,7 +71,11 @@ function soilStyle(k: number, s: number): React.CSSProperties {
   }
   if (k < s) {
     const [delay, duration] = SOIL[k + 1];
-    return { opacity: 0, transition: "opacity 260ms var(--e-out)", transitionDelay: `${delay + duration}ms` };
+    return {
+      opacity: 0,
+      transition: "opacity 260ms var(--e-out)",
+      transitionDelay: `${delay + duration}ms`,
+    };
   }
   return { opacity: 0, transition: "opacity 300ms var(--e-out)" };
 }
@@ -80,7 +84,9 @@ let lastStep: number | undefined;
 
 export function PlantingScene({ step, compact = false }: { step: number; compact?: boolean }) {
   const target = Math.max(1, Math.min(8, step));
-  const [s, setS] = useState(() => (lastStep !== undefined && lastStep < target ? lastStep : target));
+  const [s, setS] = useState(() =>
+    lastStep !== undefined && lastStep < target ? lastStep : target,
+  );
   useEffect(() => {
     lastStep = target;
     const id = requestAnimationFrame(() => requestAnimationFrame(() => setS(target)));
@@ -88,10 +94,25 @@ export function PlantingScene({ step, compact = false }: { step: number; compact
   }, [target]);
 
   return (
-    <div className="plant absolute inset-0 overflow-hidden" data-step={s} data-compact={compact ? "" : undefined} aria-hidden>
-      <div className={`plant-stage absolute left-1/2 aspect-[1200/1005] -translate-x-1/2 ${compact ? "bottom-0 h-[80%]" : "bottom-[6%] w-[69%]"}`}>
+    <div
+      className="plant absolute inset-0 overflow-hidden"
+      data-step={s}
+      data-compact={compact ? "" : undefined}
+      aria-hidden
+    >
+      <div
+        className={`plant-stage absolute left-1/2 aspect-[1200/1005] -translate-x-1/2 ${compact ? "bottom-0 h-[80%]" : "bottom-[6%] w-[69%]"}`}
+      >
         <span className="plant-sun">
-          <Image src={`${DIR}/sun.webp`} alt="" width={640} height={640} unoptimized priority className="relative block h-auto w-full" />
+          <Image
+            src={`${DIR}/sun.webp`}
+            alt=""
+            width={640}
+            height={640}
+            unoptimized
+            priority
+            className="relative block h-auto w-full"
+          />
         </span>
 
         <div className="plant-soil absolute inset-0">
@@ -110,10 +131,26 @@ export function PlantingScene({ step, compact = false }: { step: number; compact
         </div>
 
         <span className="plant-pouch">
-          <Image src={`${DIR}/pouch.webp`} alt="" width={640} height={769} unoptimized priority className="block h-auto w-full" />
+          <Image
+            src={`${DIR}/pouch.webp`}
+            alt=""
+            width={640}
+            height={769}
+            unoptimized
+            priority
+            className="block h-auto w-full"
+          />
         </span>
         <span className="plant-trowel">
-          <Image src={`${DIR}/trowel.webp`} alt="" width={420} height={1572} unoptimized priority className="block h-auto w-full" />
+          <Image
+            src={`${DIR}/trowel.webp`}
+            alt=""
+            width={420}
+            height={1572}
+            unoptimized
+            priority
+            className="block h-auto w-full"
+          />
         </span>
         {SEEDS.map((seed) => (
           <span
@@ -131,20 +168,55 @@ export function PlantingScene({ step, compact = false }: { step: number; compact
               } as React.CSSProperties
             }
           >
-            <Image src={`${DIR}/seed.webp`} alt="" width={320} height={530} unoptimized priority className="block h-auto w-full" />
+            <Image
+              src={`${DIR}/seed.webp`}
+              alt=""
+              width={320}
+              height={530}
+              unoptimized
+              priority
+              className="block h-auto w-full"
+            />
           </span>
         ))}
         {/* The hole's front edge, over the seeds, so they drop in behind it. */}
-        <Image src={`${DIR}/soil-lip.webp`} alt="" fill unoptimized priority className="plant-lip object-contain" />
+        <Image
+          src={`${DIR}/soil-lip.webp`}
+          alt=""
+          fill
+          unoptimized
+          priority
+          className="plant-lip object-contain"
+        />
         <span className="plant-shoot">
-          <Image src={`${DIR}/shoot.webp`} alt="" width={151} height={119} unoptimized priority className="block h-auto w-full" />
+          <Image
+            src={`${DIR}/shoot.webp`}
+            alt=""
+            width={151}
+            height={119}
+            unoptimized
+            priority
+            className="block h-auto w-full"
+          />
         </span>
         <span className="plant-can">
-          <Image src={`${DIR}/can.webp`} alt="" width={900} height={487} unoptimized priority className="block h-auto w-full" />
+          <Image
+            src={`${DIR}/can.webp`}
+            alt=""
+            width={900}
+            height={487}
+            unoptimized
+            priority
+            className="block h-auto w-full"
+          />
         </span>
         <span className="plant-water">
           {DROPS.map((d) => (
-            <span key={d} className="plant-drop" style={{ left: `${(d % 3) * 0.7 - 0.7}cqw`, animationDelay: `${d * 0.14}s` }} />
+            <span
+              key={d}
+              className="plant-drop"
+              style={{ left: `${(d % 3) * 0.7 - 0.7}cqw`, animationDelay: `${d * 0.14}s` }}
+            />
           ))}
         </span>
       </div>
@@ -153,7 +225,11 @@ export function PlantingScene({ step, compact = false }: { step: number; compact
         {LINES.map((line, i) => {
           const k = i + 1;
           return (
-            <span key={k} className="plant-line" data-at={k === s ? "now" : k < s ? "past" : "next"}>
+            <span
+              key={k}
+              className="plant-line"
+              data-at={k === s ? "now" : k < s ? "past" : "next"}
+            >
               {line}
             </span>
           );

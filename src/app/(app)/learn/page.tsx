@@ -5,19 +5,22 @@
    diagnoses, topics, and search across the library. Every article wears its
    own painted cover: an open book with its topic beside it. */
 
-import Image from "next/image";
-import Link from "next/link";
-import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Spot } from "@/components/art/Scenes";
-import { EmptyState, PageHeader, Panel } from "@/components/ui";
+import { EmptyState, PageHeader, Panel } from "@/components/shared";
 import { ARTICLES, articleCover } from "@/lib/data/articles";
 import { useStore } from "@/lib/store";
-import type { Article } from "@/lib/types";
+import type { Article } from "@/types/domain";
+import { Search } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 function ArticleTile({ a, why }: { a: Article; why?: string }) {
   return (
-    <Link href={`/learn/${a.slug}`} className="press group flex w-full flex-col overflow-hidden rounded-[20px] border border-line bg-panel hover:border-line-strong">
+    <Link
+      href={`/learn/${a.slug}`}
+      className="press group flex w-full flex-col overflow-hidden rounded-[20px] border border-line bg-panel hover:border-line-strong"
+    >
       <span className="relative block aspect-[16/9] overflow-hidden" aria-hidden>
         <Image
           src={articleCover(a.slug)}
@@ -30,8 +33,14 @@ function ArticleTile({ a, why }: { a: Article; why?: string }) {
       </span>
       <span className="flex flex-1 flex-col p-5">
         {why && <span className="text-[13px] font-semibold text-green-ink">{why}</span>}
-        <span className={`${why ? "mt-1" : ""} text-[17px] leading-snug font-semibold text-ink group-hover:underline`}>{a.title}</span>
-        <span className="mt-1.5 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">{a.summary}</span>
+        <span
+          className={`${why ? "mt-1" : ""} text-[17px] leading-snug font-semibold text-ink group-hover:underline`}
+        >
+          {a.title}
+        </span>
+        <span className="mt-1.5 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">
+          {a.summary}
+        </span>
         <span className="mt-auto pt-4 text-[13px] text-muted">
           {a.readMinutes} min read · Reviewed {a.lastReviewed}
         </span>
@@ -49,9 +58,15 @@ export default function LearnPage() {
   const recommended = useMemo(() => {
     if (!me.healthConsent) return [];
     return ARTICLES.filter(
-      (a) => a.diagnoses.some((d) => me.diagnoses.includes(d)) || a.stages.some((st) => me.stages.includes(st)),
+      (a) =>
+        a.diagnoses.some((d) => me.diagnoses.includes(d)) ||
+        a.stages.some((st) => me.stages.includes(st)),
     )
-      .sort((a, b) => Number(b.diagnoses.some((d) => me.diagnoses.includes(d))) - Number(a.diagnoses.some((d) => me.diagnoses.includes(d))))
+      .sort(
+        (a, b) =>
+          Number(b.diagnoses.some((d) => me.diagnoses.includes(d))) -
+          Number(a.diagnoses.some((d) => me.diagnoses.includes(d))),
+      )
       .slice(0, 3);
   }, [me]);
 
@@ -67,7 +82,10 @@ export default function LearnPage() {
   const query = q.trim().toLowerCase();
   const results = query
     ? ARTICLES.filter((a) =>
-        [a.title, a.summary, ...a.sections.flatMap((s) => [s.heading, ...s.body])].join(" ").toLowerCase().includes(query),
+        [a.title, a.summary, ...a.sections.flatMap((s) => [s.heading, ...s.body])]
+          .join(" ")
+          .toLowerCase()
+          .includes(query),
       )
     : topic
       ? ARTICLES.filter((a) => a.topics.includes(topic))
@@ -79,8 +97,13 @@ export default function LearnPage() {
 
   return (
     <>
-      <PageHeader title="Learn" lede={finding} art={<Spot kind="plate" size={88} className="hidden sm:block" />} />
+      <PageHeader
+        title="Learn"
+        lede={finding}
+        art={<Spot kind="plate" size={88} className="hidden sm:block" />}
+      />
 
+      {/* biome-ignore lint/a11y/useSemanticElements: role="search" makes this form the search landmark; the suggested <input type="search"> is a control, not a landmark (the field inside is the control) */}
       <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-8">
         <label className="search-field flex h-12 items-center gap-3 rounded-full border border-line-strong bg-panel px-5 text-muted focus-within:ring-2 focus-within:ring-accent">
           <Search size={18} aria-hidden />
@@ -104,7 +127,14 @@ export default function LearnPage() {
             <h2 id="results-h" className="text-[20px] font-semibold">
               {query ? `Results for “${q.trim()}”` : `Topic: ${topic}`}
             </h2>
-            <button type="button" className="text-[14px] font-semibold text-accent" onClick={() => { setQ(""); setTopic(null); }}>
+            <button
+              type="button"
+              className="text-[14px] font-semibold text-accent"
+              onClick={() => {
+                setQ("");
+                setTopic(null);
+              }}
+            >
               Clear
             </button>
           </div>
@@ -117,14 +147,20 @@ export default function LearnPage() {
               ))}
             </ul>
           ) : (
-            <EmptyState art="lens" title="No articles match that yet." body="Try different words, or ask in a group." />
+            <EmptyState
+              art="lens"
+              title="No articles match that yet."
+              body="Try different words, or ask in a group."
+            />
           )}
         </section>
       ) : (
         <div className="space-y-10">
           {recommended.length > 0 && (
             <section aria-labelledby="rec-h">
-              <h2 id="rec-h" className="mb-4 text-[20px] font-semibold">Recommended for you</h2>
+              <h2 id="rec-h" className="mb-4 text-[20px] font-semibold">
+                Recommended for you
+              </h2>
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((a) => (
                   <li key={a.slug} className="flex">
@@ -136,18 +172,37 @@ export default function LearnPage() {
           )}
 
           <section aria-labelledby="dx-h">
-            <h2 id="dx-h" className="mb-4 text-[20px] font-semibold">Browse by diagnosis</h2>
+            <h2 id="dx-h" className="mb-4 text-[20px] font-semibold">
+              Browse by diagnosis
+            </h2>
             <Panel className="p-2">
               <ul className="grid grid-cols-1 sm:grid-cols-2">
                 {ARTICLES.map((a) => (
                   <li key={a.slug}>
-                    <Link href={`/learn/${a.slug}`} className="press flex items-center gap-4 rounded-[14px] p-3 hover:bg-raised">
-                      <span aria-hidden className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-line ring-inset">
-                        <Image src={articleCover(a.slug)} alt="" fill sizes="128px" quality={90} className="object-cover" />
+                    <Link
+                      href={`/learn/${a.slug}`}
+                      className="press flex items-center gap-4 rounded-[14px] p-3 hover:bg-raised"
+                    >
+                      <span
+                        aria-hidden
+                        className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-line ring-inset"
+                      >
+                        <Image
+                          src={articleCover(a.slug)}
+                          alt=""
+                          fill
+                          sizes="128px"
+                          quality={90}
+                          className="object-cover"
+                        />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-[15px] font-semibold text-ink">{a.diagnosis === "Unexplained" ? "Unexplained infertility" : a.diagnosis}</span>
-                        <span className="block truncate text-[13px] text-muted">{a.title} · {a.readMinutes} min</span>
+                        <span className="block text-[15px] font-semibold text-ink">
+                          {a.diagnosis === "Unexplained" ? "Unexplained infertility" : a.diagnosis}
+                        </span>
+                        <span className="block truncate text-[13px] text-muted">
+                          {a.title} · {a.readMinutes} min
+                        </span>
                       </span>
                     </Link>
                   </li>
@@ -157,10 +212,17 @@ export default function LearnPage() {
           </section>
 
           <section aria-labelledby="topic-h">
-            <h2 id="topic-h" className="mb-4 text-[20px] font-semibold">Browse by topic</h2>
+            <h2 id="topic-h" className="mb-4 text-[20px] font-semibold">
+              Browse by topic
+            </h2>
             <div className="flex flex-wrap gap-2">
               {topics.map((t) => (
-                <button key={t} type="button" onClick={() => setTopic(t)} className="press h-10 rounded-full border border-line-strong bg-panel px-4 text-[14px] font-semibold text-ink-soft hover:text-ink">
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTopic(t)}
+                  className="press h-10 rounded-full border border-line-strong bg-panel px-4 text-[14px] font-semibold text-ink-soft hover:text-ink"
+                >
                   {t}
                 </button>
               ))}

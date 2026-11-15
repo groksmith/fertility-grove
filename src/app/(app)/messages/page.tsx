@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { MessagesView } from "./MessagesView";
+import { MessagesView } from "./_components/MessagesView";
 
 export default function MessagesPage() {
   return (

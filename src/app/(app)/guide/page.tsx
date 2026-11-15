@@ -4,19 +4,31 @@
    The balance and refill date sit under the title; past chats on the left,
    the conversation on the right, the question box always in reach. */
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, CalendarCheck, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
 import { GroupCover } from "@/components/art/Brand";
 import { Spot } from "@/components/art/Scenes";
-import { Button, Counter, CrisisCard, Dialog, Field, LinkButton, PageHeader, Panel, Textarea, Toggle, toast } from "@/components/ui";
-import { useResult } from "@/components/Safety";
+import { useResult } from "@/components/common/Safety";
+import {
+  Button,
+  Counter,
+  CrisisCard,
+  Dialog,
+  Field,
+  LinkButton,
+  PageHeader,
+  Panel,
+  Textarea,
+  Toggle,
+  toast,
+} from "@/components/shared";
+import { CREDITS } from "@/config/options";
 import { GUIDE_STARTERS } from "@/lib/data/social";
-import { CREDITS } from "@/lib/options";
 import { formatDate, nextRefill } from "@/lib/rules/credits";
 import { act, sel, useStore } from "@/lib/store";
-import type { GuideTurn } from "@/lib/types";
+import type { GuideTurn } from "@/types/domain";
+import { BookOpen, CalendarCheck, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 const AI_LABEL = "AI, not a doctor. Check with your doctor before acting on this.";
 
@@ -26,12 +38,16 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
   const [reason, setReason] = useState("");
   return (
     <li className="rise space-y-3">
-      <div className="ml-auto w-fit max-w-[85%] rounded-[20px] rounded-br-[5px] bg-accent px-4 py-3 text-[15px] leading-relaxed text-white">{turn.question}</div>
+      <div className="ml-auto w-fit max-w-[85%] rounded-[20px] rounded-br-[5px] bg-accent px-4 py-3 text-[15px] leading-relaxed text-white">
+        {turn.question}
+      </div>
       <div className="max-w-[92%] rounded-[20px] rounded-bl-[5px] bg-blue-tint px-5 py-4">
         {turn.kind === "crisis" ? (
           <div className="space-y-3">
             {turn.answer.map((p) => (
-              <p key={p} className="text-[15px] leading-relaxed text-ink">{p}</p>
+              <p key={p} className="text-[15px] leading-relaxed text-ink">
+                {p}
+              </p>
             ))}
             <CrisisCard />
             <p className="text-[13px] text-blue-ink">No credits used. This chat stays private.</p>
@@ -40,7 +56,9 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
           <>
             <div className="space-y-2.5">
               {turn.answer.map((p) => (
-                <p key={p} className="text-[15px] leading-relaxed text-ink">{p}</p>
+                <p key={p} className="text-[15px] leading-relaxed text-ink">
+                  {p}
+                </p>
               ))}
             </div>
             {turn.citations.length > 0 && (
@@ -49,7 +67,10 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
                 <ul className="mt-1.5 flex flex-wrap gap-2">
                   {turn.citations.map((c) => (
                     <li key={c.slug}>
-                      <Link href={`/learn/${c.slug}`} className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3.5 text-[14px] font-semibold text-ink">
+                      <Link
+                        href={`/learn/${c.slug}`}
+                        className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3.5 text-[14px] font-semibold text-ink"
+                      >
                         <BookOpen size={15} /> {c.title}
                       </Link>
                     </li>
@@ -65,7 +86,10 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
                     const g = groups.find((x) => x.id === id);
                     return g ? (
                       <li key={id}>
-                        <Link href={`/groups/${id}`} className="press inline-flex h-9 items-center gap-2 rounded-full bg-white pr-3.5 pl-1 text-[14px] font-semibold text-ink">
+                        <Link
+                          href={`/groups/${id}`}
+                          className="press inline-flex h-9 items-center gap-2 rounded-full bg-white pr-3.5 pl-1 text-[14px] font-semibold text-ink"
+                        >
                           <GroupCover group={g} size={28} className="rounded-full" /> {g.name}
                         </Link>
                       </li>
@@ -86,13 +110,23 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
         )}
         <span className="flex-1" />
         {turn.rating ? (
-          <span>{turn.rating === "helpful" ? "You found this helpful" : "Thanks, that helps us improve"}</span>
+          <span>
+            {turn.rating === "helpful" ? "You found this helpful" : "Thanks, that helps us improve"}
+          </span>
         ) : (
           <>
-            <button type="button" onClick={() => act.guide.rate(chatId, turn.id, "helpful")} className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 font-semibold text-ink-soft hover:text-ink">
+            <button
+              type="button"
+              onClick={() => act.guide.rate(chatId, turn.id, "helpful")}
+              className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 font-semibold text-ink-soft hover:text-ink"
+            >
               <ThumbsUp size={14} /> Helpful
             </button>
-            <button type="button" onClick={() => setReasonOpen(true)} className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 font-semibold text-ink-soft hover:text-ink">
+            <button
+              type="button"
+              onClick={() => setReasonOpen(true)}
+              className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 font-semibold text-ink-soft hover:text-ink"
+            >
               <ThumbsDown size={14} /> Not helpful
             </button>
           </>
@@ -108,7 +142,14 @@ function Turn({ chatId, turn, balance }: { chatId: string; turn: GuideTurn; bala
           className="space-y-4"
         >
           <Field label="Tell us why" optional>
-            <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} max={300} hardStop data-autofocus />
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              max={300}
+              hardStop
+              data-autofocus
+            />
           </Field>
           <Button type="submit">Send</Button>
         </form>
@@ -121,7 +162,9 @@ function GuideScreen() {
   const s = useStore();
   const params = useSearchParams();
   const router = useRouter();
-  const [chatId, setChatId] = useState<string | null>(s.guideChats.find((c) => c.turns.length)?.id ?? null);
+  const [chatId, setChatId] = useState<string | null>(
+    s.guideChats.find((c) => c.turns.length)?.id ?? null,
+  );
   const [q, setQ] = useState(params.get("q") ?? "");
   const [outOfCredits, setOutOfCredits] = useState(false);
   const [confirmAll, setConfirmAll] = useState(false);
@@ -136,6 +179,7 @@ function GuideScreen() {
   const starterKey = consent ? s.me.diagnoses.find((d) => GUIDE_STARTERS[d]) : undefined;
   const starters = GUIDE_STARTERS[starterKey ?? "default"];
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the turn count is the trigger, not an input: scroll to the newest turn each time one is added
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [chat?.turns.length]);
@@ -159,7 +203,9 @@ function GuideScreen() {
         title="Grove Guide"
         lede={
           <>
-            <span className="tabular font-semibold text-ink">{sel.plural(balance, "credit")}</span> left · free credits refill on {refill}. Answers come only from the clinician-reviewed library.
+            <span className="tabular font-semibold text-ink">{sel.plural(balance, "credit")}</span>{" "}
+            left · free credits refill on {refill}. Answers come only from the clinician-reviewed
+            library.
           </>
         }
         art={<Spot kind="lantern" size={88} className="hidden sm:block" />}
@@ -209,10 +255,16 @@ function GuideScreen() {
                 ))}
               </ul>
             ) : (
-              <p className="px-2 pt-3 pb-1 text-[13px] text-muted">Your chats stay private. Nobody else, including your partner, sees them.</p>
+              <p className="px-2 pt-3 pb-1 text-[13px] text-muted">
+                Your chats stay private. Nobody else, including your partner, sees them.
+              </p>
             )}
             {chats.length > 0 && (
-              <button type="button" onClick={() => setConfirmAll(true)} className="mt-2 w-full rounded-[10px] px-3 py-2 text-left text-[13px] font-semibold text-muted hover:text-danger">
+              <button
+                type="button"
+                onClick={() => setConfirmAll(true)}
+                className="mt-2 w-full rounded-[10px] px-3 py-2 text-left text-[13px] font-semibold text-muted hover:text-danger"
+              >
                 Delete all chats
               </button>
             )}
@@ -221,7 +273,7 @@ function GuideScreen() {
 
         <Panel className="order-1 flex min-h-[560px] flex-col lg:order-2">
           <div className="flex-1 p-5 sm:p-7">
-            {chat && chat.turns.length ? (
+            {chat?.turns.length ? (
               <ul className="space-y-8" aria-live="polite">
                 {chat.turns.map((t) => (
                   <Turn key={t.id} chatId={chat.id} turn={t} balance={balance} />
@@ -230,12 +282,22 @@ function GuideScreen() {
             ) : (
               <div className="flex flex-col items-center py-6 text-center">
                 <Spot kind="lantern" size={180} />
-                <h2 className="mt-3 text-[20px] font-semibold">Ask about your diagnosis, a treatment step or your next appointment</h2>
-                <p className="mt-1 text-[14px] text-muted">{starterKey ? `Suggested for ${starterKey.toLowerCase().replace("pcos", "PCOS")}` : "A few places to start"}</p>
+                <h2 className="mt-3 text-[20px] font-semibold">
+                  Ask about your diagnosis, a treatment step or your next appointment
+                </h2>
+                <p className="mt-1 text-[14px] text-muted">
+                  {starterKey
+                    ? `Suggested for ${starterKey.toLowerCase().replace("pcos", "PCOS")}`
+                    : "A few places to start"}
+                </p>
                 <ul className="mt-5 flex w-full max-w-xl flex-col gap-2">
                   {starters.map((st) => (
                     <li key={st}>
-                      <button type="button" onClick={() => setQ(st)} className="press w-full rounded-[14px] bg-blue-tint px-4 py-3.5 text-left text-[15px] font-semibold text-blue-ink hover:brightness-[0.97]">
+                      <button
+                        type="button"
+                        onClick={() => setQ(st)}
+                        className="press w-full rounded-[14px] bg-blue-tint px-4 py-3.5 text-left text-[15px] font-semibold text-blue-ink hover:brightness-[0.97]"
+                      >
                         {st}
                       </button>
                     </li>
@@ -256,7 +318,8 @@ function GuideScreen() {
             {outOfCredits && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[14px] bg-yellow-tint px-4 py-3 text-[14px] text-[var(--yellow-700)]">
                 <span className="flex-1">
-                  <strong className="font-semibold">You&apos;re out of credits.</strong> Free credits refill on {refill}.
+                  <strong className="font-semibold">You&apos;re out of credits.</strong> Free
+                  credits refill on {refill}.
                 </span>
                 <LinkButton href="/credits" size="sm">
                   Buy credits
@@ -290,15 +353,26 @@ function GuideScreen() {
                 onChange={(v) => act.guide.setUseProfile(v)}
                 disabled={!consent}
                 label="Use my profile answers"
-                description={consent ? "The Guide tailors answers to your diagnosis and stage." : "Off because you withdrew health-data consent in Settings."}
+                description={
+                  consent
+                    ? "The Guide tailors answers to your diagnosis and stage."
+                    : "Off because you withdrew health-data consent in Settings."
+                }
               />
             </div>
-            <p className="mt-4 text-[13px] text-muted">The Grove Guide shares reviewed information, not medical advice.</p>
+            <p className="mt-4 text-[13px] text-muted">
+              The Grove Guide shares reviewed information, not medical advice.
+            </p>
           </form>
         </Panel>
       </div>
 
-      <Dialog open={confirmAll} onClose={() => setConfirmAll(false)} title="Delete all chats?" description="Every Grove Guide chat will be removed. This can't be undone.">
+      <Dialog
+        open={confirmAll}
+        onClose={() => setConfirmAll(false)}
+        title="Delete all chats?"
+        description="Every Grove Guide chat will be removed. This can't be undone."
+      >
         <div className="flex gap-2">
           <Button
             variant="danger"

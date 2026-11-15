@@ -25,7 +25,7 @@ const clamp = (text, width, size, lines) => {
   return text.length <= max ? text : text.slice(0, text.lastIndexOf(" ", max)) + "…";
 };
 const gap = (h) => F({ name: "space", width: 10, height: h });
-const levelIcon = (lv, s = 16) => Img(`brand/art/${TREE[lv]}.webp`, s, s, { name: `level ${lv}`, scaleMode: "FIT" });
+const levelIcon = (lv, s = 16) => Img(`assets/brand/art/${TREE[lv]}.webp`, s, s, { name: `level ${lv}`, scaleMode: "FIT" });
 
 // ------------------------------------------------------------ controls
 function btn(label, { kind = "primary", size = "md", ic, disabled } = {}) {
@@ -95,7 +95,7 @@ const twoUp = (v, a, b) => (v.sm ? Row({ name: "pair", w: "fill", gap: 20, align
 
 const avatar = (key, size, tint, ring) =>
   F({ name: `avatar ${key}`, width: size, height: size, radius: 999, fill: tint, clip: true, stroke: ring, strokeWeight: ring ? 2 : undefined }, [
-    Img(`brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
+    Img(`assets/brand/grove-avatars/${key}.webp`, Math.round(size * 0.82), Math.round(size * 0.82), { name: "art", x: Math.round(size * 0.09), y: Math.round(size * 0.09), scaleMode: "FIT" }),
   ]);
 const initial = (letter, size, tint, ink) => Row({ name: "avatar initial", width: size, height: size, w: "fixed", h: "fixed", justify: "center", radius: 999, fill: tint }, [T(letter, "h3", { size: Math.round(size * 0.4), color: ink, free: true })]);
 
@@ -266,7 +266,7 @@ const SCREENS = [
       const panel = (name, kids) => Col({ name, w: "fill", padding: p, gap: 12, radius: 20, fill: C.white, stroke: C.line }, [T(name, "h4"), ...kids]);
       const group = (id, name, why) =>
         Row({ name, w: "fill", gap: 12 }, [
-          Img(`brand/groups/${id}.webp`, 44, 44, { name: "cover", radius: 10 }),
+          Img(`assets/brand/groups/${id}.webp`, 44, 44, { name: "cover", radius: 10 }),
           Col({ name: "text", w: "fill", grow: true, gap: 0 }, [T(name, "body", { style: "SemiBold" }), T(why, "caption", { color: C.muted, maxLines: 1, width: 200, w: "fill" })]),
           btn("Joined", { kind: "quiet", size: "sm" }),
         ]);
@@ -329,7 +329,7 @@ const SCREENS = [
 const panelArt = (w, h, step) =>
   F({ name: "Grove panel", width: w, height: h, radius: 20, fill: C.white, clip: true }, [
     Img(WASH, w, h, { name: "wash", x: 0, y: 0, scaleMode: "FILL" }),
-    Img(`brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
+    Img(`assets/brand/art/grow-${step}.webp`, w, w, { name: `tree (step ${step})`, x: 0, y: h - w, scaleMode: "FIT" }),
   ]);
 
 function board(s, n, size) {
@@ -341,7 +341,7 @@ function board(s, n, size) {
   const v = { desk, sm, content };
   const header = Col({ name: "Header", w: "fill", gap: 0 }, [
     Row({ name: "Bar", w: "fill", height: 56, h: "fixed", justify: "between" }, [
-      Img("brand/logo.png", Math.round(38 * (1295 / 473)), 38, { name: "Logo", scaleMode: "FIT" }),
+      Img("assets/brand/logo.png", Math.round(38 * (1295 / 473)), 38, { name: "Logo", scaleMode: "FIT" }),
       Row({ name: "Links", gap: 16 }, [T("Help", "small", { style: "SemiBold", color: C.inkSoft }), T("Sign out", "small", { style: "SemiBold", color: C.inkSoft })]),
     ]),
     gap(8),
@@ -369,7 +369,7 @@ function board(s, n, size) {
   const column = Col({ name: "Column", width: leftW, w: "fixed", padding: [12, pad, desk ? 48 : 16, pad], gap: 0, align: "center" }, [
     header,
     !desk && gap(16),
-    !desk && Row({ name: "Scene band", width: size.w, w: "fixed", height: 128, h: "fixed", justify: "center", align: "end", clip: true }, [Img(`brand/art/grow-${n}.webp`, 128, 128, { name: `tree (step ${n})`, scaleMode: "FIT" })]),
+    !desk && Row({ name: "Scene band", width: size.w, w: "fixed", height: 128, h: "fixed", justify: "center", align: "end", clip: true }, [Img(`assets/brand/art/grow-${n}.webp`, 128, 128, { name: `tree (step ${n})`, scaleMode: "FIT" })]),
     main,
   ]);
   const name = `Onboarding / ${s.key} / ${size.key}`;

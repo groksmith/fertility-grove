@@ -12,17 +12,30 @@
    Loose leaves and petals drift down now and then. Loops run only while
    on screen and hold still under reduced motion. */
 
+import { useStore } from "@/lib/store";
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import { useStore } from "@/lib/store";
 
-const DIR = "/brand/cozy";
+const DIR = "/assets/brand/cozy";
 
-type ElementKey = "awning" | "basket" | "birdhouse" | "birds" | "branch" | "branchSide" | "lantern" | "rooftops" | "swing" | "wateringCan";
+type ElementKey =
+  | "awning"
+  | "basket"
+  | "birdhouse"
+  | "birds"
+  | "branch"
+  | "branchSide"
+  | "lantern"
+  | "rooftops"
+  | "swing"
+  | "wateringCan";
 type Glow = { x: number; y: number; r: number; d?: number };
 
 /* Pixel sizes of the cut-outs, and lights as % of each picture. */
-const ELEMENTS: Record<ElementKey, { src: string; w: number; h: number; glows?: Glow[]; drip?: { x: number; y: number } }> = {
+const ELEMENTS: Record<
+  ElementKey,
+  { src: string; w: number; h: number; glows?: Glow[]; drip?: { x: number; y: number } }
+> = {
   awning: {
     src: `${DIR}/e-awning.webp`,
     w: 1600,
@@ -56,7 +69,9 @@ export function useAmbient<T extends HTMLElement>() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => el.setAttribute("data-ambient", e.isIntersecting ? "on" : "off"));
+    const io = new IntersectionObserver(([e]) =>
+      el.setAttribute("data-ambient", e.isIntersecting ? "on" : "off"),
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -89,10 +104,24 @@ function Element({
             <Image src={e.src} alt="" fill sizes={sizes} quality={90} className="object-contain" />
             {e.drip &&
               [0, 1.7].map((d) => (
-                <span key={d} className="drip ambient" style={{ left: `${e.drip!.x}%`, top: `${e.drip!.y}%`, animationDelay: `${d}s` }} />
+                <span
+                  key={d}
+                  className="drip ambient"
+                  style={{ left: `${e.drip!.x}%`, top: `${e.drip!.y}%`, animationDelay: `${d}s` }}
+                />
               ))}
             {e.glows?.map((g, i) => (
-              <span key={i} className="glow ambient" style={{ left: `${g.x}%`, top: `${g.y}%`, width: `${g.r * 2}%`, aspectRatio: "1", animationDelay: `${g.d ?? 0}s` }} />
+              <span
+                key={i}
+                className="glow ambient"
+                style={{
+                  left: `${g.x}%`,
+                  top: `${g.y}%`,
+                  width: `${g.r * 2}%`,
+                  aspectRatio: "1",
+                  animationDelay: `${g.d ?? 0}s`,
+                }}
+              />
             ))}
           </div>
         </div>
@@ -116,13 +145,31 @@ function LivelyWindow({ className, sizes }: { className: string; sizes: string }
       {(["l", "r"] as const).map((k) => {
         const sh = SHUTTERS[k];
         return (
-          <span key={k} className={`ambient shutter shutter-${k} absolute`} style={{ left: `${sh.x}%`, top: `${sh.y}%`, width: `${sh.w}%`, height: `${sh.h}%` }}>
+          <span
+            key={k}
+            className={`ambient shutter shutter-${k} absolute`}
+            style={{ left: `${sh.x}%`, top: `${sh.y}%`, width: `${sh.w}%`, height: `${sh.h}%` }}
+          >
             <Image src={sh.src} alt="" fill sizes={sizes} quality={90} className="object-fill" />
           </span>
         );
       })}
-      <Image src={`${DIR}/e-window.webp`} alt="" fill sizes={sizes} quality={90} className="object-contain" />
-      <Image src={`${DIR}/e-window-glow.webp`} alt="" fill sizes={sizes} quality={90} className="ambient lamp object-contain" />
+      <Image
+        src={`${DIR}/e-window.webp`}
+        alt=""
+        fill
+        sizes={sizes}
+        quality={90}
+        className="object-contain"
+      />
+      <Image
+        src={`${DIR}/e-window-glow.webp`}
+        alt=""
+        fill
+        sizes={sizes}
+        quality={90}
+        className="ambient lamp object-contain"
+      />
     </div>
   );
 }
@@ -137,9 +184,26 @@ function BellBranch({ className, sizes }: { className: string; sizes: string }) 
     <div className={`absolute ${className}`} style={{ aspectRatio: "1400 / 1540" }}>
       <div className="ambient sway sway-top absolute inset-0" style={d}>
         <div className="ambient bend bend-top absolute inset-0" style={d}>
-          <Image src={`${DIR}/e-bell-branch.webp`} alt="" fill sizes={sizes} quality={90} className="object-contain" />
-          <span className={`bell-ring absolute ${unread ? "is-ringing" : ""}`} style={{ left: "52.64%", top: "63.96%", width: "23.93%", height: "35.52%" }}>
-            <Image src={`${DIR}/e-bell-bell.webp`} alt="" fill sizes={sizes} quality={90} className="object-contain" />
+          <Image
+            src={`${DIR}/e-bell-branch.webp`}
+            alt=""
+            fill
+            sizes={sizes}
+            quality={90}
+            className="object-contain"
+          />
+          <span
+            className={`bell-ring absolute ${unread ? "is-ringing" : ""}`}
+            style={{ left: "52.64%", top: "63.96%", width: "23.93%", height: "35.52%" }}
+          >
+            <Image
+              src={`${DIR}/e-bell-bell.webp`}
+              alt=""
+              fill
+              sizes={sizes}
+              quality={90}
+              className="object-contain"
+            />
           </span>
         </div>
       </div>
@@ -160,15 +224,39 @@ const DRIFT = [
 
 /** Petals and loose leaves letting go and drifting down, each fluttering
     side to side as it falls. */
-function Drift({ leaves = true, petals = true, className = "" }: { leaves?: boolean; petals?: boolean; className?: string }) {
+function Drift({
+  leaves = true,
+  petals = true,
+  className = "",
+}: { leaves?: boolean; petals?: boolean; className?: string }) {
   const items = DRIFT.filter((p) => (p.kind ? leaves : petals));
   return (
     <div aria-hidden className={`pointer-events-none absolute ${className}`}>
       {items.map((p, i) => (
-        <span key={i} className="drift-fall ambient" style={{ left: `${p.x}%`, "--t": `${p.t}s`, "--d": `${p.d}s`, "--dx": `${p.dx}px` } as React.CSSProperties}>
-          <span className="drift-flutter ambient" style={{ "--spin": `${p.spin}deg`, animationDelay: `${-p.d}s` } as React.CSSProperties}>
+        <span
+          key={i}
+          className="drift-fall ambient"
+          style={
+            {
+              left: `${p.x}%`,
+              "--t": `${p.t}s`,
+              "--d": `${p.d}s`,
+              "--dx": `${p.dx}px`,
+            } as React.CSSProperties
+          }
+        >
+          <span
+            className="drift-flutter ambient"
+            style={{ "--spin": `${p.spin}deg`, animationDelay: `${-p.d}s` } as React.CSSProperties}
+          >
             {p.kind ? (
-              <Image src={`${DIR}/leaf-${p.kind}.webp`} alt="" width={p.s} height={p.s} className="block object-contain" />
+              <Image
+                src={`${DIR}/leaf-${p.kind}.webp`}
+                alt=""
+                width={p.s}
+                height={p.s}
+                className="block object-contain"
+              />
             ) : (
               <span className="petal" style={{ "--s": `${p.s}px` } as React.CSSProperties} />
             )}
@@ -181,7 +269,17 @@ function Drift({ leaves = true, petals = true, className = "" }: { leaves?: bool
 
 /** The plaster-and-sky wash, fading into white at the bottom. */
 function Wash({ priority }: { priority?: boolean }) {
-  return <Image src={`${DIR}/wash.webp`} alt="" fill sizes="100vw" quality={90} priority={priority} className="wash-fade object-cover object-top" />;
+  return (
+    <Image
+      src={`${DIR}/wash.webp`}
+      alt=""
+      fill
+      sizes="100vw"
+      quality={90}
+      priority={priority}
+      className="wash-fade object-cover object-top"
+    />
+  );
 }
 
 export type SceneKey =
@@ -365,7 +463,11 @@ const HEADER: Record<SceneKey, React.ReactNode> = {
 export function HeaderBackdrop({ scene }: { scene: SceneKey }) {
   const ref = useAmbient<HTMLDivElement>();
   return (
-    <div ref={ref} aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[200px] overflow-hidden lg:h-[400px]">
+    <div
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[200px] overflow-hidden lg:h-[400px]"
+    >
       <Wash priority />
       {HEADER[scene]}
     </div>
@@ -374,19 +476,33 @@ export function HeaderBackdrop({ scene }: { scene: SceneKey }) {
 
 /** A backdrop for a landing section or the auth panel: the wash (optional),
     an element and some drift. Fills its positioned parent. */
-export function Backdrop({ kind, wash }: { kind: "hero" | "statement" | "partners" | "join" | "auth"; wash?: boolean }) {
+export function Backdrop({
+  kind,
+  wash,
+}: { kind: "hero" | "statement" | "partners" | "join" | "auth"; wash?: boolean }) {
   const ref = useAmbient<HTMLDivElement>();
   return (
     <div ref={ref} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {wash && <Wash priority={kind === "hero" || kind === "auth"} />}
       {kind === "hero" && <Drift className="inset-0" />}
       {kind === "statement" && (
-        <Element el="branchSide" hang="right" sizes="(min-width: 1024px) 560px, 260px" className="-top-4 -right-12 w-[180px] lg:-top-8 lg:-right-36 lg:w-[420px]" />
+        <Element
+          el="branchSide"
+          hang="right"
+          sizes="(min-width: 1024px) 560px, 260px"
+          className="-top-4 -right-12 w-[180px] lg:-top-8 lg:-right-36 lg:w-[420px]"
+        />
       )}
       {kind === "partners" && <Drift leaves={false} className="inset-y-0 right-0 w-[40%]" />}
       {kind === "join" && (
         <>
-          <Element el="branch" hang="top" phase={2.5} sizes={HS} className="-top-[72px] right-3 w-[90px] lg:right-auto lg:-top-20 lg:left-10 lg:w-[280px]" />
+          <Element
+            el="branch"
+            hang="top"
+            phase={2.5}
+            sizes={HS}
+            className="-top-[72px] right-3 w-[90px] lg:right-auto lg:-top-20 lg:left-10 lg:w-[280px]"
+          />
           <Drift petals={false} className="inset-y-0 right-0 w-[40%] lg:right-auto lg:left-0" />
         </>
       )}
