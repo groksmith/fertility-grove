@@ -91,13 +91,13 @@ src/
     (app)/              # Member app (AppShell) — feed, groups, posts, messages, settings…
     (public)/           # Signed-out pages — auth, legal, help, guest community, shared post
     onboarding/         # The 8-screen onboarding
-    demo/ art/ preview/ # Prototype tools: persona picker, art sheet, landing versions
+    demo/ art/          # Prototype tools: persona picker, art sheet
     <route>/_components/  # Route-private components
     page.tsx            # Landing
   components/
     shared/             # Reusable building blocks, no store — barrel via index.ts
     common/             # Shell + app-level composites that read the store — import by path
-      landing/          # The landing page and its versions
+      landing/          # The landing page
     art/                # The brand's painted art (tree, scenes, cosy layer) — leaf files, by path
   lib/
     store/              # The mock backend: state, actions (act.*), selectors (sel.*)
