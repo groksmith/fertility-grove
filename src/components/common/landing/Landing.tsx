@@ -4,8 +4,9 @@
    the orange logo, the brand's watercolour orange trees and the near-black
    pill. One motif runs it: the orange's circle masks every picture and marks
    every list, and the tree grows from Seed to Orange Tree down the page.
-   Behind it, the cosy layer: a painted plaster wash under the hero, and
-   orange branches and blossom hanging in at a few section edges. */
+   The hero is one painted Riviera grove (a travel poster); the bands below
+   are flat tints with straight edges (sky, sage, blush) or the plain grey,
+   and orange branches and blossom hang in at a few section edges. */
 
 import { Backdrop } from "@/components/art/Cozy";
 import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
@@ -15,11 +16,20 @@ import { GROUPS } from "@/lib/data/groups";
 import { hueInk } from "@/lib/hue";
 import { LEVELS } from "@/lib/rules/sunlight";
 import { useStore } from "@/lib/store";
-import { Menu as MenuIcon, X } from "lucide-react";
-import Image from "next/image";
+import {
+  AtSign,
+  Download,
+  EyeOff,
+  type Lock,
+  Menu as MenuIcon,
+  ShieldCheck,
+  Sprout,
+  UsersRound,
+  X,
+} from "lucide-react";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Grove } from "./Grove";
 import { GuideScene } from "./GuideScene";
 
 /* ------------------------------------------------------------- Motion */
@@ -79,83 +89,11 @@ function PillButton({
   );
 }
 
-/* Each promise is its own symbol grown from the orange tree, in the watercolour
-   hand of the tree and branch art: a twig curled into an @, an eye struck out
-   by a branch, a heart-shaped orange under padlock, an arrow down into a basket. */
-const PRIVACY: { text: string; art: string }[] = [
-  {
-    text: "You post under a handle, not your name",
-    art: "/assets/brand/landing/privacy-handle.webp",
-  },
-  { text: "No ad trackers, ever", art: "/assets/brand/landing/privacy-trackers.webp" },
-  { text: "Your health data is never sold", art: "/assets/brand/landing/privacy-sold.webp" },
-  {
-    text: "Download or delete everything, any time",
-    art: "/assets/brand/landing/privacy-download.webp",
-  },
-];
-
-/** The brand's growth film plays once, then rests on the tree in fruit. It is
- *  keyed to transparency (the paper is gone), so the tree stands solid in
- *  front of the grove: HEVC with alpha for Safari, VP9 with alpha for the rest. */
-function GrowingTree({
-  ref,
-  className = "",
-}: { ref: React.Ref<HTMLVideoElement>; className?: string }) {
-  return (
-    <video
-      ref={ref}
-      className={className}
-      poster="/assets/brand/tree-grow-first.webp"
-      muted
-      playsInline
-      preload="auto"
-      aria-hidden
-    >
-      {/* Cut from the site's original at full resolution: 1024² square pixels. */}
-      <source src="/assets/brand/tree-grow-alpha.mov" type='video/quicktime; codecs="hvc1"' />
-      <source src="/assets/brand/tree-grow-alpha.webm" type="video/webm" />
-    </video>
-  );
-}
-
-/** Both hero trees grow together: wait until every visible film can play,
- *  then start them on the same frame. */
-function useGrowTogether() {
-  const left = useRef<HTMLVideoElement>(null);
-  const right = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // No growing: show the tree already in fruit.
-      for (const v of [left.current, right.current]) {
-        if (v) v.poster = "/assets/brand/tree-grow-last.webp";
-      }
-      return;
-    }
-    const films = [left.current, right.current].filter(
-      (v): v is HTMLVideoElement => !!v && v.offsetParent !== null,
-    );
-    const start = () => {
-      if (!films.every((v) => v.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA)) return;
-      for (const v of films) {
-        v.currentTime = 0;
-        void v.play().catch(() => {});
-      }
-    };
-    for (const v of films) v.addEventListener("canplaythrough", start, { once: true });
-    start();
-    return () => {
-      for (const v of films) v.removeEventListener("canplaythrough", start);
-    };
-  }, []);
-  return [left, right] as const;
-}
-
-/** Leaving the hero is walking down the path: as you scroll, the grove moves
- *  slower than the page and eases further forward, and the words rise and fade
- *  a little faster, so the text clears first. The band's painted edge scrolls
- *  with the page, so the scene slides under the paint. One scroll listener,
- *  one frame at a time, transform and opacity only; off under reduced motion. */
+/** Leaving the hero is walking down the path: as you scroll, the painting moves
+ *  slower than the page and eases further forward inside its frame, and the
+ *  words rise and fade a little faster, so the text clears first. One scroll
+ *  listener, one frame at a time, transform and opacity only; off under
+ *  reduced motion. */
 function useLeaveHero() {
   const hero = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
@@ -171,7 +109,7 @@ function useLeaveHero() {
         scene.current.style.transform = `translate3d(0, ${(p * h * 0.32).toFixed(1)}px, 0) scale(${(1 + p * 0.07).toFixed(4)})`;
       if (copy.current) {
         copy.current.style.transform = `translate3d(0, ${(-p * 90).toFixed(1)}px, 0)`;
-        copy.current.style.opacity = String(Math.max(0, 1 - p * 1.5));
+        copy.current.style.opacity = String(Math.max(0, 1 - p * 2.2));
       }
     };
     const onScroll = () => {
@@ -389,59 +327,119 @@ function SiteNav() {
 
 /* ------------------------------------------------------------- Hero */
 
+/* The hero art. Pick one entry for HERO; the others stay for comparison.
+   `immersive` stands you on the path deep inside a dense grove, canopies
+   meeting overhead and fruit close enough to touch, the rows opening onto a
+   pale morning haze where the words sit (prompt in
+   scripts/art/prompts-gouache/hero-immersive-path.txt). Phones get a portrait
+   painting of the same scene. `poster` is the earlier wide Riviera view
+   (hero-poster-brand.txt), kept so it can come back by changing one word. */
+const HERO_ART = {
+  immersive: {
+    wide: { src: "/assets/brand/gouache/grove-immersive-v2.webp", width: 2752, height: 1536 },
+    tall: { src: "/assets/brand/gouache/grove-immersive-tall-v2.webp", width: 1536, height: 2752 },
+    position: { wide: "50% 40%", tall: "50% 65%" },
+    glow: true,
+  },
+  immersiveAlt: {
+    wide: { src: "/assets/brand/gouache/grove-immersive-alt.webp", width: 2752, height: 1536 },
+    tall: { src: "/assets/brand/gouache/grove-immersive-tall-v2.webp", width: 1536, height: 2752 },
+    position: { wide: "50% 40%", tall: "50% 65%" },
+    glow: true,
+  },
+  poster: {
+    wide: { src: "/assets/brand/gouache/grove-poster.webp", width: 3168, height: 1344 },
+    tall: { src: "/assets/brand/gouache/grove-poster.webp", width: 3168, height: 1344 },
+    position: { wide: "50% 88%", tall: "50% 88%" },
+    glow: false,
+  },
+} as const;
+const HERO = HERO_ART.immersive;
+
+/** The painting, art-directed by the screen's shape: the wide view on
+    landscape screens, the portrait view on portrait ones (phones, tablets
+    held upright), so the haze where the words sit is always in view. */
+function HeroPicture() {
+  const common = { alt: "", sizes: "100vw", quality: 90, priority: true } as const;
+  const {
+    props: { srcSet: wide },
+  } = getImageProps({ ...common, ...HERO.wide });
+  const {
+    props: { srcSet: _tall, ...img },
+  } = getImageProps({ ...common, ...HERO.tall });
+  return (
+    <picture>
+      <source media="(min-aspect-ratio: 1/1)" srcSet={wide} />
+      {/* biome-ignore lint/a11y/useAltText: alt="" comes from getImageProps; the painting is decorative */}
+      <img
+        {...img}
+        className="hero-art breathe absolute inset-0 h-full w-full object-cover"
+        style={
+          {
+            "--pos-wide": HERO.position.wide,
+            "--pos-tall": HERO.position.tall,
+          } as React.CSSProperties
+        }
+      />
+    </picture>
+  );
+}
+
+/** The hero: you stand inside the grove, the words in the light where the rows
+    open. A soft morning haze along the top keeps the site bar and logo on a
+    light ground, and a sunlit glow behind the words keeps them readable over
+    the leaves at every width; both belong to the painting, not the UI. Privacy
+    has its own section further down, before Join. */
 function Hero() {
-  const [leftTree, rightTree] = useGrowTogether();
   const [heroBox, scene, copy] = useLeaveHero();
   return (
     <header className="relative overflow-hidden bg-white">
-      {/* The field fills the screen; the painting runs on below the fold, under the band's brushed edge. */}
       <div
         ref={heroBox}
         className="relative h-[var(--hero-h)]"
-        style={
-          {
-            "--hero-h": "max(700px, 100svh)",
-            "--edge": "clamp(80px, 11vw, 170px)",
-          } as React.CSSProperties
-        }
+        style={{ "--hero-h": "max(700px, 100svh)" } as React.CSSProperties}
       >
-        <Grove
-          sceneRef={scene}
-          films={[
-            <GrowingTree
-              key="l"
-              ref={leftTree}
-              className="h-full w-full object-cover object-bottom"
-            />,
-            <GrowingTree
-              key="r"
-              ref={rightTree}
-              className="h-full w-full object-cover object-bottom"
-            />,
-          ]}
-        />
-        <Backdrop kind="hero" />
+        {/* The frame stays put and clips; only the painting inside it eases down
+            as you scroll, so it never slides over the band below. */}
+        <div aria-hidden className="absolute inset-0 overflow-hidden">
+          <div ref={scene} className="absolute inset-0">
+            <HeroPicture />
+          </div>
+          {HERO.glow && <div className="hero-haze absolute inset-x-0 top-0 h-40" />}
+        </div>
 
-        {/* The words sit in the sky, above the horizon, with the path leading up to them. */}
         <div
           ref={copy}
-          className="absolute inset-x-0 top-20 bottom-[45%] z-10 flex items-center justify-center px-5 sm:px-8"
+          className={`absolute inset-x-0 z-10 flex items-center justify-center px-5 sm:px-8 ${HERO.glow ? "hero-copy" : "top-20 bottom-[46%]"}`}
         >
-          <div className="text-center">
-            <h1 className="serif mx-auto max-w-[24ch] text-[30px] leading-[1.04] tracking-[-0.01em] text-balance text-ink sm:text-[44px] xl:text-[clamp(44px,3.6vw,56px)]">
+          <div className="relative text-center">
+            {/* The sunlit glow travels with the words, so they keep their light
+                ground while they rise and fade on scroll. */}
+            {HERO.glow && (
+              <div
+                aria-hidden
+                className="hero-glow pointer-events-none absolute top-[56%] left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2"
+              />
+            )}
+            <p className="serif hero-kicker text-[30px] leading-none text-ink-soft italic sm:text-[36px]">
+              Welcome to the grove
+            </p>
+            <h1 className="serif hero-h1 mx-auto mt-3 max-w-[24ch] text-[36px] leading-[1.05] tracking-[-0.01em] text-balance text-ink sm:text-[48px] sm:leading-[1.04] lg:max-w-[28ch] xl:text-[60px] xl:leading-[1.02]">
               The first purpose built platform for the fertility community.
             </h1>
-            <p className="mx-auto mt-4 max-w-[46ch] text-[18px] leading-relaxed text-pretty text-ink-soft sm:text-[20px]">
+            <p className="mx-auto mt-5 max-w-[46ch] text-[18px] md:portrait:max-w-[38ch] leading-relaxed text-pretty text-ink-soft sm:text-[20px]">
               A private community for people going through infertility, and their partners.
             </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <PillButton href="/signup">Create account</PillButton>
               <PillButton href="/login" tone="light">
                 Sign in
               </PillButton>
             </div>
-            <p className="mt-3 text-[14px] text-ink-soft">
-              Invite-only during the beta. Ask a member for their invite link, or{" "}
+            <p className="mt-4 text-[14px] text-ink">
+              Invite-only during the beta.
+              <br />
+              Ask a member for their invite link, or{" "}
               <Link
                 href="/community"
                 className="font-semibold text-ink underline underline-offset-2"
@@ -452,79 +450,106 @@ function Hero() {
             </p>
           </div>
         </div>
-
-        {/* Just below the fold, the band is brushed over the scene in its own grey: a dry-brush edge rather than a ruled line, met only once you scroll. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-full z-[5] h-[var(--edge)] bg-[url(/assets/brand/landing/brush-edge.webp)] bg-[length:100%_100%]"
-        />
-      </div>
-      <div aria-hidden className="h-[clamp(80px,11vw,170px)] bg-raised" />
-
-      <div className="bg-raised">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12 lg:py-16">
-          <h2 className="text-[20px] font-semibold text-ink">Private by default</h2>
-          <ul className="grid grid-cols-1 gap-x-8 gap-y-4 text-[16px] leading-snug text-ink sm:grid-cols-2 lg:grid-cols-4">
-            {PRIVACY.map(({ text, art }, i) => (
-              <li
-                key={text}
-                className="promise flex items-center gap-4"
-                data-reveal
-                style={{ transitionDelay: `${i * 90}ms` }}
-              >
-                <span
-                  aria-hidden
-                  className="promise-art relative block h-20 w-20 shrink-0 lg:h-[104px] lg:w-[104px]"
-                >
-                  {/* Each symbol grows up out of the band as it arrives. */}
-                  <span
-                    className="promise-grow absolute inset-0 block"
-                    style={{ transitionDelay: `${i * 90 + 120}ms` }}
-                  >
-                    <Image
-                      src={art}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 104px, 80px"
-                      quality={90}
-                      className="object-contain"
-                    />
-                  </span>
-                </span>
-                <span className="text-balance">{text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </header>
   );
 }
 
-function Thumb({ src, alt, bg }: { src: string; alt: string; bg?: string }) {
+/* The privacy section: the promises in full, each a pill with a
+   small outline icon, beside one round painting of a padlocked garden gate
+   (public/assets/brand/gouache/privacy-gate-round.webp, prompt in
+   scripts/art/prompts-gouache/privacy-lock-round-brand.txt). Every promise is
+   one the product already makes (PRODUCT.md, the privacy page). */
+const PROMISES: { text: string; Icon: typeof Lock }[] = [
+  { text: "You post under a handle", Icon: AtSign },
+  { text: "No ad trackers, ever", Icon: EyeOff },
+  { text: "Health data never sold", Icon: ShieldCheck },
+  { text: "Success stories kept apart", Icon: Sprout },
+  { text: "Partners see only what you share", Icon: UsersRound },
+  { text: "Download or delete everything", Icon: Download },
+];
+
+function PrivacySection() {
   return (
-    <span
-      className="relative mx-[0.12em] inline-block h-[0.9em] w-[0.9em] overflow-hidden rounded-full align-[-0.1em]"
-      style={bg ? { background: bg } : undefined}
-    >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes="60px"
-        className={bg ? "object-contain p-[8%]" : "object-cover"}
-      />
-    </span>
+    <section id="privacy" aria-labelledby="privacy-h" className="scroll-mt-20 bg-raised">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-12 px-5 py-24 sm:px-8 lg:grid-cols-12 lg:gap-8 lg:py-32">
+        <div className="lg:col-span-6">
+          <h2
+            id="privacy-h"
+            className="serif text-[44px] leading-[1] text-balance lg:text-[56px]"
+            data-reveal
+          >
+            Your story stays yours
+          </h2>
+          <p
+            className="mt-6 max-w-[54ch] text-[18px] leading-relaxed text-pretty text-ink-soft"
+            data-reveal
+          >
+            Fertility Grove is private by default, and you decide what anyone else sees. You post
+            under a handle unless you choose to show your first name and last initial, and your
+            health data is never sold.
+          </p>
+          <ul className="mt-8 flex flex-wrap gap-2.5" aria-label="Our privacy promises">
+            {PROMISES.map(({ text, Icon }, i) => (
+              <li
+                key={text}
+                data-reveal
+                style={{ transitionDelay: `${i * 60}ms` }}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-[14px] font-semibold text-ink"
+              >
+                <Icon aria-hidden size={16} strokeWidth={1.75} className="shrink-0 text-ink-soft" />
+                {text}
+              </li>
+            ))}
+          </ul>
+          <p
+            className="mt-8 max-w-[54ch] text-[16px] leading-relaxed text-pretty text-ink-soft"
+            data-reveal
+          >
+            Partners join with an account of their own, and nothing passes between you until you
+            share it. You can download or delete everything at any time.
+          </p>
+          <p className="mt-6 text-[16px] text-ink-soft" data-reveal>
+            Questions about privacy? Read the{" "}
+            <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">
+              Privacy Policy
+            </Link>{" "}
+            and the{" "}
+            <Link
+              href="/privacy#health-data"
+              className="font-semibold text-ink underline underline-offset-2 sm:whitespace-nowrap"
+            >
+              Consumer Health Data Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
+
+        <div
+          className="relative mx-auto aspect-square w-full max-w-[360px] lg:col-span-5 lg:col-start-8 lg:max-w-[480px]"
+          data-reveal
+        >
+          <div className="absolute inset-0 rounded-full bg-[var(--tint-yellow)]" />
+          <div className="absolute inset-[9%] overflow-hidden rounded-full">
+            <Image
+              src="/assets/brand/gouache/privacy-gate-round.webp"
+              alt="A brass padlock closed on a garden gate, under a branch of ripe oranges and blossom"
+              fill
+              sizes="(min-width: 1024px) 400px, 300px"
+              quality={90}
+              className="drift object-cover"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
-/* The promise in three lines, each picture right after the word it belongs
-   to. From tablet up the type scales with the window so each stays one line; on
-   a phone each wraps, and a picture never leaves its word. The lines rise in
+/* The promise in three lines of type. From tablet up the type scales with
+   the window so each stays one line; on a phone each wraps. The lines rise in
    turn, the gaps tightening a little so they read as one breath. */
 function Statement() {
-  const word = "whitespace-nowrap";
-  const mark = "-ml-[0.1em]"; // punctuation sits close against the round picture
   const line = "block md:whitespace-nowrap";
   return (
     <section aria-label="What you get" className="relative px-5 py-32 sm:px-8 lg:py-56">
@@ -534,32 +559,10 @@ function Statement() {
           Tell us where you are once.
         </span>
         <span data-reveal className={`${line} mt-4 lg:mt-7`} style={{ transitionDelay: "130ms" }}>
-          Meet people on your{" "}
-          <span className={word}>
-            path{" "}
-            <Thumb
-              src="/assets/brand/landing/stage-trying.webp"
-              alt="A path through an orange grove"
-            />
-            <span className={mark}>,</span>
-          </span>{" "}
-          answers a clinician{" "}
-          <span className={word}>
-            reviewed <Thumb src={articleCover("male-factor")} alt="A microscope from the library" />
-            <span className={mark}>,</span>
-          </span>
+          Meet people on your path, answers a clinician reviewed,
         </span>
         <span data-reveal className={`${line} mt-4 lg:mt-7`} style={{ transitionDelay: "230ms" }}>
-          and someone who&apos;s been{" "}
-          <span className={word}>
-            there{" "}
-            <Thumb
-              src="/assets/brand/art/tree-orange.webp"
-              alt="An orange tree in fruit"
-              bg="var(--tint-green)"
-            />
-            <span className={mark}>.</span>
-          </span>
+          and someone who&apos;s been there.
         </span>
       </p>
     </section>
@@ -699,7 +702,6 @@ const STAGES = [
     line: "Months of trying, and wondering what's next.",
     photo: "/assets/brand/landing/stage-trying.webp",
     alt: "A sunlit path winding up through an orange grove",
-    disc: "var(--tint-green)",
     groups: ["g-waiting", "g-unexplained", "g-work"],
     article: "unexplained-infertility",
   },
@@ -708,7 +710,6 @@ const STAGES = [
     line: "Appointments booked, answers not back yet.",
     photo: "/assets/brand/landing/stage-waiting.webp",
     alt: "A garden bench under an orange tree, beside a path to a closed gate",
-    disc: "var(--tint-blue)",
     groups: ["g-waiting", "g-pcos", "g-mf"],
     article: "pcos",
   },
@@ -717,7 +718,6 @@ const STAGES = [
     line: "IUI, IVF or surgery, and everything in between.",
     photo: "/assets/brand/landing/stage-treatment.webp",
     alt: "An orange branch in white blossom, a small green fruit just forming",
-    disc: "var(--tag-pink-bg)",
     groups: ["g-ivf", "g-iui", "g-endo"],
     article: "endometriosis",
   },
@@ -726,7 +726,6 @@ const STAGES = [
     line: "Stepping back for a while, without stepping away.",
     photo: "/assets/brand/landing/stage-break.webp",
     alt: "A hammock in dappled shade at the edge of a still lake",
-    disc: "var(--tint-purple)",
     groups: ["g-break", "g-rpl", "g-unexplained"],
     article: "recurrent-pregnancy-loss",
   },
@@ -735,19 +734,19 @@ const STAGES = [
     line: "Supporting someone you love, and needing support too.",
     photo: "/assets/brand/landing/stage-partner.webp",
     alt: "Two chairs side by side facing a lake under an orange tree",
-    disc: "var(--tint-pink)",
     groups: ["g-partners", "g-mf", "g-donor"],
     article: "male-factor",
   },
 ];
 
+/** On the flat sky band, each stage's painting sits on a white disc. */
 function WhereAreYou() {
   const [i, setI] = useState(0);
   const cur = STAGES[i];
   const groups = cur.groups.map((id) => GROUPS.find((g) => g.id === id)!);
   const article = ARTICLES.find((a) => a.slug === cur.article)!;
   return (
-    <section aria-labelledby="where-h" className="bg-raised">
+    <section aria-labelledby="where-h" className="bg-[var(--tint-blue)]">
       <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,0.7fr)] lg:gap-14 lg:py-28">
         <div className="order-2 lg:order-1">
           <h2
@@ -790,7 +789,7 @@ function WhereAreYou() {
         <div className="relative order-1 mx-auto aspect-square w-full max-w-[520px] lg:order-2">
           <div
             className="absolute inset-0 rounded-full transition-colors duration-300"
-            style={{ background: cur.disc }}
+            style={{ background: "var(--white)" }}
           />
           {STAGES.map((s, k) => (
             <div
@@ -890,7 +889,7 @@ function LearnList() {
 
 function Grow() {
   return (
-    <section id="grow" aria-labelledby="grow-h" className="scroll-mt-20 bg-raised">
+    <section id="grow" aria-labelledby="grow-h" className="scroll-mt-20 bg-[var(--tint-green)]">
       <div className="mx-auto max-w-[1440px] px-5 py-24 sm:px-8 lg:py-32">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12" data-reveal>
           <h2 id="grow-h" className="serif text-[44px] leading-[1] lg:col-span-4 lg:text-[56px]">
@@ -1108,6 +1107,7 @@ export function Landing() {
         <LearnList />
         <Grow />
         <Partners />
+        <PrivacySection />
         <Join />
       </main>
       <Footer />

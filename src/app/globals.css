@@ -233,61 +233,6 @@ a {
   transform: none;
 }
 
-/* The landing grove (components/landing/Grove.tsx). The view eases forward as
-   if you'd stepped onto the path; each tree rises a little as it appears and
-   grows through its five stages, the next fading in before the last fades out
-   so it never thins mid-change. Delays come from each tree's depth (--a, --in,
-   --out), so the grove grows in a wave from near to far. */
-.grove-box {
-  transform-origin: 50% 49.5%;
-  animation: grove-dolly 7000ms var(--e-out) 200ms both;
-}
-@keyframes grove-dolly {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.035);
-  }
-}
-.grove-tree {
-  translate: -50% 0;
-  transform-origin: 50% 100%;
-  animation: grove-rise 900ms var(--e-out) var(--a) both;
-}
-@keyframes grove-rise {
-  from {
-    transform: scale(0.82);
-  }
-  to {
-    transform: none;
-  }
-}
-.grove-stage {
-  opacity: 0;
-  animation: grove-in 480ms var(--e-out) var(--in) both, grove-out 480ms var(--e-out) var(--out)
-    forwards;
-}
-.grove-stage[data-last] {
-  animation: grove-in 480ms var(--e-out) var(--in) both;
-}
-@keyframes grove-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes grove-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
 /* The Grove Guide card (components/landing/GuideScene.tsx). The light comes on
    as the card arrives. Lantern, beam and pool are one layer swinging from the
    knot on the branch, so the light sweeps the path as the lantern swings; the
@@ -1018,6 +963,94 @@ a {
   animation: fg-drift 18s ease-in-out infinite alternate;
 }
 
+/* The landing hero's painted grove breathes: a 40 second drift you only notice
+   if you wait. Held still under reduced motion by the rule at the end. */
+.breathe {
+  animation: fg-breathe 40s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+@keyframes fg-breathe {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.07) translate3d(-0.6%, -0.4%, 0);
+  }
+}
+
+/* The immersive hero's light, part of the painting rather than the UI: a soft
+   morning haze along the top edge, under the site bar and logo, and a sunlit
+   glow where the rows open, behind the words (it travels with them). Brand
+   white, fading to nothing. Portrait screens get the portrait painting, which
+   brings its own pale opening, so both are lighter there and the leaves keep
+   their colour; short laptop screens get a smaller glow. */
+.hero-art {
+  object-position: var(--pos-wide);
+}
+/* The words sit low in the light where the rows open, clear of the site bar. */
+.hero-copy {
+  top: 170px;
+  bottom: calc(34% - 90px);
+}
+.hero-haze {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--white) 88%, transparent),
+    color-mix(in srgb, var(--white) 55%, transparent) 45%,
+    transparent
+  );
+}
+.hero-glow {
+  height: 190%;
+  width: min(1150px, 210vw);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--white) 85%, transparent),
+    color-mix(in srgb, var(--white) 70%, transparent) 50%,
+    color-mix(in srgb, var(--white) 30%, transparent) 80%,
+    transparent
+  );
+}
+@media (min-width: 64rem) and (max-height: 820px) {
+  .hero-glow {
+    height: 165%;
+    width: min(1000px, 210vw);
+  }
+}
+@media (orientation: portrait) {
+  .hero-art {
+    object-position: var(--pos-tall);
+  }
+  .hero-haze {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--white) 75%, transparent),
+      color-mix(in srgb, var(--white) 40%, transparent) 45%,
+      transparent
+    );
+  }
+  .hero-glow {
+    height: 150%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--white) 60%, transparent),
+      color-mix(in srgb, var(--white) 48%, transparent) 50%,
+      color-mix(in srgb, var(--white) 18%, transparent) 80%,
+      transparent
+    );
+  }
+}
+
+/* Short laptop screens: the hero words stay in the sky, clear of the trees. */
+@media (min-width: 64rem) and (max-height: 820px) {
+  .hero-kicker {
+    font-size: 30px;
+  }
+  .hero-h1 {
+    font-size: 48px;
+    line-height: 1.04;
+  }
+}
+
 /* The cosy layer (components/art/Cozy.tsx): a painted wash behind headers,
    fading into the white page, with painted elements hanging in from the edge. */
 .wash-fade {
@@ -1146,31 +1179,6 @@ a {
 .lamp {
   mix-blend-mode: screen;
   animation: fg-lamp 5.9s ease-in-out infinite;
-}
-
-/* The landing's privacy promises: painted symbols that lift a little under
-   a mouse pointer. */
-.promise-art {
-  transition: transform 260ms var(--e-out);
-}
-/* The privacy symbols grow up out of the band as it arrives, one after
-   another (delays inline), with a small overshoot like a shoot springing up. */
-.promise-grow {
-  transform-origin: 50% 100%;
-}
-.reveal-ready [data-reveal] .promise-grow {
-  transform: translateY(22px) scale(0.78);
-  opacity: 0;
-  transition: transform 760ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 360ms var(--e-out);
-}
-.reveal-ready [data-reveal][data-in] .promise-grow {
-  transform: none;
-  opacity: 1;
-}
-@media (hover: hover) and (pointer: fine) {
-  .promise:hover .promise-art {
-    transform: translateY(-4px) rotate(-1deg);
-  }
 }
 
 /* The Grove Guide button (AppShell): the orange's two stars twinkle slowly in
@@ -1368,11 +1376,5 @@ a {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-  }
-  /* The grove is simply grown: no waiting on its wave of delays. */
-  .grove-box,
-  .grove-tree,
-  .grove-stage {
-    animation-delay: 0ms !important;
   }
 }

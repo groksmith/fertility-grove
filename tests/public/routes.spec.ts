@@ -19,9 +19,6 @@ const PUBLIC_ROUTES = [
   "/community",
   "/demo",
   "/art",
-  "/preview/original",
-  "/preview/a",
-  "/preview/d",
 ];
 
 for (const route of PUBLIC_ROUTES) {
