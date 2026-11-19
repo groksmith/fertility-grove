@@ -160,7 +160,7 @@ Same pipeline as `pharos-web`: AWS Lambda for the server, S3 + CloudFront for st
 Each deploy writes `.env` from a secret, builds the Next `standalone` output, zips it with
 `runserver.sh`, uploads it to S3, points the Lambda at it, syncs `.next/static` and `public/assets`
 to the bucket and clears the CloudFront cache. Secrets: `DOTENV_DEVELOPMENT` / `DOTENV_PRODUCTION`
-(optional while there is no backend), `AWS_ACCESS_KEY_ID_DEV` / `AWS_SECRET_ACCESS_KEY_DEV`,
+(optional while there is no backend), `AWS_ACCESS_KEY_ID_STAGING` / `AWS_SECRET_ACCESS_KEY_STAGING`,
 `AWS_ACCESS_KEY_ID_PROD` / `AWS_SECRET_ACCESS_KEY_PROD`. Bucket, Lambda and CloudFront IDs are
 written in the workflow files.
 
