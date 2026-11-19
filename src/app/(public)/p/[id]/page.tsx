@@ -7,22 +7,18 @@
    can't do opens the sign-up prompt; guests can't report, so Help's Contact
    support is linked instead. */
 
-import { ReadingFrame } from "@/components/common/AuthFrame";
-import { JoinBlock, PublicByline, useGuestAction } from "@/components/common/Guest";
-import {
-  EmptyState,
-  LinkButton,
-  Panel,
-  SourceLabel,
-  TypeChip,
-  VoteControl,
-} from "@/components/shared";
-import { publicPost } from "@/lib/api";
-import { groupOpenToGuests } from "@/lib/rules/guests";
-import { sel, useStore } from "@/lib/store";
 import { Bookmark, Reply, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ReadingFrame } from "@/components/common/AuthFrame";
+import { JoinBlock, PublicByline, useGuestAction } from "@/components/common/Guest";
+import { EmptyState, SourceLabel, TypeChip, VoteControl } from "@/components/shared";
+import { LinkButton } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
+import { allowsDownvote, publicPost } from "@/features/posts";
+import { plural } from "@/lib/format";
+import { useStore } from "@/lib/mock-server";
+import { groupOpenToGuests } from "@/lib/rules/guests";
 
 export default function PublicPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -70,7 +66,7 @@ export default function PublicPostPage() {
             up={post.up}
             down={post.down}
             my={0}
-            allowDown={sel.allowsDownvote(post)}
+            allowDown={allowsDownvote(post)}
             onVote={() => ask(member)}
           />
           <button type="button" onClick={() => ask(`${member}#comments`)} className={action}>
@@ -89,7 +85,7 @@ export default function PublicPostPage() {
 
       <JoinBlock title="Join to read the conversation">
         <p className="tabular mt-2 text-[15px] font-semibold text-white">
-          {sel.plural(replies, "reply", "replies")}
+          {plural(replies, "reply", "replies")}
         </p>
       </JoinBlock>
 

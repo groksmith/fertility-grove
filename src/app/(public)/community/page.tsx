@@ -4,14 +4,17 @@
    from every group visible to guests, newest first, with a filter by group.
    Linked from the landing page. No sign-in needed. */
 
-import { ReadingFrame } from "@/components/common/AuthFrame";
-import { JoinBlock, PublicPostCard, useGuestAction } from "@/components/common/Guest";
-import { EmptyState, Field, Select } from "@/components/shared";
-import { guestGroups, publicFeed } from "@/lib/api";
-import { sel, useStore } from "@/lib/store";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { ReadingFrame } from "@/components/common/AuthFrame";
+import { JoinBlock, PublicPostCard, useGuestAction } from "@/components/common/Guest";
+import { EmptyState } from "@/components/shared";
+import { Field } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
+import { guestGroups, publicFeed } from "@/features/posts";
+import { plural } from "@/lib/format";
+import { useStore } from "@/lib/mock-server";
 
 export default function CommunityPage() {
   const s = useStore();
@@ -37,7 +40,7 @@ export default function CommunityPage() {
             ))}
           </Select>
         </Field>
-        <p className="tabular pb-2 text-[14px] text-muted">{sel.plural(items.length, "post")}</p>
+        <p className="tabular pb-2 text-[14px] text-muted">{plural(items.length, "post")}</p>
       </div>
       {groupId && (
         <Link

@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { HELD_MESSAGE, detectCrisis } from "@/lib/rules/crisis";
+import { detectCrisis, HELD_MESSAGE } from "@/lib/rules/crisis";
 
 describe("detectCrisis", () => {
   it.each([

@@ -208,7 +208,7 @@ export const CREDITS = {
     { id: "sprout", name: "Sprout", credits: 25, price: 4.99 },
     { id: "grove", name: "Grove", credits: 60, price: 9.99 },
     { id: "orchard", name: "Orchard", credits: 150, price: 19.99 },
-  ],
+  ] as const,
 };
 
 export const RESERVED_HANDLES = [

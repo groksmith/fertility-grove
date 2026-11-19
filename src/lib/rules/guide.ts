@@ -4,7 +4,7 @@
    support, then a library answer or an honest "no reviewed answer yet". */
 
 import { APPOINTMENT_TYPES, CREDITS } from "@/config/options";
-import { ARTICLES } from "@/lib/data/articles";
+import { ARTICLES } from "@/lib/mock-server/seed/articles";
 import type { AppointmentQuestion, GuideReplyKind, GuideTurn } from "@/types/domain";
 import { detectCrisis, normalizeText } from "./crisis";
 
@@ -268,7 +268,7 @@ export function appointmentQuestions(type: string, onMind?: string): Appointment
     });
   }
   for (const t of topics) {
-    for (const text of BANK[t]) {
+    for (const text of BANK[t] ?? []) {
       if (out.length >= 12) break;
       out.push({ id: `aq-${i++}`, topic: t, text });
     }

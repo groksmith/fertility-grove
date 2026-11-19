@@ -35,7 +35,10 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // No surface uses these. Clipboard (copy invite and share links) is not listed, so it keeps its
   // default of this origin only.
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
 ];
 
 const nextConfig: NextConfig = {
@@ -48,6 +51,9 @@ const nextConfig: NextConfig = {
   // beside it instead. Unset, nothing changes.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   devIndicators: false,
+  // Cache Components (the kit's default) is OFF here: every screen is a client component reading
+  // localStorage, so the member layout's `usePathname()` would need new <Suspense> boundaries (and
+  // their fallbacks) to prerender. Revisit when the backend lands and data moves to the server.
   reactStrictMode: true,
   // 90 for the painted backdrops, which soften visibly at the default 75.
   images: { qualities: [75, 90] },

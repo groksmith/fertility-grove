@@ -12,9 +12,9 @@
    Loose leaves and petals drift down now and then. Loops run only while
    on screen and hold still under reduced motion. */
 
-import { useStore } from "@/lib/store";
 import Image from "next/image";
 import { useEffect, useRef } from "react";
+import { useStore } from "@/lib/mock-server";
 
 const DIR = "/assets/brand/cozy";
 
@@ -70,7 +70,7 @@ export function useAmbient<T extends HTMLElement>() {
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(([e]) =>
-      el.setAttribute("data-ambient", e.isIntersecting ? "on" : "off"),
+      el.setAttribute("data-ambient", e?.isIntersecting ? "on" : "off"),
     );
     io.observe(el);
     return () => io.disconnect();
@@ -228,7 +228,11 @@ function Drift({
   leaves = true,
   petals = true,
   className = "",
-}: { leaves?: boolean; petals?: boolean; className?: string }) {
+}: {
+  leaves?: boolean;
+  petals?: boolean;
+  className?: string;
+}) {
   const items = DRIFT.filter((p) => (p.kind ? leaves : petals));
   return (
     <div aria-hidden className={`pointer-events-none absolute ${className}`}>
@@ -479,7 +483,10 @@ export function HeaderBackdrop({ scene }: { scene: SceneKey }) {
 export function Backdrop({
   kind,
   wash,
-}: { kind: "hero" | "statement" | "partners" | "join" | "auth"; wash?: boolean }) {
+}: {
+  kind: "hero" | "statement" | "partners" | "join" | "auth";
+  wash?: boolean;
+}) {
   const ref = useAmbient<HTMLDivElement>();
   return (
     <div ref={ref} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">

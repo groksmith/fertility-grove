@@ -157,7 +157,7 @@ Two naming changes affect the sections below: the member's home screen is now ca
 - Up to 3 links per group. Each opens a section of a Learn article (`/learn/{slug}#{section}`), with the article's cover, a short label (for example "How endometriosis can affect fertility", "Common treatment paths", "Questions to bring to your doctor") and the article title.
 
 **Rules (prototype)**
-- The links are a fixed list per group (`GROUP_READING` in `src/lib/data/articles.ts`).
+- The links are a fixed list per group (`GROUP_READING` in `src/lib/mock-server/seed/articles.ts`).
 - A link appears only if that section exists in the article, so a missing section never makes a broken link.
 - Groups without a list show only the heading and "Browse clinician-reviewed articles".
 

@@ -2,15 +2,24 @@
 
 /* The same message shows whether or not an account exists (PRD §4). */
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button, Field, Input } from "@/components/shared";
-import { MSG, checks } from "@/lib/rules/validation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { FormField } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { forgotPasswordSchema } from "@/features/auth";
+import { MSG } from "@/lib/rules/validation";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string>();
+  // Checked on submit only; the message stays until the next submit, and focus stays put.
+  const form = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [sent, setSent] = useState(false);
   return (
     <AuthFrame
@@ -19,7 +28,6 @@ export default function ForgotPasswordPage() {
       lede="Enter the email you signed up with and we'll send you a link."
     >
       {sent ? (
-        // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
         <div role="status">
           <p className="rounded-[20px] border border-line bg-panel p-5 text-[15px] leading-relaxed text-ink">
             {MSG.resetSent}
@@ -32,25 +40,15 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
       ) : (
-        <form
-          noValidate
-          className="space-y-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const err = checks.email(email);
-            setError(err);
-            if (!err) setSent(true);
-          }}
-        >
-          <Field label="Email" error={error}>
-            <Input
-              type="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Field>
+        <form noValidate className="space-y-5" onSubmit={form.handleSubmit(() => setSent(true))}>
+          <FormField
+            form={form}
+            name="email"
+            label="Email"
+            kind="email"
+            autoComplete="email"
+            autoCapitalize="none"
+          />
           <Button type="submit" className="w-full">
             Send reset link
           </Button>

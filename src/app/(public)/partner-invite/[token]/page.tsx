@@ -3,13 +3,13 @@
 /* The partner invite page (PRD §7): the member's first name, their note, and
    Accept invite. The note shows only here, never in the email. */
 
-import { Spot } from "@/components/art/Scenes";
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button } from "@/components/shared";
-import { MSG } from "@/lib/rules/validation";
-import { act } from "@/lib/store";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Spot } from "@/components/art/Scenes";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { Button } from "@/components/ui/button";
+import { authService } from "@/features/auth";
+import { MSG } from "@/lib/rules/validation";
 
 export default function PartnerInvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -57,7 +57,7 @@ export default function PartnerInvitePage() {
       <Button
         className="mt-7"
         onClick={() => {
-          act.auth.arriveWithInvite("partner");
+          authService.arriveWithInvite("partner");
           router.push("/signup");
         }}
       >

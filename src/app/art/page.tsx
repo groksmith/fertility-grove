@@ -1,8 +1,8 @@
 import { GroupCover } from "@/components/art/Brand";
 import { OnboardingScene, Spot, type SpotKind } from "@/components/art/Scenes";
 import { TreeArt, TreeGlyph } from "@/components/art/Tree";
-import { AppIcon, Logo, LogoOrange } from "@/components/shared";
-import { GROUPS } from "@/lib/data/groups";
+import { AppIcon, Logo, LogoOrange } from "@/components/icons/Logo";
+import { GROUPS } from "@/features/groups";
 import type { TreeLevel } from "@/types/domain";
 
 export const metadata = { title: "Illustration sheet · Fertility Grove", robots: { index: false } };

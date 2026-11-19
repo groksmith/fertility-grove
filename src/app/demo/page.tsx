@@ -3,12 +3,12 @@
 /* Prototype entry: pick who you want to be. Each persona resets the demo data
    to a starting point for one story in the PRD. */
 
-import { Spot } from "@/components/art/Scenes";
-import { TreeArt } from "@/components/art/Tree";
-import { Logo } from "@/components/shared";
-import { act } from "@/lib/store";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Spot } from "@/components/art/Scenes";
+import { TreeArt } from "@/components/art/Tree";
+import { Logo } from "@/components/icons/Logo";
+import { demoService } from "@/features/demo";
 
 const PERSONAS = [
   {
@@ -66,7 +66,7 @@ export default function DemoPage() {
               <button
                 type="button"
                 onClick={() => {
-                  act.demo.persona(p.kind);
+                  demoService.persona(p.kind);
                   router.push(p.href);
                 }}
                 className="press group flex h-full w-full items-center gap-5 rounded-[20px] border border-line bg-panel p-5 text-left hover:bg-white sm:p-6"

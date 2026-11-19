@@ -2,8 +2,8 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { CREDITS } from "@/config/options";
-import { formatDate, nextRefill, spend, total, usd } from "@/lib/rules/credits";
 import type { Balance } from "@/lib/rules/credits";
+import { formatDate, nextRefill, spend, total, usd } from "@/lib/rules/credits";
 
 describe("CREDITS sample values", () => {
   it("matches the README sample values", () => {

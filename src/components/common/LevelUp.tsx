@@ -3,11 +3,13 @@
 /* The short level-up celebration (PRD §13): the new tree grows in, and the
    copy says what the level unlocks. Reaching Blossom Tree opens mentoring. */
 
-import { TreeArt } from "@/components/art/Tree";
-import { Button, Dialog } from "@/components/shared";
-import { LEVELS, nextLevel } from "@/lib/rules/sunlight";
-import { act, useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { TreeArt } from "@/components/art/Tree";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { settingsService } from "@/features/settings";
+import { useStore } from "@/lib/mock-server";
+import { LEVELS, nextLevel } from "@/lib/rules/sunlight";
 
 export function LevelUp() {
   const level = useStore((s) => s.pendingLevelUp);
@@ -16,7 +18,7 @@ export function LevelUp() {
   if (!level) return null;
   const info = LEVELS.find((l) => l.level === level)!;
   const next = nextLevel(level);
-  const close = () => act.settings.acknowledgeLevelUp();
+  const close = () => settingsService.acknowledgeLevelUp();
   return (
     <Dialog
       open

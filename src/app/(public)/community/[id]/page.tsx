@@ -5,15 +5,18 @@
    and the posts guests can read, newest first. No member avatars, no sort or
    filters, no Join button and no side column. */
 
-import { GroupCover } from "@/components/art/Brand";
-import { ReadingFrame } from "@/components/common/AuthFrame";
-import { JoinBlock, PublicPostCard, useGuestAction } from "@/components/common/Guest";
-import { EmptyState, LinkButton, Panel } from "@/components/shared";
-import { publicGroup } from "@/lib/api";
-import { sel, useStore } from "@/lib/store";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { GroupCover } from "@/components/art/Brand";
+import { ReadingFrame } from "@/components/common/AuthFrame";
+import { JoinBlock, PublicPostCard, useGuestAction } from "@/components/common/Guest";
+import { EmptyState } from "@/components/shared";
+import { LinkButton } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
+import { publicGroup } from "@/features/posts";
+import { plural } from "@/lib/format";
+import { useStore } from "@/lib/mock-server";
 
 const DEFAULT_RULES =
   "Be kind, share your own experience, and keep medical details general. The community guidelines apply here too.";
@@ -55,11 +58,8 @@ export default function PublicGroupPage() {
         <GroupCover group={group} size={64} />
         <p className="tabular text-[15px] text-ink-soft">
           {group.type} group ·{" "}
-          <strong className="font-semibold text-ink">{sel.plural(group.members, "member")}</strong>{" "}
-          ·{" "}
-          <strong className="font-semibold text-ink">
-            {sel.plural(group.postsThisWeek, "post")}
-          </strong>{" "}
+          <strong className="font-semibold text-ink">{plural(group.members, "member")}</strong> ·{" "}
+          <strong className="font-semibold text-ink">{plural(group.postsThisWeek, "post")}</strong>{" "}
           this week
         </p>
       </div>

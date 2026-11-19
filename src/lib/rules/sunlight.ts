@@ -47,7 +47,7 @@ export function nextLevel(level: TreeLevel) {
 export function progress(level: TreeLevel, sunlight: number) {
   const here = LEVELS[levelIndex(level)];
   const next = nextLevel(level);
-  if (!next) return 1;
+  if (!here || !next) return 1;
   return Math.max(0, Math.min(1, (sunlight - here.at) / (next.at - here.at)));
 }
 

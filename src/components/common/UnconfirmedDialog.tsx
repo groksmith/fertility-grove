@@ -1,9 +1,11 @@
 "use client";
 
-import { Button, Dialog } from "@/components/shared";
-import { act, useStore } from "@/lib/store";
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { authService } from "@/features/auth";
+import { useStore } from "@/lib/mock-server";
 
 /** Shown when an unconfirmed member tries something that needs a confirmed email. */
 export function UnconfirmedDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -19,7 +21,7 @@ export function UnconfirmedDialog({ open, onClose }: { open: boolean; onClose: (
         <Button
           variant="secondary"
           onClick={() => {
-            act.auth.resendLink();
+            authService.resendLink();
             setSent(true);
           }}
         >

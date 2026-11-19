@@ -3,11 +3,11 @@
 /* A member's display identity: the name (real name or @handle, by their own
    setting), the tree beside it, pronouns and badges, linked to the profile. */
 
+import Link from "next/link";
 import { TreeGlyph } from "@/components/art/Tree";
 import { Avatar, BadgeChip } from "@/components/shared";
-import { sel } from "@/lib/store";
+import { displayName } from "@/features/auth";
 import type { Member } from "@/types/domain";
-import Link from "next/link";
 
 /** "Annie M. · she/her" with the tree glyph, linked to the profile. */
 export function Name({
@@ -23,7 +23,7 @@ export function Name({
   pronouns?: boolean;
   className?: string;
 }) {
-  const name = sel.displayName(member);
+  const name = displayName(member);
   const team = member.badges.includes("team");
   const href = member.id === "me" ? "/dashboard" : `/u/${member.handle}`;
   return (

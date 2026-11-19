@@ -2,11 +2,12 @@
 
 /* Deletion is pending (PRD §4): 14 days to change your mind. */
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button } from "@/components/shared";
-import { act, useHydrated, useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { Button } from "@/components/ui/button";
+import { settingsService } from "@/features/settings";
+import { useHydrated, useStore } from "@/lib/mock-server";
 
 export default function RestorePage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function RestorePage() {
       <div className="mt-7 flex flex-wrap gap-2">
         <Button
           onClick={() => {
-            act.settings.restoreAccount();
+            settingsService.restoreAccount();
             router.push("/feed");
           }}
         >

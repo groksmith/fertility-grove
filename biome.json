@@ -1,9 +1,31 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "ignoreUnknown": true,
-    "ignore": [".next", "node_modules", "public", "next-env.d.ts"]
+    "includes": [
+      "**",
+      "!!**/.next",
+      "!!**/.next-check",
+      "!!**/.next-e2e",
+      "!!**/.vitest",
+      "!!**/node_modules",
+      "!!**/.claude",
+      "!!**/.impeccable",
+      "!!**/test-results",
+      "!!**/playwright-report",
+      "!**/public",
+      "!**/docs",
+      "!**/scripts",
+      "!**/next-env.d.ts",
+      "!**/*.md",
+      "!**/*.yaml",
+      "!**/*.yml"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -19,50 +41,45 @@
       "arrowParentheses": "always"
     }
   },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "style": {
-        "noNonNullAssertion": "off",
-        "useImportType": "error"
-      },
-      "suspicious": {
-        "noExplicitAny": "warn",
-        "noArrayIndexKey": "off"
-      },
-      "a11y": {
-        "useKeyWithClickEvents": "off"
-      },
-      "correctness": {
-        "useHookAtTopLevel": "error"
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
       }
     }
   },
-  "organizeImports": { "enabled": true },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "react": "recommended",
+      "next": "recommended",
+      "playwright": "recommended"
+    },
+    "rules": {
+      "style": {
+        "useImportType": "error",
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off"
+      },
+      "nursery": {
+        "noTailwindRawColors": "error"
+      }
+    }
+  },
   "overrides": [
     {
-      "include": ["src/components/ui/**"],
+      "includes": ["src/app/globals.css"],
       "linter": {
         "rules": {
-          "correctness": {
-            "useExhaustiveDependencies": "off"
-          },
-          "a11y": {
-            "useSemanticElements": "off",
-            "useFocusableInteractive": "off"
-          }
-        }
-      }
-    },
-    {
-      "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
-      "linter": {
-        "rules": {
-          "a11y": {
-            "useSemanticElements": "off",
-            "useFocusableInteractive": "off",
-            "useAriaPropsForRole": "off"
+          "complexity": {
+            "noImportantStyles": "off"
           }
         }
       }

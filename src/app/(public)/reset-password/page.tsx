@@ -1,19 +1,27 @@
 "use client";
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button, Field, PasswordInput } from "@/components/shared";
-import { MSG } from "@/lib/rules/validation";
-import { act, useStore } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { FormField } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { authService, resetPasswordSchema } from "@/features/auth";
+import { useStore } from "@/lib/mock-server";
+import { MSG } from "@/lib/rules/validation";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const expired = useStore((s) => s.linkExpired);
-  const [pw, setPw] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [errs, setErrs] = useState<Record<string, string>>({});
+  // Checked on submit only; messages stay until the next submit, and focus stays put.
+  const form = useForm({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: "", confirm: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [done, setDone] = useState(false);
 
   if (expired) {
@@ -46,27 +54,30 @@ export default function ResetPasswordPage() {
       <form
         noValidate
         className="space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const r = act.auth.resetPassword(pw, confirm);
+        onSubmit={form.handleSubmit(({ password, confirm }) => {
+          const r = authService.resetPassword(password, confirm);
           if (r.ok) setDone(true);
-          else setErrs(r.errs ?? {});
-        }}
+          else {
+            for (const [name, message] of Object.entries(r.errs ?? {}))
+              form.setError(name as "password" | "confirm", { message });
+          }
+        })}
       >
-        <Field label="New password" hint="8 to 64 characters." error={errs.password}>
-          <PasswordInput
-            autoComplete="new-password"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-          />
-        </Field>
-        <Field label="Confirm new password" error={errs.confirm}>
-          <PasswordInput
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-          />
-        </Field>
+        <FormField
+          form={form}
+          name="password"
+          label="New password"
+          hint="8 to 64 characters."
+          kind="password"
+          autoComplete="new-password"
+        />
+        <FormField
+          form={form}
+          name="confirm"
+          label="Confirm new password"
+          kind="password"
+          autoComplete="new-password"
+        />
         <Button type="submit" className="w-full">
           Save new password
         </Button>

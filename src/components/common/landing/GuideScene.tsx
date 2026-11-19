@@ -8,8 +8,8 @@
    on as the card arrives (.guide-light), and loops run only while the card is
    on screen. */
 
-import { useAmbient } from "@/components/art/Cozy";
 import Image from "next/image";
+import { useAmbient } from "@/components/art/Cozy";
 
 export function GuideScene({ delay = 0 }: { delay?: number }) {
   const ref = useAmbient<HTMLSpanElement>();

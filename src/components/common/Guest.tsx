@@ -6,25 +6,21 @@
    profile all open the prompt, and nothing is saved. A signed-in member on a
    guest page goes to the real thing instead. */
 
-import { Name } from "@/components/common/Person";
-import {
-  Avatar,
-  Button,
-  Dialog,
-  Field,
-  Input,
-  LinkButton,
-  Panel,
-  SourceLabel,
-  TypeChip,
-  VoteControl,
-} from "@/components/shared";
-import { type PublicPost, joinWaitlist, signUpStatus } from "@/lib/api";
-import { sel, useStore } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Bookmark, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { Name } from "@/components/common/Person";
+import { Avatar, FormField, SourceLabel, TypeChip, VoteControl } from "@/components/shared";
+import { Button, LinkButton } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Panel } from "@/components/ui/panel";
+import { authService, joinWaitlistSchema, signUpStatus } from "@/features/auth";
+import { allowsDownvote, type PublicPost } from "@/features/posts";
+import { plural, timeAgo } from "@/lib/format";
+import { useStore } from "@/lib/mock-server";
 
 /** Run `memberHref` for members; for guests, open the sign-up prompt. */
 export function useGuestAction() {
@@ -41,9 +37,14 @@ export function useGuestAction() {
 }
 
 function SignUpPrompt({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [err, setErr] = useState<string>();
-  const [done, setDone] = useState(false);
+  // Checked on submit only; the message stays until the next submit, and focus stays put.
+  const form = useForm({
+    resolver: zodResolver(joinWaitlistSchema),
+    defaultValues: { email: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
+  const [done, setDone] = useState<string>();
   return (
     <Dialog
       open={open}
@@ -52,35 +53,32 @@ function SignUpPrompt({ open, onClose }: { open: boolean; onClose: () => void })
       description="Fertility Grove is invite-only during the beta. Ask a member for an invite link, or leave your email and we'll tell you when it opens."
     >
       {done ? (
-        // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
         <p
           role="status"
           className="rounded-[14px] bg-green-tint px-4 py-3 text-[15px] leading-relaxed text-ink"
         >
-          Thank you. We&apos;ll email {email.trim()} as soon as sign-up opens.
+          Thank you. We&apos;ll email {done} as soon as sign-up opens.
         </p>
       ) : (
         <form
           noValidate
           className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={form.handleSubmit(({ email }) => {
             // TODO(api): POST /api/v1/auth/sign-up-waitlist.
-            const r = joinWaitlist(email);
-            setErr(r.ok ? undefined : r.error);
-            if (r.ok) setDone(true);
-          }}
+            const r = authService.joinWaitlist(email);
+            if (r.ok) setDone(email.trim());
+            else form.setError("email", { message: r.error });
+          })}
         >
-          <Field label="Your email" error={err}>
-            <Input
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Field>
+          <FormField
+            form={form}
+            name="email"
+            label="Your email"
+            kind="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+          />
           <Button type="submit">Let me know</Button>
         </form>
       )}
@@ -100,7 +98,11 @@ export function PublicByline({
   item,
   ask,
   size = 40,
-}: { item: PublicPost; ask: (href: string) => void; size?: number }) {
+}: {
+  item: PublicPost;
+  ask: (href: string) => void;
+  size?: number;
+}) {
   const { author, post } = item;
   const profile = author.id === "me" ? "/dashboard" : `/u/${author.handle}`;
   return (
@@ -122,7 +124,7 @@ export function PublicByline({
         >
           <Name member={author} link={false} />
         </button>
-        <p className="text-[13px] text-muted">{sel.timeAgo(post.minutesAgo)} ago</p>
+        <p className="text-[13px] text-muted">{timeAgo(post.minutesAgo)} ago</p>
       </div>
     </div>
   );
@@ -133,7 +135,11 @@ export function PublicPostCard({
   item,
   ask,
   showGroup = true,
-}: { item: PublicPost; ask: (href: string) => void; showGroup?: boolean }) {
+}: {
+  item: PublicPost;
+  ask: (href: string) => void;
+  showGroup?: boolean;
+}) {
   const { post, group, replies } = item;
   return (
     <Panel as="article" className="p-5 sm:p-6">
@@ -153,7 +159,7 @@ export function PublicPostCard({
           up={post.up}
           down={post.down}
           my={0}
-          allowDown={sel.allowsDownvote(post)}
+          allowDown={allowsDownvote(post)}
           onVote={() => ask(`/posts/${post.id}`)}
         />
         <Link
@@ -161,7 +167,7 @@ export function PublicPostCard({
           className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-raised px-3 text-[14px] font-semibold text-ink-soft hover:text-ink"
         >
           <MessageSquare size={16} aria-hidden />
-          <span className="tabular">{sel.plural(replies, "reply", "replies")}</span>
+          <span className="tabular">{plural(replies, "reply", "replies")}</span>
         </Link>
         <button
           type="button"

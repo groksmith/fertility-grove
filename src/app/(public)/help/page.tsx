@@ -4,21 +4,18 @@
    the team. Members see it inside the app like any other page; signed out
    and during onboarding it stands alone as a reading page. */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { AppShell } from "@/components/common/AppShell";
 import { ReadingFrame } from "@/components/common/AuthFrame";
-import {
-  Button,
-  Counter,
-  CrisisCard,
-  Field,
-  Input,
-  PageHeader,
-  Panel,
-  Textarea,
-} from "@/components/shared";
-import { checks } from "@/lib/rules/validation";
-import { useHydrated, useStore } from "@/lib/store";
-import { useState } from "react";
+import { CrisisCard, FormField, PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Panel } from "@/components/ui/panel";
+import { contactSupportSchema } from "@/features/support";
+import { useHydrated, useStore } from "@/lib/mock-server";
 
 const FAQ = [
   {
@@ -75,9 +72,14 @@ export default function HelpPage() {
 
 /** Members' contact form starts with their own email filled in. */
 function HelpBody({ email: known = "" }: { email?: string }) {
-  const [email, setEmail] = useState(known);
-  const [message, setMessage] = useState("");
-  const [errs, setErrs] = useState<{ email?: string; message?: string }>({});
+  /* Checked on submit; messages stay until the next submit, and focus stays put. Leaving a filled
+     email field re-checks just the email. */
+  const form = useForm({
+    resolver: zodResolver(contactSupportSchema),
+    defaultValues: { email: known, message: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [sent, setSent] = useState(false);
 
   return (
@@ -119,16 +121,17 @@ function HelpBody({ email: known = "" }: { email?: string }) {
         </p>
         <Panel className="mt-5 p-5 sm:p-7">
           {sent ? (
-            // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
             <div role="status">
               <p className="text-[17px] font-semibold text-ink">Thanks, we have your message.</p>
-              <p className="mt-1 text-[15px] text-ink-soft">We&apos;ll reply to {email} soon.</p>
+              <p className="mt-1 text-[15px] text-ink-soft">
+                We&apos;ll reply to {form.getValues("email")} soon.
+              </p>
               <Button
                 className="mt-5"
                 variant="secondary"
                 onClick={() => {
                   setSent(false);
-                  setMessage("");
+                  form.setValue("message", "");
                 }}
               >
                 Send another message
@@ -138,38 +141,38 @@ function HelpBody({ email: known = "" }: { email?: string }) {
             <form
               noValidate
               className="space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const next = {
-                  email: checks.email(email),
-                  message: message.trim() ? undefined : "Tell us how we can help.",
-                };
-                setErrs(next);
-                if (!next.email && !next.message) setSent(true);
-              }}
+              onSubmit={form.handleSubmit(() => setSent(true))}
             >
-              <Field label="Your email" error={errs.email}>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => email && setErrs((x) => ({ ...x, email: checks.email(email) }))}
-                />
-              </Field>
-              <Field
+              <Controller
+                control={form.control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <Field label="Your email" error={fieldState.error?.message}>
+                    <Input
+                      ref={field.ref}
+                      name={field.name}
+                      type="email"
+                      autoComplete="email"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={() => {
+                        field.onBlur();
+                        if (field.value) void form.trigger("email");
+                      }}
+                    />
+                  </Field>
+                )}
+              />
+              <FormField
+                form={form}
+                name="message"
                 label="How can we help?"
-                error={errs.message}
-                counter={<Counter value={message} max={2000} />}
-              >
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  max={2000}
-                  hardStop
-                  rows={5}
-                />
-              </Field>
+                kind="textarea"
+                counterMax={2000}
+                max={2000}
+                hardStop
+                rows={5}
+              />
               <Button type="submit">Send message</Button>
             </form>
           )}

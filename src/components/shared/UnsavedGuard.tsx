@@ -8,23 +8,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "./controls";
-import { Dialog } from "./overlay";
-
-type Pending =
-  | { kind: "href"; href: string }
-  | { kind: "back" }
-  | { kind: "action"; run: () => void };
-
-/* The form currently guarding the page, if it has unsaved edits. */
-let active: ((p: Pending) => void) | null = null;
-
-/** For in-page navigation that isn't a link (switching Settings sections):
-    asks first when a form has unsaved edits, otherwise just runs. */
-export function requestLeave(run: () => void) {
-  if (active) active({ kind: "action", run });
-  else run();
-}
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { clearNavigationGuard, type Pending, setNavigationGuard } from "@/lib/navigation-guard";
 
 /**
  * `dirty`: the form has unsaved edits. `onSave`: save them; return false if
@@ -45,10 +31,8 @@ export function useUnsavedGuard({ dirty, onSave }: { dirty: boolean; onSave?: ()
 
   useEffect(() => {
     if (!dirty) return;
-    active = setPending;
-    return () => {
-      if (active === setPending) active = null;
-    };
+    setNavigationGuard(setPending);
+    return () => clearNavigationGuard(setPending);
   }, [dirty]);
 
   // Closing or reloading the tab.
@@ -142,7 +126,7 @@ export function useUnsavedGuard({ dirty, onSave }: { dirty: boolean; onSave?: ()
     else if (p.kind === "action") {
       // Staying on this page (another section): the form's edits are dropped.
       live.current.leaving = false;
-      if (active === setPending) active = null;
+      clearNavigationGuard(setPending);
       if (guardPushed.current) {
         // Drop the guard entry first; run once the browser has stepped back.
         guardPushed.current = false;

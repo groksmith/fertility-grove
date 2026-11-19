@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { APPOINTMENT_TYPES, CREDITS } from "@/config/options";
-import { ARTICLES } from "@/lib/data/articles";
+import { ARTICLES } from "@/lib/mock-server/seed/articles";
 import { APPOINTMENT_TYPE_LIST, appointmentQuestions, askGuide } from "@/lib/rules/guide";
 
 const article = (slug: string) => {
@@ -168,14 +168,14 @@ describe("askGuide library answers", () => {
 describe("appointmentQuestions", () => {
   it("starts test results with understanding the results", () => {
     const qs = appointmentQuestions("Test results");
-    expect(qs[0].topic).toBe("Understanding my results");
+    expect(qs[0]?.topic).toBe("Understanding my results");
     expect(qs).toHaveLength(11);
   });
 
   it("starts a first consultation or second opinion with the plan and covers cost", () => {
     for (const type of ["First consultation", "Second opinion"]) {
       const qs = appointmentQuestions(type);
-      expect(qs[0].topic).toBe("The plan");
+      expect(qs[0]?.topic).toBe("The plan");
       expect(qs.map((q) => q.topic)).toContain("Cost and coverage");
     }
   });
@@ -187,13 +187,13 @@ describe("appointmentQuestions", () => {
       topic: "What's on my mind",
       text: "I've been wondering about this: whether to try another round. What would you suggest?",
     });
-    const long = appointmentQuestions("Follow-up", "x".repeat(500))[0].text;
+    const long = appointmentQuestions("Follow-up", "x".repeat(500))[0]?.text;
     expect(long).toContain(`${"x".repeat(220)}.`);
     expect(long).not.toContain("x".repeat(221));
   });
 
   it("ignores a blank on-mind note", () => {
-    expect(appointmentQuestions("Follow-up", "   ")[0].topic).not.toBe("What's on my mind");
+    expect(appointmentQuestions("Follow-up", "   ")[0]?.topic).not.toBe("What's on my mind");
   });
 
   it("never gives a dose or a diagnosis", () => {

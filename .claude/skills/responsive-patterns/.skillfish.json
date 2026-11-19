@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "responsive-patterns",
+  "owner": "yonatangross",
+  "repo": "orchestkit",
+  "path": "plugins/ork/skills/responsive-patterns",
+  "branch": "main",
+  "sha": "3832e4895fae637ce3ca78f1e11da0a37959e525",
+  "source": "manual"
+}

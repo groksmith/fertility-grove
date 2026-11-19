@@ -3,21 +3,21 @@
 /* Report flow (PRD §19) and the hook that turns an action's Result into the
    right response: the confirm-email dialog, a toast, or crisis resources. */
 
-import { UnconfirmedDialog } from "@/components/common/UnconfirmedDialog";
-import {
-  Button,
-  Choices,
-  CrisisCard,
-  Dialog,
-  Field,
-  Textarea,
-  Toggle,
-  toast,
-} from "@/components/shared";
-import { REPORT_REASONS } from "@/config/options";
-import { type Result, act } from "@/lib/store";
-import type { ReportReason } from "@/types/domain";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { UnconfirmedDialog } from "@/components/common/UnconfirmedDialog";
+import { CrisisCard } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Choices } from "@/components/ui/choices";
+import { Dialog } from "@/components/ui/dialog";
+import { Field } from "@/components/ui/field";
+import { Toggle } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
+import { REPORT_REASONS } from "@/config/options";
+import { reportSchema, socialService } from "@/features/social";
+import type { Result } from "@/lib/mock-server";
 
 export function ReportDialog({
   open,
@@ -32,17 +32,21 @@ export function ReportDialog({
   what: string;
   authorId?: string;
 }) {
-  const [reason, setReason] = useState<ReportReason[]>([]);
-  const [details, setDetails] = useState("");
-  const [block, setBlock] = useState(false);
+  // The service checks the report and returns one message at a time; the dialog keeps it until
+  // the next submit replaces it or the dialog closes. The details message sits on its field, the
+  // rest under the form. Focus stays put.
+  const form = useForm({
+    resolver: zodResolver(reportSchema),
+    defaultValues: { reason: [], details: "", block: false },
+    shouldFocusError: false,
+  });
+  const reason = useWatch({ control: form.control, name: "reason" });
   const [error, setError] = useState<string>();
   const [done, setDone] = useState<string>();
 
   const close = () => {
     onClose();
-    setReason([]);
-    setDetails("");
-    setBlock(false);
+    form.reset();
     setError(undefined);
     setDone(undefined);
   };
@@ -63,49 +67,72 @@ export function ReportDialog({
         </div>
       ) : (
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const r = act.social.report(
+          onSubmit={form.handleSubmit((v) => {
+            const r = socialService.report(
               target,
-              reason[0] ?? "",
-              details,
-              block ? authorId : undefined,
+              v.reason[0] ?? "",
+              v.details,
+              v.block ? authorId : undefined,
             );
             if (!r.ok) setError(r.error);
             else setDone(r.note);
-          }}
+          })}
           className="space-y-5"
         >
           <p className="text-[14px] text-muted">
             Reports are anonymous. The person won&apos;t know it was you.
           </p>
-          <Choices
-            legend="What's wrong?"
-            options={REPORT_REASONS}
-            value={reason}
-            onChange={setReason}
-            columns={1}
+          <Controller
+            control={form.control}
+            name="reason"
+            render={({ field }) => (
+              <Choices
+                legend="What's wrong?"
+                options={REPORT_REASONS}
+                value={field.value}
+                onChange={field.onChange}
+                columns={1}
+              />
+            )}
           />
-          <Field
-            label="Details"
-            optional={reason[0] !== "Other"}
-            error={error === "Tell us a little about what's wrong." ? error : undefined}
-            counter={<span className="tabular text-[13px] text-muted">{details.length} / 500</span>}
-          >
-            <Textarea
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              max={500}
-              hardStop
-              rows={3}
-            />
-          </Field>
+          {/* Controller, not FormField: this counter is plain text, not the shared Counter. */}
+          <Controller
+            control={form.control}
+            name="details"
+            render={({ field }) => (
+              <Field
+                label="Details"
+                optional={reason[0] !== "Other"}
+                error={error === "Tell us a little about what's wrong." ? error : undefined}
+                counter={
+                  <span className="tabular text-[13px] text-muted">{field.value.length} / 500</span>
+                }
+              >
+                <Textarea
+                  ref={field.ref}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  max={500}
+                  hardStop
+                  rows={3}
+                />
+              </Field>
+            )}
+          />
           {authorId && (
-            <Toggle
-              checked={block}
-              onChange={setBlock}
-              label="Also block this member"
-              description="They won't be able to message you, follow you or see your posts."
+            <Controller
+              control={form.control}
+              name="block"
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Also block this member"
+                  description="They won't be able to message you, follow you or see your posts."
+                />
+              )}
             />
           )}
           {error && error !== "Tell us a little about what's wrong." && (

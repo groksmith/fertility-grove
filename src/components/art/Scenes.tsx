@@ -92,7 +92,11 @@ export function Spot({
   kind,
   size = 160,
   className = "",
-}: { kind: SpotKind; size?: number; className?: string }) {
+}: {
+  kind: SpotKind;
+  size?: number;
+  className?: string;
+}) {
   const h = Math.round((size * 3) / 4);
   if (kind === "plate") {
     return (

@@ -4,32 +4,34 @@
    preview, source label, votes, comment count, save and the post menu. Items
    at −5 or below collapse behind "Show hidden content". */
 
-import { Name } from "@/components/common/Person";
-import {
-  Avatar,
-  Menu,
-  Panel,
-  SourceLabel,
-  TagChip,
-  TypeChip,
-  VoteControl,
-  toast,
-  useCopy,
-} from "@/components/shared";
-import { act, sel, useStore } from "@/lib/store";
-import type { Post } from "@/types/domain";
 import { Bookmark, MessageSquare, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { Name } from "@/components/common/Person";
+import { Avatar, SourceLabel, TagChip, TypeChip, VoteControl } from "@/components/shared";
+import { Menu } from "@/components/ui/dropdown-menu";
+import { Panel } from "@/components/ui/panel";
+import { toast } from "@/components/ui/toast";
+import { displayName, person } from "@/features/auth";
+import { allowsDownvote, collapsed, commentCount, postService } from "@/features/posts";
+import { socialService } from "@/features/social";
+import { useCopy } from "@/hooks/useCopy";
+import { timeAgo } from "@/lib/format";
+import { useStore } from "@/lib/mock-server";
+import type { Post } from "@/types/domain";
 import { ReportDialog, useResult } from "./Safety";
 
 export function PostCard({
   post,
   matched,
   showGroup = true,
-}: { post: Post; matched?: string; showGroup?: boolean }) {
+}: {
+  post: Post;
+  matched?: string;
+  showGroup?: boolean;
+}) {
   const s = useStore();
-  const author = sel.person(s, post.authorId);
+  const author = person(s, post.authorId);
   const group = s.groups.find((g) => g.id === post.groupId);
   const [reveal, setReveal] = useState(false);
   const [report, setReport] = useState(false);
@@ -37,9 +39,9 @@ export function PostCard({
   const { handle, ui } = useResult();
   if (!author || !group) return null;
 
-  const comments = sel.commentCount(s, post.id);
+  const comments = commentCount(s, post.id);
   const mine = post.authorId === "me";
-  const hidden = sel.collapsed(post) && !reveal;
+  const hidden = collapsed(post) && !reveal;
 
   if (post.status === "deleted") {
     return (
@@ -78,7 +80,7 @@ export function PostCard({
         <div className="min-w-0 flex-1 text-[14px]">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <Name member={author} pronouns={false} />
-            <span className="text-muted">· {sel.timeAgo(post.minutesAgo)}</span>
+            <span className="text-muted">· {timeAgo(post.minutesAgo)}</span>
             {post.edited && <span className="text-muted">· Edited</span>}
           </div>
           {showGroup && (
@@ -119,18 +121,24 @@ export function PostCard({
             },
             {
               label: post.saved ? "Remove from saved" : "Save",
-              onSelect: () => act.posts.toggleSave(post.id),
+              onSelect: () => postService.toggleSave(post.id),
             },
             ...(mine
-              ? [{ label: "Delete post", danger: true, onSelect: () => act.posts.remove(post.id) }]
+              ? [
+                  {
+                    label: "Delete post",
+                    danger: true,
+                    onSelect: () => postService.remove(post.id),
+                  },
+                ]
               : [
                   "divider" as const,
                   { label: "Report post", onSelect: () => setReport(true) },
                   {
-                    label: `Block ${sel.displayName(author)}`,
+                    label: `Block ${displayName(author)}`,
                     danger: true,
                     onSelect: () => {
-                      act.social.block(author.id);
+                      socialService.block(author.id);
                       toast("Blocked. You won't see their posts.");
                     },
                   },
@@ -172,9 +180,9 @@ export function PostCard({
           up={post.up}
           down={post.down}
           my={post.myVote}
-          allowDown={sel.allowsDownvote(post)}
+          allowDown={allowsDownvote(post)}
           disabled={mine}
-          onVote={(v) => handle(act.posts.vote(post.id, v))}
+          onVote={(v) => handle(postService.vote(post.id, v))}
         />
         <Link
           href={`/posts/${post.id}#comments`}
@@ -186,7 +194,7 @@ export function PostCard({
         </Link>
         <button
           type="button"
-          onClick={() => act.posts.toggleSave(post.id)}
+          onClick={() => postService.toggleSave(post.id)}
           aria-pressed={post.saved}
           aria-label={post.saved ? "Saved" : "Save"}
           className={`press grid h-9 w-9 place-items-center rounded-full bg-raised ${post.saved ? "text-accent" : "text-muted hover:text-ink"}`}

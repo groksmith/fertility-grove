@@ -2,12 +2,13 @@
 
 /* Opening the confirmation link (PRD §4). It works once, within 60 minutes. */
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button } from "@/components/shared";
-import { MSG } from "@/lib/rules/validation";
-import { act, useHydrated, useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { Button } from "@/components/ui/button";
+import { authService } from "@/features/auth";
+import { useHydrated, useStore } from "@/lib/mock-server";
+import { MSG } from "@/lib/rules/validation";
 
 export default function ConfirmEmailPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function ConfirmEmailPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    const r = act.auth.confirmEmail();
+    const r = authService.confirmEmail();
     // The link's outcome is decided once, on arrival.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(r.ok ? "done" : "expired");
@@ -30,7 +31,6 @@ export default function ConfirmEmailPage() {
     return (
       <AuthFrame title="This link has expired" step={3} lede={MSG.linkExpired}>
         {resent ? (
-          // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
           <p
             role="status"
             className="rounded-[20px] border border-line bg-panel p-5 text-[15px] text-ink"
@@ -41,7 +41,7 @@ export default function ConfirmEmailPage() {
         ) : (
           <Button
             onClick={() => {
-              act.auth.resendLink();
+              authService.resendLink();
               setResent(true);
             }}
           >

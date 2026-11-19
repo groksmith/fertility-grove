@@ -23,7 +23,7 @@ const DIR = "/assets/brand/planting";
 
 /* When each soil layer arrives, in ms: [delay, duration]. Timed to its cause:
    2 on the trowel's first strike, 3 as the last seed lands, 5 slowly under the water. */
-const SOIL: Record<number, [number, number]> = {
+const SOIL: Partial<Record<number, [number, number]>> = {
   1: [0, 300],
   2: [560, 260],
   3: [1460, 240],
@@ -61,16 +61,18 @@ const SEEDS = [
 /* The current layer fades in over the one before; that one (it has transparent
    parts, like the dirt pile) then fades away once the new one is fully there. */
 function soilStyle(k: number, s: number): React.CSSProperties {
-  if (k === s) {
-    const [delay, duration] = SOIL[k];
+  const arrives = SOIL[k];
+  if (k === s && arrives) {
+    const [delay, duration] = arrives;
     return {
       opacity: 1,
       transition: `opacity ${duration}ms var(--e-out)`,
       transitionDelay: `${delay}ms`,
     };
   }
-  if (k < s) {
-    const [delay, duration] = SOIL[k + 1];
+  const next = SOIL[k + 1];
+  if (k < s && next) {
+    const [delay, duration] = next;
     return {
       opacity: 0,
       transition: "opacity 260ms var(--e-out)",

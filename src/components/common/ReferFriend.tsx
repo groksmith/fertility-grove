@@ -13,14 +13,15 @@
    in globals.css. Copying while it plays still copies, without restarting it.
    Under reduced motion it jumps between those states. */
 
-import { useAmbient } from "@/components/art/Cozy";
-import { Button, useCopy } from "@/components/shared";
-import { inviteLink, myInvite } from "@/lib/api";
-import { POINTS } from "@/lib/rules/sunlight";
-import { useHydrated, useStore } from "@/lib/store";
 import { Check, Copy } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { useAmbient } from "@/components/art/Cozy";
+import { Button } from "@/components/ui/button";
+import { inviteLink, myInvite } from "@/features/auth";
+import { useCopy } from "@/hooks/useCopy";
+import { useHydrated, useStore } from "@/lib/mock-server";
+import { POINTS } from "@/lib/rules/sunlight";
 
 const DIR = "/assets/brand/refer";
 

@@ -3,8 +3,8 @@
    its own cover falls back to a crop of the orange-tree canopy. The logo lives in
    components/Logo.tsx. */
 
-import type { Group, Hue } from "@/types/domain";
 import Image from "next/image";
+import type { Group, Hue } from "@/types/domain";
 import { hash } from "./shapes";
 
 const TYPE_HUE: Record<Group["type"], Hue> = {
@@ -38,7 +38,11 @@ export function GroupCover({
   group,
   size = 56,
   className = "",
-}: { group: Pick<Group, "id" | "type">; size?: number; className?: string }) {
+}: {
+  group: Pick<Group, "id" | "type">;
+  size?: number;
+  className?: string;
+}) {
   const hue = groupHue(group);
   const src = GROUP_ART.has(group.id)
     ? `/assets/brand/groups/${group.id}.webp`

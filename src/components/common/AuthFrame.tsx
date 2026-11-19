@@ -4,11 +4,11 @@
    page ground, the grove drawn beside it on desktop and as a short band on a
    phone. */
 
-import { Backdrop } from "@/components/art/Cozy";
-import { OnboardingScene } from "@/components/art/Scenes";
-import { Logo } from "@/components/shared";
 import { CircleHelp } from "lucide-react";
 import Link from "next/link";
+import { Backdrop } from "@/components/art/Cozy";
+import { OnboardingScene } from "@/components/art/Scenes";
+import { Logo } from "@/components/icons/Logo";
 
 export function AuthFrame({
   title,
@@ -92,7 +92,11 @@ export function ReadingFrame({
   title,
   lede,
   children,
-}: { title: string; lede?: React.ReactNode; children: React.ReactNode }) {
+}: {
+  title: string;
+  lede?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-dvh bg-ground">
       <header className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-4 pt-[env(safe-area-inset-top)] sm:px-8">

@@ -1,5 +1,5 @@
-import { ReadingFrame } from "@/components/common/AuthFrame";
 import Link from "next/link";
+import { ReadingFrame } from "@/components/common/AuthFrame";
 
 export const metadata = { title: "Terms · Fertility Grove" };
 

@@ -5,7 +5,7 @@
    Turning visitors on turns sharing on and holds it there. Members-only
    groups offer neither. Used by Write a post and Edit post. */
 
-import { Toggle } from "@/components/shared";
+import { Toggle } from "@/components/ui/switch";
 import type { Group, PostType } from "@/types/domain";
 
 /* Draft wording, sent back to the PRD for review. */

@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { RESERVED_HANDLES } from "@/config/options";
-import { MSG, TAKEN_HANDLES, checks, collect, normalizeEmail } from "@/lib/rules/validation";
+import { checks, collect, MSG, normalizeEmail, TAKEN_HANDLES } from "@/lib/rules/validation";
 
 describe("checks.email", () => {
   it.each(["ben@groksmith.co", "a.b+tag@example.org", "  maya@grove.com  "])("accepts %s", (v) => {

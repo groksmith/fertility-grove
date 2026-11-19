@@ -1,8 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-
-import { matchGroups, matchPeople, reason } from "@/lib/rules/matching";
 import type { Journey } from "@/lib/rules/matching";
+import { matchGroups, matchPeople, reason } from "@/lib/rules/matching";
 import type { Group, Member } from "@/types/domain";
 
 const group = (id: string, tags: string[], over: Partial<Group> = {}): Group => ({
@@ -85,14 +84,14 @@ describe("matchGroups", () => {
     });
     const result = matchGroups(j, all);
     expect(result.map((r) => r.group.id)).toEqual(["g-endo", "g-ttc", "g-ivf"]);
-    expect(result[0].why).toBe("Matched on endometriosis");
-    expect(result[2].why).toBe("Matched on IVF");
+    expect(result[0]?.why).toBe("Matched on endometriosis");
+    expect(result[2]?.why).toBe("Matched on IVF");
   });
 
   it("names a shared path before a shared treatment in the reason", () => {
     const j = journey({ paths: ["Donor eggs"], treatments: ["IVF"] });
     const both = group("g-both", ["IVF", "Donor eggs"]);
-    expect(matchGroups(j, [both])[0].why).toBe("Matched on donor eggs and IVF");
+    expect(matchGroups(j, [both])[0]?.why).toBe("Matched on donor eggs and IVF");
   });
 
   it("matches tags case-insensitively", () => {
@@ -113,7 +112,7 @@ describe("matchGroups", () => {
     const j = journey({ diagnoses: ["Other"], stages: ["Prefer not to share"] });
     const result = matchGroups(j, [other, ivf, ttc]);
     expect(result.every((r) => r.why === "Popular in the grove")).toBe(true);
-    expect(result[0].group.id).toBe("g-ivf");
+    expect(result[0]?.group.id).toBe("g-ivf");
   });
 
   it("falls back to the most active groups when there are no answers", () => {
@@ -165,12 +164,12 @@ describe("matchPeople", () => {
     const none = member("m-none", { diagnoses: ["PCOS"] });
     const result = matchPeople(j, [one, none, two], { exclude: [] });
     expect(result.map((r) => r.member.id)).toEqual(["m-two", "m-one"]);
-    expect(result[0].why).toBe("Matched on endometriosis and trying to conceive");
+    expect(result[0]?.why).toBe("Matched on endometriosis and trying to conceive");
   });
 
   it("keeps a private journey's reason vague", () => {
     const priv = member("m-priv", { diagnoses: ["Endometriosis"], shareJourney: false });
-    expect(matchPeople(j, [priv], { exclude: [] })[0].why).toBe("Similar journey");
+    expect(matchPeople(j, [priv], { exclude: [] })[0]?.why).toBe("Similar journey");
   });
 
   it("leaves out excluded, unavailable, team and opted-out members", () => {

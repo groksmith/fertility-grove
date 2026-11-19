@@ -1,91 +1,149 @@
-import { readFileSync, readdirSync } from "node:fs";
+/**
+ * GUARD: dependency flow between layers ("Dependency flow" in CLAUDE.md).
+ *
+ * Every import in a source file under src/ (tests excluded — a test may reach anywhere it needs to
+ * mock) is resolved to the layer it lands in and checked against what the importing file's layer may
+ * depend on. A failure names the file, the import and the rule; the fix is to MOVE the code (e.g. a
+ * component that needs a feature hook belongs in components/common, not components/shared), not to
+ * widen the table below.
+ *
+ * Adjust: ALLOWED (your layer table), SHARED_FEATURES, FEATURE_DEEP_ALLOWED, MIN_SOURCE_FILES and
+ * PROBE_IMPORT. A top-level folder under src/ that is not in ALLOWED fails the test with a message
+ * asking you to add it — deliberately, so a new layer is a decision, not an accident.
+ */
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { cwd } from "node:process";
 
 import { describe, expect, it } from "vitest";
 
-// The dependency rules in .claude/CLAUDE.md ("Dependency flow"), enforced. Every import in a source
-// file (tests excluded — a test may reach anywhere it needs to) is resolved to the layer it lands in
-// and checked against what that file's own layer may depend on. A failure names the file, the import
-// and the rule, so the fix is to move the code, not to add an exception here.
+// ── Configuration ──────────────────────────────────────────────────────────────────────────────
 
-const SRC = path.resolve(__dirname);
+/** Vitest runs from the project root; src/ is resolved from there so the file can live anywhere. */
+const SRC = path.resolve(cwd(), "src");
 
-type Layer =
-  | "app"
-  | "components/common"
-  | "components/shared"
-  | "components/art"
-  | "lib"
-  | "config"
-  | "hooks"
-  | "types"
-  | "root";
+/** Path alias for src/ used in imports (tsconfig "paths"). */
+const ALIAS = "@/";
 
-// What each layer may import, besides itself.
-const ALLOWED: Record<Layer, readonly Layer[]> = {
+/**
+ * What each layer may import, besides itself. `components/<x>` folders are layers of their own;
+ * files directly under src/ (proxy.ts, instrumentation.ts) are "root".
+ */
+const ALLOWED: Record<string, readonly string[]> = {
   app: [
-    "components/common",
+    "features",
+    "components/ui",
     "components/shared",
+    "components/common",
+    "components/icons",
+    "components/art",
+    "lib",
+    "config",
+    "hooks",
+    "types",
+    "styles",
+  ],
+  features: ["lib", "config", "types"],
+  // App shell and app-level composites: may use features and the store, never a route.
+  "components/common": [
+    "features",
+    "components/ui",
+    "components/shared",
+    "components/icons",
     "components/art",
     "lib",
     "config",
     "hooks",
     "types",
   ],
-  // App shell and app-level composites: may read the store, never a route.
-  "components/common": ["components/shared", "components/art", "lib", "config", "hooks", "types"],
-  // Reusable building blocks with no domain state (see DOMAIN_STATE below).
-  "components/shared": ["components/art", "lib", "config", "hooks", "types"],
+  // Reusable composites with no domain state (no features, no mock server — see below).
+  "components/shared": [
+    "components/ui",
+    "components/icons",
+    "components/art",
+    "lib",
+    "config",
+    "hooks",
+    "types",
+  ],
+  // The app's own primitives (this project has no shadcn).
+  "components/ui": ["lib", "hooks", "types"],
+  "components/icons": ["lib"],
   // The brand's painted art: leaf components, imported by path.
   "components/art": ["lib", "config", "types"],
   hooks: ["lib", "config", "types"],
   lib: ["config", "types"],
   config: ["types"],
   types: [],
+  styles: [],
   // Framework entry points at the src root.
   root: ["lib", "config", "types"],
 };
 
-// The prototype's stand-in for a backend: the store (state, actions, selectors) and the API facade
-// over it. Pharos keeps this in `features/`; here it is `lib/store` + `lib/api` until the API lands.
-const DOMAIN_STATE = ["lib/store", "lib/api"];
-const isDomainState = (target: string) =>
-  DOMAIN_STATE.some((p) => target === p || target.startsWith(`${p}/`));
+/**
+ * The mock server (`lib/mock-server`) stands in for the backend. Screens read it through
+ * `useStore`; nothing below the composites tier may touch it, and the pure PRD rules never do
+ * (its `seed/` content is allowed — it is static data).
+ */
+const NO_MOCK_SERVER = ["components/shared", "components/ui", "components/icons", "hooks"];
+const PURE = ["lib/rules"];
+const isMockServerState = (target: string) =>
+  target === "lib/mock-server" ||
+  (target.startsWith("lib/mock-server/") && !target.startsWith("lib/mock-server/seed"));
 
-// Pure modules: rules and mock data never read or write state, so they stay unit-testable and can
-// move server-side unchanged.
-const PURE = ["lib/rules", "lib/data"];
+/** Features any other feature may import (session and identity). */
+const SHARED_FEATURES = new Set(["auth"]);
 
-function layerOf(relative: string): Layer {
-  const [top, second] = relative.split("/");
-  if (top === "components") return `components/${second}` as Layer;
-  if (!relative.includes("/")) return "root";
-  return top as Layer;
+/**
+ * Reaching past a feature's barrel is allowed only for these server-safe leaf modules, which server
+ * layouts need because the barrel also exports client hooks.
+ */
+const FEATURE_DEEP_ALLOWED = new Set(["server", "keys", "state"]);
+
+/** Vacuous-pass guard: the scan must see at least this many files … */
+const MIN_SOURCE_FILES = 150;
+/** … and at least one file importing this (set to null to skip). */
+const PROBE_IMPORT: string | null = "@/lib/mock-server";
+
+// ── Implementation ─────────────────────────────────────────────────────────────────────────────
+
+interface Location {
+  layer: string;
+  feature?: string;
+}
+
+function layerOf(relative: string): Location {
+  const [top, second] = relative.split(/[\\/]/);
+  if (top === "components") return { layer: `components/${second}` };
+  if (top === "features") return { layer: "features", feature: second };
+  if (!/[\\/]/.test(relative)) return { layer: "root" };
+  return { layer: top ?? "root" };
 }
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) return sourceFiles(full);
-    if (!/\.(ts|tsx)$/.test(entry.name) || /\.(test|bench)\.tsx?$/.test(entry.name)) return [];
+    if (!/\.(ts|tsx)$/.test(entry.name) || /\.(test|spec|bench)\.tsx?$/.test(entry.name)) return [];
     if (entry.name.endsWith(".d.ts")) return [];
     return [full];
   });
 }
 
 const IMPORT =
-  /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+["']([^"']+)["']|(?:^|\n)\s*import\s+["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)/g;
+  /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)/g;
 
 function importsOf(file: string): string[] {
   const text = readFileSync(file, "utf8");
-  return [...text.matchAll(IMPORT)].map((m) => (m[1] ?? m[2] ?? m[3]) as string);
+  return [...text.matchAll(IMPORT)].map((m) => (m[1] ?? m[2]) as string);
 }
 
-/** The `src/`-relative target of an import, or null for a package. */
+/** The src-relative target of an import, or null for a package. */
 function resolveTarget(file: string, specifier: string): string | null {
-  if (specifier.startsWith("@/")) return specifier.slice(2);
-  if (specifier.startsWith("."))
+  if (specifier.startsWith(ALIAS)) return specifier.slice(ALIAS.length);
+  if (specifier.startsWith(".")) {
     return path.relative(SRC, path.resolve(path.dirname(file), specifier));
+  }
   return null;
 }
 
@@ -94,28 +152,54 @@ function violations(): string[] {
   for (const file of sourceFiles(SRC)) {
     const relative = path.relative(SRC, file);
     const from = layerOf(relative);
+    const allowed = ALLOWED[from.layer];
+    if (!allowed) {
+      found.push(`${relative}: unknown layer "${from.layer}" — add it to ALLOWED`);
+      continue;
+    }
     for (const specifier of importsOf(file)) {
       const target = resolveTarget(file, specifier);
       if (target === null) continue;
       const to = layerOf(target);
       const where = `${relative} → ${specifier}`;
 
+      if (to.layer === "features" && to.feature !== from.feature) {
+        const deep = target.split(/[\\/]/).slice(2).join("/");
+        if (deep && !FEATURE_DEEP_ALLOWED.has(deep)) {
+          found.push(
+            `${where}: import a feature through its barrel (${ALIAS}features/${to.feature})`,
+          );
+        }
+      }
+
       if (
-        to === "components/shared" &&
-        from !== "components/shared" &&
+        to.layer === "components/shared" &&
+        from.layer !== "components/shared" &&
         target !== "components/shared"
       ) {
-        found.push(`${where}: import shared components through the barrel (@/components/shared)`);
+        found.push(
+          `${where}: import shared components through the barrel (${ALIAS}components/shared)`,
+        );
       }
-      if (from === "components/shared" && isDomainState(target)) {
-        found.push(`${where}: shared components may not read the store — move it to common`);
+      if (NO_MOCK_SERVER.includes(from.layer) && isMockServerState(target)) {
+        found.push(`${where}: ${from.layer} may not read the mock server — move it to common`);
       }
-      if (PURE.some((p) => relative.startsWith(`${p}/`)) && isDomainState(target)) {
-        found.push(`${where}: rules and data stay pure — no store or API`);
+      if (PURE.some((p) => relative.startsWith(`${p}/`)) && isMockServerState(target)) {
+        found.push(`${where}: PRD rules stay pure — no mock server state`);
       }
-      if (to === from) continue;
-      if (!ALLOWED[from].includes(to)) {
-        found.push(`${where}: ${from} may not import ${to}`);
+
+      if (to.layer === from.layer) {
+        if (
+          from.layer === "features" &&
+          to.feature !== from.feature &&
+          !SHARED_FEATURES.has(to.feature ?? "")
+        ) {
+          found.push(`${where}: features may not import other features`);
+        }
+        continue;
+      }
+      if (!allowed.includes(to.layer)) {
+        found.push(`${where}: ${from.layer} may not import ${to.layer}`);
       }
     }
   }
@@ -129,8 +213,9 @@ describe("architecture — dependency flow", () => {
 
   it("actually inspects the codebase (guards against a vacuous pass)", () => {
     const files = sourceFiles(SRC);
-    expect(files.length).toBeGreaterThan(80);
-    expect(files.some((f) => importsOf(f).includes("@/lib/store"))).toBe(true);
-    expect(files.some((f) => importsOf(f).includes("@/components/shared"))).toBe(true);
+    expect(files.length).toBeGreaterThanOrEqual(MIN_SOURCE_FILES);
+    if (PROBE_IMPORT) {
+      expect(files.some((f) => importsOf(f).includes(PROBE_IMPORT))).toBe(true);
+    }
   });
 });

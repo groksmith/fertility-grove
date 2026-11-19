@@ -5,11 +5,12 @@
    Unsaved changes ask first; confirming signs out this device only and opens
    the sign-in screen. */
 
-import { requestLeave } from "@/components/shared";
-import { Button, Dialog } from "@/components/shared";
-import { logout } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { authService } from "@/features/auth";
+import { requestLeave } from "@/lib/navigation-guard";
 
 export function useSignOut() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function useSignOut() {
           variant="danger"
           onClick={() => {
             setConfirm(false);
-            logout();
+            authService.logout();
             router.replace("/login");
           }}
         >

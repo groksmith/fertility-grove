@@ -5,12 +5,12 @@
    change and never credits whoever takes an old handle. Opening it unlocks
    sign-up on this device. */
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button } from "@/components/shared";
-import { inviteOwner } from "@/lib/api";
-import { act, sel, useStore } from "@/lib/store";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { Button } from "@/components/ui/button";
+import { authService, displayName, inviteOwner } from "@/features/auth";
+import { useStore } from "@/lib/mock-server";
 
 export default function InvitePage() {
   const { code } = useParams<{ code: string }>();
@@ -18,7 +18,7 @@ export default function InvitePage() {
   // TODO(api): the backend resolves the code to the member who sent it.
   const owner = inviteOwner(useStore(), decodeURIComponent(code ?? ""));
   const from = owner
-    ? sel.displayName(owner)
+    ? displayName(owner)
     : code && code !== "beta"
       ? "A member"
       : "The Fertility Grove team";
@@ -44,7 +44,7 @@ export default function InvitePage() {
       <Button
         className="mt-7"
         onClick={() => {
-          act.auth.arriveWithInvite("beta");
+          authService.arriveWithInvite("beta");
           router.push("/signup");
         }}
       >

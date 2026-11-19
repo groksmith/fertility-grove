@@ -2,13 +2,13 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
-  LEVELS,
-  POINTS,
   canMentor,
   keepLevel,
+  LEVELS,
   levelFor,
   levelIndex,
   nextLevel,
+  POINTS,
   progress,
 } from "@/lib/rules/sunlight";
 import type { TreeLevel } from "@/types/domain";

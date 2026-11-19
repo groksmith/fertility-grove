@@ -128,7 +128,10 @@ a {
 
 /* Pressable things answer the press. Gated so touch doesn't get sticky hover. */
 .press {
-  transition: transform 140ms var(--e-out), background-color 160ms ease, color 160ms ease,
+  transition:
+    transform 140ms var(--e-out),
+    background-color 160ms ease,
+    color 160ms ease,
     border-color 160ms ease;
 }
 .press:active:not(:disabled) {
@@ -139,7 +142,10 @@ a {
    the #f8f8f8 sidebar where the band grey (#f3f3f3) didn't. It fades in fast
    and leaves a touch slower, so moving down the list feels continuous. */
 .nav-row {
-  transition: background-color 90ms ease, color 90ms ease, transform 140ms var(--e-out);
+  transition:
+    background-color 90ms ease,
+    color 90ms ease,
+    transform 140ms var(--e-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .nav-row:not(:hover) {
@@ -149,14 +155,18 @@ a {
 
 /* Popovers and sheets enter with @starting-style so they need no mount effect. */
 .pop {
-  transition: opacity 160ms var(--e-out), transform 160ms var(--e-out);
+  transition:
+    opacity 160ms var(--e-out),
+    transform 160ms var(--e-out);
   @starting-style {
     opacity: 0;
     transform: scale(0.96);
   }
 }
 .rise {
-  transition: opacity 220ms var(--e-out), transform 220ms var(--e-out);
+  transition:
+    opacity 220ms var(--e-out),
+    transform 220ms var(--e-out);
   @starting-style {
     opacity: 0;
     transform: translateY(8px);
@@ -174,14 +184,18 @@ a {
   }
 }
 .dialog-panel {
-  transition: transform 320ms var(--e-drawer), opacity 200ms ease;
+  transition:
+    transform 320ms var(--e-drawer),
+    opacity 200ms ease;
   @starting-style {
     transform: translateY(100%);
   }
 }
 @media (min-width: 640px) {
   .dialog-panel {
-    transition: transform 200ms var(--e-out), opacity 200ms var(--e-out);
+    transition:
+      transform 200ms var(--e-out),
+      opacity 200ms var(--e-out);
     @starting-style {
       transform: scale(0.96);
       opacity: 0;
@@ -226,7 +240,9 @@ a {
 .reveal-ready [data-reveal] {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 600ms var(--e-out), transform 600ms var(--e-out);
+  transition:
+    opacity 600ms var(--e-out),
+    transform 600ms var(--e-out);
 }
 .reveal-ready [data-reveal][data-in] {
   opacity: 1;
@@ -283,7 +299,9 @@ a {
   margin-left: -12cqw;
   opacity: 0;
   transform: translate(-30cqw, 2cqw);
-  transition: opacity 500ms var(--e-out), transform 700ms var(--e-out);
+  transition:
+    opacity 500ms var(--e-out),
+    transform 700ms var(--e-out);
 }
 .plant[data-step="1"] .plant-pouch,
 .plant[data-step="2"] .plant-pouch,
@@ -320,7 +338,9 @@ a {
   transform-origin: 50% 100%;
   opacity: 0;
   transform: translate(18cqw, -40cqw) rotate(34deg);
-  transition: opacity 500ms var(--e-out), transform 700ms var(--e-out);
+  transition:
+    opacity 500ms var(--e-out),
+    transform 700ms var(--e-out);
 }
 .plant[data-step="2"] .plant-trowel,
 .plant[data-step="3"] .plant-trowel {
@@ -405,8 +425,9 @@ a {
   opacity: 1;
 }
 .plant[data-step="3"] .plant-seed {
-  animation: plant-seed var(--t) cubic-bezier(0.45, 0, 0.55, 1) var(--d) both, plant-seed-rest 1ms
-    linear 1720ms forwards;
+  animation:
+    plant-seed var(--t) cubic-bezier(0.45, 0, 0.55, 1) var(--d) both,
+    plant-seed-rest 1ms linear 1720ms forwards;
 }
 @keyframes plant-seed {
   0% {
@@ -441,7 +462,9 @@ a {
   transform-origin: 0.5% 4%;
   opacity: 0;
   transform: translate(45cqw, -25cqw) rotate(6deg);
-  transition: opacity 500ms var(--e-out), transform 800ms var(--e-out);
+  transition:
+    opacity 500ms var(--e-out),
+    transform 800ms var(--e-out);
 }
 .plant[data-step="5"] .plant-can {
   opacity: 1;
@@ -504,7 +527,9 @@ a {
   width: 24cqw;
   opacity: 0;
   transform: translateY(30cqw) scale(0.9);
-  transition: opacity 1100ms var(--e-out), transform 2400ms var(--e-out);
+  transition:
+    opacity 1100ms var(--e-out),
+    transform 2400ms var(--e-out);
 }
 /* On a short panel the line of narration reaches the sun's height, so the sun rises less. */
 @media (max-height: 720px) {
@@ -576,8 +601,9 @@ a {
 .plant[data-step="8"] .plant-shoot {
   opacity: 1;
   transform: none;
-  transition: opacity 240ms var(--e-out) 260ms, transform 900ms cubic-bezier(0.34, 1.56, 0.64, 1)
-    260ms;
+  transition:
+    opacity 240ms var(--e-out) 260ms,
+    transform 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 260ms;
 }
 
 /* The line of narration. It hangs just above where the sun rises (the stage is
@@ -609,7 +635,10 @@ a {
   opacity: 0;
   filter: blur(4px);
   transform: translateY(0.625rem);
-  transition: opacity 180ms var(--e-out), filter 180ms var(--e-out), transform 180ms var(--e-out);
+  transition:
+    opacity 180ms var(--e-out),
+    filter 180ms var(--e-out),
+    transform 180ms var(--e-out);
 }
 .plant-line[data-at="past"] {
   transform: translateY(-0.5rem);
@@ -618,8 +647,10 @@ a {
   opacity: 1;
   filter: none;
   transform: none;
-  transition: opacity 480ms var(--e-out) 140ms, filter 480ms var(--e-out) 140ms, transform 720ms
-    var(--e-out) 140ms;
+  transition:
+    opacity 480ms var(--e-out) 140ms,
+    filter 480ms var(--e-out) 140ms,
+    transform 720ms var(--e-out) 140ms;
 }
 
 /* Refer a friend (components/ReferFriend.tsx). One gesture, each part waiting
@@ -882,7 +913,9 @@ a {
 .gift-bud {
   display: block;
   transform-origin: 50% 100%;
-  transition: opacity 400ms var(--e-out), transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 400ms var(--e-out),
+    transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 /* A bud sets (none -> bud), then gives way as its blossom opens (gone). */
 .gift-bud[data-state="none"] {
@@ -896,7 +929,9 @@ a {
 .gift-bloom {
   opacity: 0;
   transform: scale(0.55) rotate(-28deg);
-  transition: opacity 320ms var(--e-out), transform 760ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 320ms var(--e-out),
+    transform 760ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .gift-bloom[data-open] {
   opacity: 1;
@@ -906,8 +941,9 @@ a {
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.3);
   transform-origin: 50% 20%;
-  transition: opacity 500ms var(--e-out) 200ms, transform 1000ms cubic-bezier(0.34, 1.56, 0.64, 1)
-    200ms;
+  transition:
+    opacity 500ms var(--e-out) 200ms,
+    transform 1000ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms;
 }
 .gift-fruit[data-open] {
   opacity: 1;
@@ -931,8 +967,10 @@ a {
 .fold {
   display: grid;
   grid-template-rows: 1fr;
-  transition: grid-template-rows 240ms var(--e-out), opacity 160ms ease, transform 160ms
-    var(--e-out);
+  transition:
+    grid-template-rows 240ms var(--e-out),
+    opacity 160ms ease,
+    transform 160ms var(--e-out);
 }
 .fold-inner {
   min-height: 0;
@@ -1225,7 +1263,9 @@ a {
 }
 .guide-label {
   grid-template-columns: 1fr;
-  transition: grid-template-columns 260ms var(--e-out), opacity 180ms var(--e-out);
+  transition:
+    grid-template-columns 260ms var(--e-out),
+    opacity 180ms var(--e-out);
 }
 .guide-fab[data-folded] .guide-label {
   grid-template-columns: 0fr;

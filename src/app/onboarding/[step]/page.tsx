@@ -4,6 +4,12 @@
    Next is always enabled and shows what's missing; Skip appears only on
    screens 2 and 7. The grove beside the form gains one piece per answer. */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { Controller, type UseFormReturn, useForm, useWatch } from "react-hook-form";
 import { GroupCover } from "@/components/art/Brand";
 import { Backdrop } from "@/components/art/Cozy";
 import { PlantingScene } from "@/components/art/PlantingScene";
@@ -11,22 +17,16 @@ import { TreeArt } from "@/components/art/Tree";
 import { Name, Person } from "@/components/common/Person";
 import { ReferFriend } from "@/components/common/ReferFriend";
 import { useSignOut } from "@/components/common/SignOut";
-import { Logo } from "@/components/shared";
-import {
-  Avatar,
-  AvatarPicker,
-  Button,
-  Choices,
-  Counter,
-  Field,
-  HueSwatches,
-  Input,
-  Panel,
-  Select,
-  Textarea,
-  Toggle,
-  toast,
-} from "@/components/shared";
+import { Logo } from "@/components/icons/Logo";
+import { Avatar, AvatarPicker, FormField, HueSwatches } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Choices } from "@/components/ui/choices";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Panel } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
+import { Toggle } from "@/components/ui/switch";
+import { toast } from "@/components/ui/toast";
 import {
   AGE_RANGES,
   COMMUNITIES,
@@ -39,20 +39,31 @@ import {
   PRONOUNS,
   TREATMENTS,
 } from "@/config/options";
-import { completeOnboarding } from "@/lib/api";
-import { ARTICLES } from "@/lib/data/articles";
-import { GUIDE_STARTERS } from "@/lib/data/social";
-import { MSG, checks } from "@/lib/rules/validation";
-import { type Me, act, get, sel, useHydrated, useStore } from "@/lib/store";
+import { journey, meAsMember } from "@/features/auth";
+import { groupMatches, groupService } from "@/features/groups";
+import { GUIDE_STARTERS } from "@/features/guide";
+import { ARTICLES } from "@/features/learn";
+import { mentorMatches } from "@/features/mentors";
+import {
+  ONBOARDING_STEP_FIELDS,
+  type OnboardingInput,
+  onboardingSchema,
+  onboardingService,
+  onboardingStepSchemas,
+} from "@/features/onboarding";
+import { partnerService } from "@/features/partner";
+import { firstErrors, settingsService } from "@/features/settings";
+import { peopleMatches, socialService } from "@/features/social";
+import { get, type Me, useHydrated, useStore } from "@/lib/mock-server";
+import { checks } from "@/lib/rules/validation";
 import type { CommunityId, MessagePolicy } from "@/types/domain";
-import { ArrowLeft, CircleHelp, Lock, LogOut, Sparkles } from "lucide-react";
-import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
 
 /* ------------------------------------------------------------- Screens */
 
-const SCREENS: { title: string; why: string; intro?: string }[] = [
+type Screen = { title: string; why: string; intro?: string };
+
+// A non-empty tuple, so SCREENS[0] is always a Screen.
+const SCREENS: [Screen, ...Screen[]] = [
   {
     title: "Where are you in your fertility journey?",
     intro:
@@ -175,7 +186,10 @@ function initialDraft(): Draft {
 }
 
 /** Which community to suggest, and why (PRD §5 screen 5). */
-function suggestion(d: Draft): { pick: CommunityId | null; why: string } {
+function suggestion(d: Pick<Draft, "stages" | "gender">): {
+  pick: CommunityId | null;
+  why: string;
+} {
   const partner = d.stages.includes("I am a partner / spouse");
   const women = ["Female", "Transgender female"].includes(d.gender);
   const men = ["Male", "Transgender male"].includes(d.gender);
@@ -189,34 +203,6 @@ function suggestion(d: Draft): { pick: CommunityId | null; why: string } {
         : "Suggested because of the gender identity you chose.",
     };
   return { pick: null, why: "Both spaces are open to you. Choose the one that feels right." };
-}
-
-function validate(step: number, d: Draft): Record<string, string> {
-  const e: Record<string, string> = {};
-  if (step === 1) {
-    if (!d.stages.length) e.stages = MSG.selectOne;
-    if (!d.healthConsent) e.consent = MSG.consent;
-  }
-  if (step === 2 && d.diagnoses.includes("Other") && !d.otherDiagnosis.trim())
-    e.otherDiagnosis = MSG.otherDiagnosis;
-  if (step === 3) {
-    if (!d.gender) e.gender = MSG.gender;
-    if (d.gender === "Prefer to self-describe" && !d.genderSelf.trim())
-      e.genderSelf = MSG.genderSelf;
-    if (d.pronouns === "Prefer to self-describe" && !d.pronounsSelf.trim())
-      e.pronounsSelf = MSG.pronounsSelf;
-    const z = checks.zip(d.zip);
-    if (z) e.zip = z;
-  }
-  if (step === 4 && !d.lookingFor.length) e.lookingFor = MSG.lookingFor;
-  if (step === 5 && !d.community) e.community = MSG.community;
-  if (step === 6) {
-    if (!d.firstName.trim() || !d.lastName.trim()) e.names = MSG.names;
-    const h = checks.handle(d.handle);
-    if (h) e.handle = h;
-    if (d.aboutMe.length > 1000) e.aboutMe = "About me can be up to 1,000 characters.";
-  }
-  return e;
 }
 
 /** What each screen writes to the profile. */
@@ -274,368 +260,481 @@ function patchFor(step: number, d: Draft): Partial<Me> {
 
 /* ---------------------------------------------------------- Step bodies */
 
-type StepProps = { d: Draft; set: (p: Partial<Draft>) => void; errs: Record<string, string> };
+type Form = UseFormReturn<OnboardingInput>;
+type StepProps = { form: Form };
 
-function Step1({ d, set, errs }: StepProps) {
-  const treating = d.stages.includes("Pursuing treatment");
+function Step1({ form }: StepProps) {
+  const treating = useWatch({ control: form.control, name: "stages" }).includes(
+    "Pursuing treatment",
+  );
   return (
     <div className="space-y-7">
-      <Choices
-        legend="Journey stage"
-        multi
-        options={JOURNEY_STAGES}
-        value={d.stages}
-        onChange={(stages) => set({ stages })}
-        error={errs.stages}
+      <Controller
+        control={form.control}
+        name="stages"
+        render={({ field, fieldState }) => (
+          <Choices
+            legend="Journey stage"
+            multi
+            options={JOURNEY_STAGES}
+            value={field.value}
+            onChange={field.onChange}
+            error={fieldState.error?.message}
+          />
+        )}
       />
       {treating && (
         <div className="space-y-6 rounded-[20px] border border-line bg-panel p-5">
-          <Choices
-            legend="Which treatment?"
-            multi
-            options={TREATMENTS}
-            value={d.treatments}
-            onChange={(treatments) => set({ treatments })}
-            hint="Optional."
+          <Controller
+            control={form.control}
+            name="treatments"
+            render={({ field }) => (
+              <Choices
+                legend="Which treatment?"
+                multi
+                options={TREATMENTS}
+                value={field.value}
+                onChange={field.onChange}
+                hint="Optional."
+              />
+            )}
           />
-          <Field label="Next treatment or cycle date" optional hint="Only you see this.">
-            <Input
-              type="date"
-              value={d.nextDate}
-              onChange={(e) => set({ nextDate: e.target.value })}
-              className="max-w-[240px]"
-            />
-          </Field>
+          <Controller
+            control={form.control}
+            name="nextDate"
+            render={({ field }) => (
+              <Field label="Next treatment or cycle date" optional hint="Only you see this.">
+                <Input
+                  type="date"
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  className="max-w-[240px]"
+                />
+              </Field>
+            )}
+          />
         </div>
       )}
       <div className="rounded-[20px] border border-line bg-panel p-5">
-        <Toggle
-          checked={d.healthConsent}
-          onChange={(healthConsent) => set({ healthConsent })}
-          label="I agree that Fertility Grove uses my answers about my health to match me with people, groups and information."
-          description={
-            <>
-              Read our{" "}
-              <Link href="/privacy#health-data" className="font-semibold underline" target="_blank">
-                Consumer Health Data Privacy Policy
-              </Link>
-              . You can withdraw this any time in Settings.
-            </>
-          }
-          error={errs.consent}
+        <Controller
+          control={form.control}
+          name="healthConsent"
+          render={({ field, fieldState }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="I agree that Fertility Grove uses my answers about my health to match me with people, groups and information."
+              description={
+                <>
+                  Read our{" "}
+                  <Link
+                    href="/privacy#health-data"
+                    className="font-semibold underline"
+                    target="_blank"
+                  >
+                    Consumer Health Data Privacy Policy
+                  </Link>
+                  . You can withdraw this any time in Settings.
+                </>
+              }
+              error={fieldState.error?.message}
+            />
+          )}
         />
       </div>
     </div>
   );
 }
 
-function Step2({ d, set, errs }: StepProps) {
+function Step2({ form }: StepProps) {
+  const diagnoses = useWatch({ control: form.control, name: "diagnoses" });
   return (
     <div className="space-y-7">
-      <Choices
-        legend="Diagnosis"
-        multi
-        options={DIAGNOSES}
-        value={d.diagnoses}
-        onChange={(diagnoses) => set({ diagnoses })}
-        hint="Optional. Pick everything a doctor has named."
-      />
-      {d.diagnoses.includes("Other") && (
-        <Field
-          label="Other diagnosis"
-          error={errs.otherDiagnosis}
-          counter={<Counter value={d.otherDiagnosis} max={100} />}
-        >
-          <Input
-            value={d.otherDiagnosis}
-            maxLength={100}
-            onChange={(e) => set({ otherDiagnosis: e.target.value })}
+      <Controller
+        control={form.control}
+        name="diagnoses"
+        render={({ field }) => (
+          <Choices
+            legend="Diagnosis"
+            multi
+            options={DIAGNOSES}
+            value={field.value}
+            onChange={field.onChange}
+            hint="Optional. Pick everything a doctor has named."
           />
-        </Field>
+        )}
+      />
+      {diagnoses.includes("Other") && (
+        <FormField
+          form={form}
+          name="otherDiagnosis"
+          label="Other diagnosis"
+          counterMax={100}
+          maxLength={100}
+        />
       )}
-      <Choices
-        legend="Path to parenthood"
-        multi
-        options={PATHS}
-        value={d.paths}
-        onChange={(paths) => set({ paths })}
-        hint="Optional."
+      <Controller
+        control={form.control}
+        name="paths"
+        render={({ field }) => (
+          <Choices
+            legend="Path to parenthood"
+            multi
+            options={PATHS}
+            value={field.value}
+            onChange={field.onChange}
+            hint="Optional."
+          />
+        )}
       />
     </div>
   );
 }
 
-function Step3({ d, set, errs }: StepProps) {
+function Step3({ form }: StepProps) {
+  const [gender, pronouns] = useWatch({ control: form.control, name: ["gender", "pronouns"] });
   return (
     <div className="space-y-7">
-      <Choices
-        legend="Gender identity"
-        options={GENDERS}
-        value={d.gender ? [d.gender] : []}
-        onChange={([gender]) => set({ gender })}
-        error={errs.gender}
-        hint="Private. Never shown on your profile."
+      <Controller
+        control={form.control}
+        name="gender"
+        render={({ field, fieldState }) => (
+          <Choices
+            legend="Gender identity"
+            options={GENDERS}
+            value={field.value ? [field.value] : []}
+            onChange={([g]) => field.onChange(g)}
+            error={fieldState.error?.message}
+            hint="Private. Never shown on your profile."
+          />
+        )}
       />
-      {d.gender === "Prefer to self-describe" && (
-        <Field
+      {gender === "Prefer to self-describe" && (
+        <FormField
+          form={form}
+          name="genderSelf"
           label="How you describe your gender identity"
-          error={errs.genderSelf}
-          counter={<Counter value={d.genderSelf} max={50} />}
-        >
-          <Input
-            value={d.genderSelf}
-            maxLength={50}
-            onChange={(e) => set({ genderSelf: e.target.value })}
-          />
-        </Field>
+          counterMax={50}
+          maxLength={50}
+        />
       )}
-      <Choices
-        legend="Pronouns"
-        options={PRONOUNS}
-        value={d.pronouns ? [d.pronouns] : []}
-        onChange={([pronouns]) => set({ pronouns })}
-        hint="Optional. Shown next to your name if you add them."
-        columns={3}
-      />
-      {d.pronouns === "Prefer to self-describe" && (
-        <Field
-          label="Your pronouns"
-          error={errs.pronounsSelf}
-          counter={<Counter value={d.pronounsSelf} max={30} />}
-        >
-          <Input
-            value={d.pronounsSelf}
-            maxLength={30}
-            onChange={(e) => set({ pronounsSelf: e.target.value })}
+      <Controller
+        control={form.control}
+        name="pronouns"
+        render={({ field }) => (
+          <Choices
+            legend="Pronouns"
+            options={PRONOUNS}
+            value={field.value ? [field.value] : []}
+            onChange={([p]) => field.onChange(p)}
+            hint="Optional. Shown next to your name if you add them."
+            columns={3}
           />
-        </Field>
+        )}
+      />
+      {pronouns === "Prefer to self-describe" && (
+        <FormField
+          form={form}
+          name="pronounsSelf"
+          label="Your pronouns"
+          counterMax={30}
+          maxLength={30}
+        />
       )}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Field label="Age range" optional hint="Never shown.">
-          <Select value={d.ageRange} onChange={(e) => set({ ageRange: e.target.value })}>
-            <option value="">Choose</option>
-            {AGE_RANGES.map((a) => (
-              <option key={a}>{a}</option>
-            ))}
-          </Select>
-        </Field>
-        <Field
+        <FormField
+          form={form}
+          name="ageRange"
+          kind="select"
+          label="Age range"
+          optional
+          hint="Never shown."
+          options={[
+            { value: "", label: "Choose" },
+            ...AGE_RANGES.map((a) => ({ value: a, label: a })),
+          ]}
+        />
+        <FormField
+          form={form}
+          name="zip"
           label="ZIP code"
-          error={errs.zip}
           hint="Never shown. Helps us match you with people in your region."
-        >
-          <Input
-            inputMode="numeric"
-            autoComplete="postal-code"
-            value={d.zip}
-            onChange={(e) => set({ zip: e.target.value })}
-            maxLength={10}
-          />
-        </Field>
+          inputMode="numeric"
+          autoComplete="postal-code"
+          maxLength={10}
+        />
       </div>
     </div>
   );
 }
 
-function Step4({ d, set, errs }: StepProps) {
+function Step4({ form }: StepProps) {
   return (
     <div className="space-y-7">
-      <Choices
-        legend="I'm looking for"
-        multi
-        options={LOOKING_FOR}
-        value={d.lookingFor}
-        onChange={(lookingFor) => set({ lookingFor })}
-        error={errs.lookingFor}
+      <Controller
+        control={form.control}
+        name="lookingFor"
+        render={({ field, fieldState }) => (
+          <Choices
+            legend="I'm looking for"
+            multi
+            options={LOOKING_FOR}
+            value={field.value}
+            onChange={field.onChange}
+            error={fieldState.error?.message}
+          />
+        )}
       />
-      <Choices
-        legend="How I like to connect"
-        multi
-        options={CONNECT_STYLES}
-        value={d.connectStyle}
-        onChange={(connectStyle) => set({ connectStyle })}
-        hint="Optional."
+      <Controller
+        control={form.control}
+        name="connectStyle"
+        render={({ field }) => (
+          <Choices
+            legend="How I like to connect"
+            multi
+            options={CONNECT_STYLES}
+            value={field.value}
+            onChange={field.onChange}
+            hint="Optional."
+          />
+        )}
       />
     </div>
   );
 }
 
-function Step5({ d, set, errs }: StepProps) {
-  const { pick, why } = suggestion(d);
+function Step5({ form }: StepProps) {
+  const [stages, gender] = useWatch({ control: form.control, name: ["stages", "gender"] });
+  const { pick, why } = suggestion({ stages, gender });
   const order: CommunityId[] =
     pick === "partners" ? ["partners", "womens"] : ["womens", "partners"];
   return (
-    <fieldset>
-      <legend className="sr-only">Community</legend>
-      <p className="mb-4 text-[15px] text-ink-soft">{why}</p>
-      <div className="grid gap-3">
-        {order.map((id) => {
-          const on = d.community === id;
-          const c = COMMUNITIES[id];
-          return (
-            <label
-              key={id}
-              className={`press flex cursor-pointer gap-4 rounded-[20px] border-2 bg-panel p-5 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
-            >
-              <input
-                type="radio"
-                name="community"
-                className="sr-only"
-                checked={on}
-                onChange={() => set({ community: id })}
-              />
-              <span
-                aria-hidden
-                className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent bg-accent" : "border-[var(--grey-300)]"}`}
-              >
-                {on && <span className="h-2 w-2 rounded-full bg-white" />}
-              </span>
-              <span>
-                <span className="flex flex-wrap items-center gap-2 text-[18px] font-semibold text-ink">
-                  {c.name}
-                  {pick === id && (
-                    <span className="rounded-full bg-green-tint px-2.5 py-0.5 text-[12px] font-semibold text-green-ink">
-                      Suggested for you
+    <Controller
+      control={form.control}
+      name="community"
+      render={({ field, fieldState }) => (
+        <fieldset>
+          <legend className="sr-only">Community</legend>
+          <p className="mb-4 text-[15px] text-ink-soft">{why}</p>
+          <div className="grid gap-3">
+            {order.map((id) => {
+              const on = field.value === id;
+              const c = COMMUNITIES[id];
+              return (
+                <label
+                  key={id}
+                  className={`press flex cursor-pointer gap-4 rounded-[20px] border-2 bg-panel p-5 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
+                >
+                  <input
+                    type="radio"
+                    name="community"
+                    className="sr-only"
+                    checked={on}
+                    onChange={() => field.onChange(id)}
+                  />
+                  <span
+                    aria-hidden
+                    className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent bg-accent" : "border-[var(--grey-300)]"}`}
+                  >
+                    {on && <span className="h-2 w-2 rounded-full bg-white" />}
+                  </span>
+                  <span>
+                    <span className="flex flex-wrap items-center gap-2 text-[18px] font-semibold text-ink">
+                      {c.name}
+                      {pick === id && (
+                        <span className="rounded-full bg-green-tint px-2.5 py-0.5 text-[12px] font-semibold text-green-ink">
+                          Suggested for you
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <span className="mt-1 block text-[15px] leading-relaxed text-ink-soft">
-                  {c.blurb}
-                </span>
-              </span>
-            </label>
-          );
-        })}
-      </div>
-      {errs.community && (
-        <p role="alert" className="mt-3 text-[13px] font-semibold text-danger">
-          {errs.community}
-        </p>
+                    <span className="mt-1 block text-[15px] leading-relaxed text-ink-soft">
+                      {c.blurb}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {fieldState.error?.message && (
+            <p role="alert" className="mt-3 text-[13px] font-semibold text-danger">
+              {fieldState.error.message}
+            </p>
+          )}
+        </fieldset>
       )}
-    </fieldset>
+    />
   );
 }
 
-function Step6({
-  d,
-  set,
-  errs,
-  touched,
-  touch,
-}: StepProps & { touched: boolean; touch: () => void }) {
-  const live = d.handle ? checks.handle(d.handle) : undefined;
-  const handleErr = errs.handle ?? (touched ? live : undefined);
+function Step6({ form, touched, touch }: StepProps & { touched: boolean; touch: () => void }) {
+  const [
+    firstName,
+    lastName,
+    handle,
+    showRealName,
+    avatarHue,
+    avatarPreset,
+    pronouns,
+    pronounsSelf,
+    aboutMe,
+  ] = useWatch({
+    control: form.control,
+    name: [
+      "firstName",
+      "lastName",
+      "handle",
+      "showRealName",
+      "avatarHue",
+      "avatarPreset",
+      "pronouns",
+      "pronounsSelf",
+      "aboutMe",
+    ],
+  });
+  const live = handle ? checks.handle(handle) : undefined;
   const preview = {
-    ...sel.meAsMember(get()),
-    firstName: d.firstName || "Your",
-    lastInitial: (d.lastName || " ")[0].trim() || "N",
-    handle: d.handle || "your_handle",
-    showRealName: d.showRealName,
-    avatarHue: d.avatarHue,
+    ...meAsMember(get()),
+    firstName: firstName || "Your",
+    lastInitial: (lastName || " ").charAt(0).trim() || "N",
+    handle: handle || "your_handle",
+    showRealName,
+    avatarHue,
     pronouns:
-      d.pronouns && !["Prefer not to say", "Prefer to self-describe"].includes(d.pronouns)
-        ? d.pronouns
-        : d.pronouns === "Prefer to self-describe"
-          ? d.pronounsSelf || undefined
+      pronouns && !["Prefer not to say", "Prefer to self-describe"].includes(pronouns)
+        ? pronouns
+        : pronouns === "Prefer to self-describe"
+          ? pronounsSelf || undefined
           : undefined,
     badges: [],
     level: "Seed" as const,
     sunlight: 0,
   };
-  const initial = d.firstName ? `${d.firstName} ${(d.lastName || "")[0] ?? ""}.` : "Annie M.";
+  const initial = firstName ? `${firstName} ${(lastName || "")[0] ?? ""}.` : "Annie M.";
   return (
     <div className="space-y-7">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Field label="First name" error={errs.names}>
-          <Input
-            autoComplete="given-name"
-            value={d.firstName}
-            maxLength={50}
-            onChange={(e) => set({ firstName: e.target.value })}
-          />
-        </Field>
-        <Field label="Last name" hint="Only your initial is ever shown.">
-          <Input
-            autoComplete="family-name"
-            value={d.lastName}
-            maxLength={50}
-            onChange={(e) => set({ lastName: e.target.value })}
-          />
-        </Field>
+        <FormField
+          form={form}
+          name="firstName"
+          label="First name"
+          autoComplete="given-name"
+          maxLength={50}
+        />
+        <FormField
+          form={form}
+          name="lastName"
+          label="Last name"
+          hint="Only your initial is ever shown."
+          autoComplete="family-name"
+          maxLength={50}
+        />
       </div>
-      <Field
-        label="Handle"
-        error={handleErr}
-        hint={
-          !handleErr
-            ? "3 to 30 characters: lowercase letters, numbers and underscores, starting with a letter."
-            : undefined
-        }
-      >
-        <div className="relative">
-          <span
-            aria-hidden
-            className="absolute inset-y-0 left-3.5 grid place-items-center text-[15px] text-muted"
-          >
-            @
-          </span>
-          <Input
-            value={d.handle}
-            onChange={(e) => set({ handle: e.target.value.toLowerCase().replace(/\s/g, "") })}
-            onBlur={touch}
-            placeholder="hopeful_annie"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            maxLength={30}
-            className="pl-8"
-          />
-        </div>
-      </Field>
-
-      <fieldset>
-        <legend className="mb-2 text-[14px] font-semibold text-ink">How your name shows</legend>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[
-            {
-              real: false,
-              title: "Show my handle instead",
-              body: `Members see @${d.handle || "your_handle"}.`,
-            },
-            { real: true, title: "Show my real name", body: `Members see ${initial}` },
-          ].map((o) => {
-            const on = d.showRealName === o.real;
-            return (
-              <label
-                key={o.title}
-                className={`press cursor-pointer rounded-[14px] border-2 bg-panel p-4 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
-              >
-                <input
-                  type="radio"
-                  name="display"
-                  className="sr-only"
-                  checked={on}
-                  onChange={() => set({ showRealName: o.real })}
+      <Controller
+        control={form.control}
+        name="handle"
+        render={({ field, fieldState }) => {
+          const handleErr = fieldState.error?.message ?? (touched ? live : undefined);
+          return (
+            <Field
+              label="Handle"
+              error={handleErr}
+              hint={
+                !handleErr
+                  ? "3 to 30 characters: lowercase letters, numbers and underscores, starting with a letter."
+                  : undefined
+              }
+            >
+              <div className="relative">
+                <span
+                  aria-hidden
+                  className="absolute inset-y-0 left-3.5 grid place-items-center text-[15px] text-muted"
+                >
+                  @
+                </span>
+                <Input
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/\s/g, ""))}
+                  onBlur={() => {
+                    field.onBlur();
+                    touch();
+                  }}
+                  placeholder="hopeful_annie"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={30}
+                  className="pl-8"
                 />
-                <span className="block text-[15px] font-semibold text-ink">{o.title}</span>
-                <span className="mt-0.5 block text-[14px] text-muted">{o.body}</span>
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
+              </div>
+            </Field>
+          );
+        }}
+      />
+
+      <Controller
+        control={form.control}
+        name="showRealName"
+        render={({ field }) => (
+          <fieldset>
+            <legend className="mb-2 text-[14px] font-semibold text-ink">How your name shows</legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                {
+                  real: false,
+                  title: "Show my handle instead",
+                  body: `Members see @${handle || "your_handle"}.`,
+                },
+                { real: true, title: "Show my real name", body: `Members see ${initial}` },
+              ].map((o) => {
+                const on = field.value === o.real;
+                return (
+                  <label
+                    key={o.title}
+                    className={`press cursor-pointer rounded-[14px] border-2 bg-panel p-4 ${on ? "border-accent" : "border-transparent hover:border-line-strong"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="display"
+                      className="sr-only"
+                      checked={on}
+                      onChange={() => field.onChange(o.real)}
+                    />
+                    <span className="block text-[15px] font-semibold text-ink">{o.title}</span>
+                    <span className="mt-0.5 block text-[14px] text-muted">{o.body}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+      />
 
       <fieldset>
         <legend className="mb-2 text-[14px] font-semibold text-ink">
           Photo or avatar <span className="font-normal text-muted">(optional)</span>
         </legend>
-        <AvatarPicker
-          member={{ ...preview, avatarHue: d.avatarHue }}
-          value={d.avatarPreset}
-          onChange={(i) => set({ avatarPreset: i })}
-          size={48}
+        <Controller
+          control={form.control}
+          name="avatarPreset"
+          render={({ field }) => (
+            <AvatarPicker
+              member={{ ...preview, avatarHue }}
+              value={field.value}
+              onChange={field.onChange}
+              size={48}
+            />
+          )}
         />
-        <HueSwatches value={d.avatarHue} onChange={(h) => set({ avatarHue: h })} />
+        <Controller
+          control={form.control}
+          name="avatarHue"
+          render={({ field }) => <HueSwatches value={field.value} onChange={field.onChange} />}
+        />
         <Button
           variant="secondary"
           size="sm"
@@ -645,26 +744,23 @@ function Step6({
         >
           Upload from my computer
         </Button>
-        {!d.showRealName && d.avatarPreset < 0 && (
+        {!showRealName && avatarPreset < 0 && (
           <p className="mt-2 text-[13px] text-muted">
             An avatar keeps your handle private and still helps people recognise you.
           </p>
         )}
       </fieldset>
 
-      <Field
+      <FormField
+        form={form}
+        name="aboutMe"
+        kind="textarea"
         label="About me"
         optional
-        error={errs.aboutMe}
-        counter={<Counter value={d.aboutMe} max={1000} />}
-      >
-        <Textarea
-          value={d.aboutMe}
-          onChange={(e) => set({ aboutMe: e.target.value })}
-          rows={4}
-          placeholder="What brought you here, where you are, what you're hoping to find"
-        />
-      </Field>
+        counterMax={1000}
+        rows={4}
+        placeholder="What brought you here, where you are, what you're hoping to find"
+      />
 
       <div>
         <p className="mb-2 text-[14px] font-semibold text-ink">How others see you</p>
@@ -673,10 +769,8 @@ function Step6({
             <Avatar member={preview} size={48} />
             <Name member={preview} link={false} />
           </div>
-          {d.aboutMe && (
-            <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">
-              {d.aboutMe}
-            </p>
+          {aboutMe && (
+            <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-ink-soft">{aboutMe}</p>
           )}
         </Panel>
       </div>
@@ -684,7 +778,7 @@ function Step6({
   );
 }
 
-function Step7({ d, set }: StepProps) {
+function Step7({ form }: StepProps) {
   const policies: { id: MessagePolicy; label: string }[] = [
     { id: "anyone", label: "Anyone" },
     { id: "following", label: "Members I follow" },
@@ -694,11 +788,17 @@ function Step7({ d, set }: StepProps) {
     <div className="space-y-4">
       <Panel className="space-y-6 p-5 sm:p-6">
         <h2 className="text-[16px] font-semibold">Connections</h2>
-        <Toggle
-          checked={d.suggestMe}
-          onChange={(suggestMe) => set({ suggestMe })}
-          label="Suggest me to members on my path"
-          description="People with a similar journey may see you in their matches."
+        <Controller
+          control={form.control}
+          name="suggestMe"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Suggest me to members on my path"
+              description="People with a similar journey may see you in their matches."
+            />
+          )}
         />
         <div>
           <label htmlFor="who-msg" className="text-[15px] font-semibold text-ink">
@@ -707,56 +807,101 @@ function Step7({ d, set }: StepProps) {
           <p className="mt-0.5 text-[14px] text-muted">
             Others can still send a message request you can accept or delete.
           </p>
-          <Select
-            id="who-msg"
-            value={d.messagePolicy}
-            onChange={(e) => set({ messagePolicy: e.target.value as MessagePolicy })}
-            className="mt-2 max-w-[280px]"
-          >
-            {policies.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            control={form.control}
+            name="messagePolicy"
+            render={({ field }) => (
+              <Select
+                id="who-msg"
+                name={field.name}
+                ref={field.ref}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value as MessagePolicy)}
+                onBlur={field.onBlur}
+                className="mt-2 max-w-[280px]"
+              >
+                {policies.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          />
         </div>
-        <Toggle
-          checked={d.wantMentor}
-          onChange={(wantMentor) => set({ wantMentor })}
-          label="I'd like a mentor"
-          description="We'll suggest members who have been through it."
+        <Controller
+          control={form.control}
+          name="wantMentor"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="I'd like a mentor"
+              description="We'll suggest members who have been through it."
+            />
+          )}
         />
-        <Toggle
-          checked={d.showStories}
-          onChange={(showStories) => set({ showStories })}
-          label="Show success stories in my feed"
-          description="Off means stories stay in their own space."
+        <Controller
+          control={form.control}
+          name="showStories"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Show success stories in my feed"
+              description="Off means stories stay in their own space."
+            />
+          )}
         />
-        <Toggle
-          checked={d.shareJourney}
-          onChange={(shareJourney) => set({ shareJourney })}
-          label="Show my diagnosis, stage and path on my profile"
-          description="Off by default. Matching still works when this is off."
+        <Controller
+          control={form.control}
+          name="shareJourney"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Show my diagnosis, stage and path on my profile"
+              description="Off by default. Matching still works when this is off."
+            />
+          )}
         />
       </Panel>
       <Panel className="space-y-6 p-5 sm:p-6">
         <h2 className="text-[16px] font-semibold">Email</h2>
-        <Toggle
-          checked={d.notify.comments}
-          onChange={(comments) => set({ notify: { ...d.notify, comments } })}
-          label="Comments and replies on my posts"
-          description="In your daily update."
+        <Controller
+          control={form.control}
+          name="notify.comments"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Comments and replies on my posts"
+              description="In your daily update."
+            />
+          )}
         />
-        <Toggle
-          checked={d.notify.messages}
-          onChange={(messages) => set({ notify: { ...d.notify, messages } })}
-          label="New direct messages"
-          description="In your daily update."
+        <Controller
+          control={form.control}
+          name="notify.messages"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="New direct messages"
+              description="In your daily update."
+            />
+          )}
         />
-        <Toggle
-          checked={d.notify.includeFollows}
-          onChange={(includeFollows) => set({ notify: { ...d.notify, includeFollows } })}
-          label="Include follows, levels and matches in my daily update"
+        <Controller
+          control={form.control}
+          name="notify.includeFollows"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Include follows, levels and matches in my daily update"
+            />
+          )}
         />
       </Panel>
     </div>
@@ -765,15 +910,17 @@ function Step7({ d, set }: StepProps) {
 
 function Step8({ finish, preview }: { finish: (to: string) => void; preview: boolean }) {
   const s = useStore();
-  const groups = sel.groupMatches(s, 5);
-  const people = sel.peopleMatches(s, 3);
-  const mentors = s.me.wantMentor ? sel.mentorMatches(s, 3) : [];
-  const j = sel.journey(s);
+  const groups = groupMatches(s, 5);
+  const people = peopleMatches(s, 3);
+  const mentors = s.me.wantMentor ? mentorMatches(s, 3) : [];
+  const j = journey(s);
   const articles = ARTICLES.filter((a) => a.diagnoses.some((d) => j.diagnoses.includes(d)))
     .concat(ARTICLES)
     .filter((a, i, all) => all.indexOf(a) === i)
     .slice(0, 3);
-  const starters = GUIDE_STARTERS[j.diagnoses.find((d) => GUIDE_STARTERS[d]) ?? "default"];
+  const starters =
+    GUIDE_STARTERS[j.diagnoses.find((d) => GUIDE_STARTERS[d]) ?? "default"] ??
+    GUIDE_STARTERS.default;
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteErr, setInviteErr] = useState<string>();
   const [invited, setInvited] = useState(false);
@@ -782,7 +929,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
   // Screen 8 completes onboarding as it opens: the personal invite link is
   // behind the onboarding gate (PRD §5, §10).
   useEffect(() => {
-    if (!preview) completeOnboarding();
+    if (!preview) onboardingService.completeOnboarding();
   }, [preview]);
 
   return (
@@ -824,7 +971,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                     size="sm"
                     variant={joined ? "quiet" : "secondary"}
                     aria-pressed={joined}
-                    onClick={() => act.groups.toggleJoin(group.id)}
+                    onClick={() => groupService.toggleJoin(group.id)}
                   >
                     {joined ? "Joined" : "Join"}
                   </Button>
@@ -850,7 +997,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                       size="sm"
                       variant={on ? "quiet" : "secondary"}
                       aria-pressed={on}
-                      onClick={() => act.social.toggleFollow(member.id)}
+                      onClick={() => socialService.toggleFollow(member.id)}
                     >
                       {on ? "Following" : "Follow"}
                     </Button>
@@ -913,7 +1060,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                     size="sm"
                     variant={saved ? "quiet" : "secondary"}
                     aria-pressed={saved}
-                    onClick={() => act.settings.saveArticle(a.slug)}
+                    onClick={() => settingsService.saveArticle(a.slug)}
                   >
                     {saved ? "Saved" : "Save"}
                   </Button>
@@ -956,7 +1103,6 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
             They get their own private account. You choose what to share with them.
           </p>
           {invited ? (
-            // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
             <p role="status" className="mt-3 text-[15px] font-semibold text-green-ink">
               Invite sent to {inviteEmail}.
             </p>
@@ -980,7 +1126,7 @@ function Step8({ finish, preview }: { finish: (to: string) => void; preview: boo
                     toast("Preview only: nothing was sent");
                     return;
                   }
-                  const r = act.partner.invite(inviteEmail, "");
+                  const r = partnerService.invite(inviteEmail, "");
                   if (!r.ok) setInviteErr(r.error);
                   else setInvited(true);
                 }}
@@ -1032,52 +1178,77 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
   const router = useRouter();
   const signOut = useSignOut();
   const firstName = useStore((s) => s.me.firstName);
-  const [d, setD] = useState<Draft>(initialDraft);
-  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [initial] = useState<Draft>(initialDraft);
+  // Errors show only after Next and clear on the next change (below); the summary takes focus.
+  const form = useForm({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: initial,
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [handleTouched, setHandleTouched] = useState(false);
   const summary = useRef<HTMLDivElement>(null);
-  const screen = SCREENS[step - 1];
+  const screen = SCREENS[step - 1] ?? SCREENS[0];
   const q = preview ? "?preview=1" : "";
+  const fields: readonly (keyof OnboardingInput)[] =
+    ONBOARDING_STEP_FIELDS[step as keyof typeof ONBOARDING_STEP_FIELDS] ?? [];
 
-  const set = (p: Partial<Draft>) => {
-    setD((x) => ({ ...x, ...p }));
-    if (Object.keys(errs).length) setErrs({});
-  };
+  // Any change clears every error, as each answer may fix more than one.
+  useEffect(
+    () =>
+      form.subscribe({
+        formState: { values: true },
+        callback: () => {
+          if (Object.keys(form.formState.errors).length) form.clearErrors();
+        },
+      }),
+    [form],
+  );
 
   const go = (n: number) => router.push(`/onboarding/${n}${q}`);
 
+  // Validated synchronously, as before, so the summary shows in the same frame as the click and
+  // takes focus on the next one.
   const next = () => {
-    const e = validate(step, d);
-    setErrs(e);
+    const schema = onboardingStepSchemas[step as keyof typeof onboardingStepSchemas] as
+      | typeof onboardingSchema
+      | undefined;
+    const e = schema ? firstErrors(schema, form.getValues()) : {};
+    form.clearErrors();
+    for (const [name, message] of Object.entries(e))
+      if (message) form.setError(name as keyof OnboardingInput, { message });
     if (Object.keys(e).length) {
       setHandleTouched(true);
       requestAnimationFrame(() => summary.current?.focus());
       return;
     }
-    if (!preview) act.onboarding.save(step, patchFor(step, d));
+    if (!preview) onboardingService.save(step, patchFor(step, form.getValues()));
     go(step + 1);
   };
 
   const skip = () => {
     // Skipping saves nothing from the screen, except screen 7, which keeps its defaults.
     if (!preview) {
-      if (step === 2) act.onboarding.save(2, {}, ["diagnosis", "path"]);
-      else act.onboarding.save(7, patchFor(7, initialDraft()));
+      if (step === 2) onboardingService.save(2, {}, ["diagnosis", "path"]);
+      else onboardingService.save(7, patchFor(7, initialDraft()));
     }
     go(step + 1);
   };
 
   const finish = (to: string) => {
     if (!preview) {
-      completeOnboarding();
+      onboardingService.completeOnboarding();
       // Screen 8 already celebrated the Seed; don't repeat it on Home.
-      act.settings.acknowledgeLevelUp();
+      settingsService.acknowledgeLevelUp();
     }
     router.push(to);
   };
 
   const title = step === 8 ? `You're all set, ${firstName || "friend"}!` : screen.title;
-  const errList = Object.values(errs);
+  const errors = form.formState.errors;
+  const errList = fields
+    .map((f) => errors[f]?.message)
+    .filter((m): m is string => typeof m === "string" && m !== "");
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.78fr)]">
@@ -1102,7 +1273,6 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
             </div>
           </div>
 
-          {/* biome-ignore lint/a11y/useFocusableInteractive: progressbar is a read-only progress indicator, not an operable widget; making it focusable would add a dead tab stop */}
           <div
             className="mt-2"
             aria-label={`Step ${step} of 8`}
@@ -1166,21 +1336,15 @@ function StepView({ step, preview }: { step: number; preview: boolean }) {
               else finish("/feed");
             }}
           >
-            {step === 1 && <Step1 d={d} set={set} errs={errs} />}
-            {step === 2 && <Step2 d={d} set={set} errs={errs} />}
-            {step === 3 && <Step3 d={d} set={set} errs={errs} />}
-            {step === 4 && <Step4 d={d} set={set} errs={errs} />}
-            {step === 5 && <Step5 d={d} set={set} errs={errs} />}
+            {step === 1 && <Step1 form={form} />}
+            {step === 2 && <Step2 form={form} />}
+            {step === 3 && <Step3 form={form} />}
+            {step === 4 && <Step4 form={form} />}
+            {step === 5 && <Step5 form={form} />}
             {step === 6 && (
-              <Step6
-                d={d}
-                set={set}
-                errs={errs}
-                touched={handleTouched}
-                touch={() => setHandleTouched(true)}
-              />
+              <Step6 form={form} touched={handleTouched} touch={() => setHandleTouched(true)} />
             )}
-            {step === 7 && <Step7 d={d} set={set} errs={errs} />}
+            {step === 7 && <Step7 form={form} />}
             {step === 8 && <Step8 finish={finish} preview={preview} />}
 
             <div className="sticky bottom-0 -mx-4 mt-8 flex items-center gap-2 bg-ground/95 px-4 py-4 pb-[max(16px,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:bg-transparent sm:px-0">

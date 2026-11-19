@@ -3,19 +3,23 @@
 /* Sign in (PRD §4): Google or email. The email error never says which field
    was wrong; five misses in 15 minutes pause sign-in. */
 
-import { AuthFrame, GoogleMark } from "@/components/common/AuthFrame";
-import { Button, Field, Input, PasswordInput, Toggle } from "@/components/shared";
-import { act } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { AuthFrame, GoogleMark } from "@/components/common/AuthFrame";
+import { FormField } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/switch";
+import { authService, signInSchema } from "@/features/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [keep, setKeep] = useState(false);
-  const [error, setError] = useState<string>();
+  const form = useForm({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { email: "", password: "", keep: false },
+  });
+  const error = form.formState.errors.root?.message;
 
   return (
     <AuthFrame
@@ -35,7 +39,7 @@ export default function LoginPage() {
         variant="secondary"
         className="w-full"
         onClick={() => {
-          act.auth.signInWithGoogle(keep);
+          authService.signInWithGoogle(form.getValues("keep"));
           router.push("/feed");
         }}
       >
@@ -48,12 +52,11 @@ export default function LoginPage() {
       <form
         noValidate
         className="space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const r = act.auth.signIn(email, password, keep);
-          if (!r.ok) setError(r.error);
+        onSubmit={form.handleSubmit(({ email, password, keep }) => {
+          const r = authService.signIn(email, password, keep);
+          if (!r.ok) form.setError("root", { message: r.error });
           else router.push("/feed");
-        }}
+        })}
       >
         {error && (
           <p
@@ -63,27 +66,32 @@ export default function LoginPage() {
             {error}
           </p>
         )}
-        <Field label="Email">
-          <Input
-            type="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </Field>
-        <Field label="Password">
-          <PasswordInput
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </Field>
-        <Toggle
-          checked={keep}
-          onChange={setKeep}
-          label="Keep me signed in"
-          description="For 30 days on this device. Leave off on a shared computer."
+        <FormField
+          form={form}
+          name="email"
+          label="Email"
+          kind="email"
+          autoComplete="email"
+          autoCapitalize="none"
+        />
+        <FormField
+          form={form}
+          name="password"
+          label="Password"
+          kind="password"
+          autoComplete="current-password"
+        />
+        <Controller
+          control={form.control}
+          name="keep"
+          render={({ field }) => (
+            <Toggle
+              checked={field.value}
+              onChange={field.onChange}
+              label="Keep me signed in"
+              description="For 30 days on this device. Leave off on a shared computer."
+            />
+          )}
         />
         <Button type="submit" className="w-full">
           Sign in

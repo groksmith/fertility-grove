@@ -7,17 +7,11 @@
    full-screen menu sheet for everything else. Grove Guide is not a nav item:
    it floats bottom right on every screen except its own and a conversation. */
 
-import { HeaderBackdrop, sceneFor } from "@/components/art/Cozy";
-import { TreeGlyph } from "@/components/art/Tree";
-import { useSignOut } from "@/components/common/SignOut";
-import { Logo, LogoOrange } from "@/components/shared";
-import { Avatar, Button, Dialog, Menu, Toaster } from "@/components/shared";
-import { COMMUNITIES } from "@/config/options";
-import { type State, act, sel, useStore } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Bell,
-  BookOpen,
   Bookmark,
+  BookOpen,
   ChevronsUpDown,
   CircleHelp,
   Flower2,
@@ -36,6 +30,20 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { HeaderBackdrop, sceneFor } from "@/components/art/Cozy";
+import { TreeGlyph } from "@/components/art/Tree";
+import { useSignOut } from "@/components/common/SignOut";
+import { Logo, LogoOrange } from "@/components/icons/Logo";
+import { Avatar } from "@/components/shared";
+import { Menu } from "@/components/ui/dropdown-menu";
+import { Toaster } from "@/components/ui/toast";
+import { COMMUNITIES } from "@/config/options";
+import { authService, displayName, meAsMember } from "@/features/auth";
+import { unreadMessages } from "@/features/messages";
+import { unreadNotifications } from "@/features/notifications";
+import { searchSchema } from "@/features/search";
+import { type State, useStore } from "@/lib/mock-server";
 
 type NavItem = {
   href: string;
@@ -55,13 +63,13 @@ const PRIMARY: NavItem[] = [
     href: "/messages",
     label: "Messages",
     icon: MessageCircle,
-    count: (s) => sel.unreadMessages(s),
+    count: (s) => unreadMessages(s),
   },
   {
     href: "/notifications",
     label: "Notifications",
     icon: Bell,
-    count: (s) => sel.unreadNotifications(s),
+    count: (s) => unreadNotifications(s),
   },
 ];
 
@@ -79,7 +87,7 @@ const PHONE: NavItem[] = [
     href: "/messages",
     label: "Messages",
     icon: MessageCircle,
-    count: (s) => sel.unreadMessages(s),
+    count: (s) => unreadMessages(s),
   },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
@@ -91,7 +99,12 @@ function NavRow({
   path,
   onNavigate,
   rail,
-}: { item: NavItem; path: string; onNavigate?: () => void; rail?: boolean }) {
+}: {
+  item: NavItem;
+  path: string;
+  onNavigate?: () => void;
+  rail?: boolean;
+}) {
   const s = useStore();
   const Icon = item.icon;
   const on = isActive(path, item.href) || (item.href === "/groups" && path.startsWith("/posts"));
@@ -133,23 +146,21 @@ function NavRow({
 
 function SearchBox({ onDone }: { onDone?: () => void }) {
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const form = useForm({ resolver: zodResolver(searchSchema), defaultValues: { q: "" } });
   return (
     // biome-ignore lint/a11y/useSemanticElements: role="search" makes this form the search landmark; the suggested <input type="search"> is a control, not a landmark (the field inside is the control)
     <form
       role="search"
-      onSubmit={(e) => {
-        e.preventDefault();
+      onSubmit={form.handleSubmit(({ q }) => {
         router.push(`/people?q=${encodeURIComponent(q.trim())}`);
         onDone?.();
-      }}
+      })}
     >
       <label className="search-field flex h-10 items-center gap-2 rounded-full bg-raised px-3.5 text-muted focus-within:bg-white focus-within:ring-2 focus-within:ring-accent">
         <Search size={16} aria-hidden />
         <span className="sr-only">Find people by handle</span>
         <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          {...form.register("q")}
           placeholder="Find people by @handle"
           enterKeyHint="search"
           autoCapitalize="none"
@@ -174,7 +185,7 @@ function Scope() {
 function AccountMenu() {
   const s = useStore();
   const router = useRouter();
-  const me = sel.meAsMember(s);
+  const me = meAsMember(s);
   const signOut = useSignOut();
   return (
     <>
@@ -186,14 +197,14 @@ function AccountMenu() {
           <button
             {...p}
             type="button"
-            title={sel.displayName(me)}
-            aria-label={`Your account, ${sel.displayName(me)}`}
+            title={displayName(me)}
+            aria-label={`Your account, ${displayName(me)}`}
             className="nav-row press flex w-full items-center justify-center gap-3 rounded-[14px] p-2 text-left hover:bg-line xl:justify-start"
           >
             <Avatar member={me} size={36} />
             <span className="sr-only xl:not-sr-only xl:min-w-0 xl:flex-1">
               <span className="block truncate text-[14px] font-semibold text-ink">
-                {sel.displayName(me)}
+                {displayName(me)}
               </span>
               <span className="flex items-center gap-1 text-[12.5px] text-muted">
                 <TreeGlyph level={me.level} size={14} />
@@ -227,7 +238,7 @@ function AccountMenu() {
 
 function MeRow({ onNavigate }: { onNavigate?: () => void }) {
   const s = useStore();
-  const me = sel.meAsMember(s);
+  const me = meAsMember(s);
   return (
     <Link
       href="/dashboard"
@@ -236,9 +247,7 @@ function MeRow({ onNavigate }: { onNavigate?: () => void }) {
     >
       <Avatar member={me} size={36} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-semibold text-ink">
-          {sel.displayName(me)}
-        </span>
+        <span className="block truncate text-[14px] font-semibold text-ink">{displayName(me)}</span>
         <span className="flex items-center gap-1 text-[12.5px] text-muted">
           <TreeGlyph level={me.level} size={14} />
           {me.level} · <span className="tabular">{me.sunlight.toLocaleString()}</span> Sunlight
@@ -308,7 +317,7 @@ function PhoneChrome() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const s = useStore();
-  const unread = sel.unreadNotifications(s);
+  const unread = unreadNotifications(s);
   const signOut = useSignOut();
 
   useEffect(() => {
@@ -395,11 +404,12 @@ function PhoneChrome() {
       {open && (
         <div
           className="fixed inset-0 z-[70] lg:hidden"
-          // biome-ignore lint/a11y/useSemanticElements: custom modal with its own backdrop, focus handling and z-index stacking; native <dialog> brings UA styles, top-layer stacking and open/close behaviour that would change rendering
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
         >
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: the scrim's click-to-close is a pointer convenience; keyboard users close the menu with Escape or its close button */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: the scrim's click-to-close is a pointer convenience; keyboard users close the menu with Escape or its close button */}
           <div
             className="scrim absolute inset-0 bg-[rgba(3,30,15,0.32)]"
             onClick={() => setOpen(false)}
@@ -552,7 +562,7 @@ function UnconfirmedBanner() {
           type="button"
           className="underline underline-offset-2"
           onClick={() => {
-            act.auth.resendLink();
+            authService.resendLink();
             setSent(true);
           }}
         >

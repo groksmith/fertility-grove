@@ -8,14 +8,6 @@
    are flat tints with straight edges (sky, sage, blush) or the plain grey,
    and orange branches and blossom hang in at a few section edges. */
 
-import { Backdrop } from "@/components/art/Cozy";
-import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
-import { Logo, LogoOrange } from "@/components/shared";
-import { ARTICLES, articleCover } from "@/lib/data/articles";
-import { GROUPS } from "@/lib/data/groups";
-import { hueInk } from "@/lib/hue";
-import { LEVELS } from "@/lib/rules/sunlight";
-import { useStore } from "@/lib/store";
 import {
   AtSign,
   Download,
@@ -30,6 +22,14 @@ import {
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Backdrop } from "@/components/art/Cozy";
+import { STAGE_SRC, TreeArt } from "@/components/art/Tree";
+import { Logo, LogoOrange } from "@/components/icons/Logo";
+import { GROUPS } from "@/features/groups";
+import { ARTICLES, articleCover } from "@/features/learn";
+import { hueInk } from "@/lib/hue";
+import { useStore } from "@/lib/mock-server";
+import { LEVELS } from "@/lib/rules/sunlight";
 import { GuideScene } from "./GuideScene";
 
 /* ------------------------------------------------------------- Motion */
@@ -74,7 +74,11 @@ function PillButton({
   href,
   children,
   tone = "dark",
-}: { href: string; children: React.ReactNode; tone?: "dark" | "light" }) {
+}: {
+  href: string;
+  children: React.ReactNode;
+  tone?: "dark" | "light";
+}) {
   return (
     <Link
       href={href}
@@ -156,7 +160,7 @@ function SiteNav() {
   useEffect(() => {
     const el = sentinel.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => setScrolled(!e.isIntersecting));
+    const io = new IntersectionObserver(([e]) => setScrolled(!e?.isIntersecting));
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -169,7 +173,7 @@ function SiteNav() {
         const seen = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (seen.length) setActive(seen[0].target.id);
+        if (seen[0]) setActive(seen[0].target.id);
       },
       { rootMargin: "-80px 0px -55% 0px" },
     );
@@ -640,7 +644,7 @@ function Specimens() {
           Groups, answers, mentors and your partner, so this isn&apos;t one more thing to juggle.
         </p>
       </div>
-      {/* biome-ignore lint/a11y/noRedundantRoles lint/a11y/useSemanticElements: role="list" restores list semantics that Safari/VoiceOver drop under list-style: none; do not remove */}
+      {/* biome-ignore lint/a11y/noRedundantRoles: role="list" restores list semantics that Safari/VoiceOver drop under list-style: none; do not remove */}
       <ul className="grid grid-cols-2 gap-2.5 lg:col-span-9 lg:grid-cols-4" role="list">
         {SPECIMENS.map((s, i) => (
           <li
@@ -696,7 +700,17 @@ function Specimens() {
 }
 
 /* The live thing: pick where you are, see where you'd land. */
-const STAGES = [
+type Stage = {
+  stage: string;
+  line: string;
+  photo: string;
+  alt: string;
+  groups: string[];
+  article: string;
+};
+
+// A non-empty tuple, so STAGES[0] is always a Stage.
+const STAGES: [Stage, ...Stage[]] = [
   {
     stage: "Trying to conceive",
     line: "Months of trying, and wondering what's next.",
@@ -742,7 +756,7 @@ const STAGES = [
 /** On the flat sky band, each stage's painting sits on a white disc. */
 function WhereAreYou() {
   const [i, setI] = useState(0);
-  const cur = STAGES[i];
+  const cur = STAGES[i] ?? STAGES[0];
   const groups = cur.groups.map((id) => GROUPS.find((g) => g.id === id)!);
   const article = ARTICLES.find((a) => a.slug === cur.article)!;
   return (

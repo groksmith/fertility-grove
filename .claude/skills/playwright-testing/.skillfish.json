@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "playwright-testing",
+  "owner": "fcakyon",
+  "repo": "claude-codex-settings",
+  "path": "plugins/playwright-tools/skills/playwright-testing",
+  "branch": "main",
+  "sha": "ad56b0eac3058701c90a4b6bb642bc980c5f4aed",
+  "source": "manual"
+}

@@ -6,8 +6,8 @@
    and ground so the five read as a growth plate. `TreeGlyph` is the 16px mark
    beside every name, coloured from that art. */
 
-import type { TreeLevel } from "@/types/domain";
 import Image from "next/image";
+import type { TreeLevel } from "@/types/domain";
 
 export const TREE_SRC: Record<TreeLevel, string> = {
   Seed: "/assets/brand/art/tree-seed.webp",

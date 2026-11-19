@@ -4,7 +4,7 @@ A clickable, front-end-only prototype of the Fertility Grove MVP, built from
 `docs/Fertility-Grove-MVP-PRD-v2.0.docx`. It covers the member app only; the
 moderator and admin panel (PRD §19–20) is out of this prototype.
 
-**There is no backend.** All data is mocked under `src/lib/data/` and every change
+**There is no backend.** All data is mocked under `src/lib/mock-server/` and every change
 you make is kept in this browser's `localStorage`. Reset any time from
 **Settings → Prototype tools → Reset demo data**.
 
@@ -142,7 +142,7 @@ Skipped as not applicable:
 ```bash
 yarn typecheck   # tsc
 yarn lint        # Biome (yarn format to fix)
-yarn test        # Vitest: PRD rules + architecture
+yarn test        # Vitest: PRD rules + guards (architecture, theme contrast, docs)
 yarn test:e2e    # Playwright: every route renders cleanly
 ```
 
@@ -170,7 +170,8 @@ flow, naming, imports) match `pharos-web` and are written up in
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · lucide-react ·
-Biome · Vitest · Playwright · yarn.
+Next.js 16.4 (App Router) · React 19.3 · TypeScript 7 · Tailwind CSS 4.3 · lucide-react ·
+Biome 2 · Vitest 5 · Playwright · yarn. The Claude Code setup (`.claude/`: skills, agents,
+`CLAUDE.md`) follows the `claude-nextjs-kit` template, adapted to this project.
 Nothing is medical advice, no payments are processed, and no data leaves the
 browser.

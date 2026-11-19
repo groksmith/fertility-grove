@@ -4,18 +4,26 @@
    email. Email sign-ups land on "Check your email" and onboard straight away;
    a duplicate email sees exactly the same screen. */
 
-import { AuthFrame, GoogleMark } from "@/components/common/AuthFrame";
-import { Button, Checkbox, Field, Input, PasswordInput, Toggle } from "@/components/shared";
-import { MSG, checks } from "@/lib/rules/validation";
-import { act, useHydrated, useStore } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { AuthFrame, GoogleMark } from "@/components/common/AuthFrame";
+import { FormField } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/switch";
+import { authService, type SignUpInput, signUpSchema, signUpWaitlistSchema } from "@/features/auth";
+import { useHydrated, useStore } from "@/lib/mock-server";
+import { MSG } from "@/lib/rules/validation";
 
 type SignUpResult = {
   ok: boolean;
   error?: string;
-  errs?: Record<string, string>;
+  errs?: Partial<Record<keyof SignUpInput, string>>;
   duplicate?: boolean;
 };
 
@@ -24,28 +32,44 @@ export default function SignupPage() {
   const hydrated = useHydrated();
   const { hasInvite, signupsPaused, invitedBy } = useStore();
   const [mode, setMode] = useState<"choose" | "google">("choose");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [adult, setAdult] = useState(false);
-  const [terms, setTerms] = useState(false);
-  const [errs, setErrs] = useState<Record<string, string>>({});
+  /* One form behind both sign-up modes, so the answers carry over when switching; `google` says
+     which mode is submitting. Checked on submit only: messages stay until the next submit (or a
+     mode switch clears them), and focus stays put. Leaving a filled email re-checks just it. */
+  const form = useForm({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { email: "", password: "", adult: false, terms: false, google: false },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [check, setCheck] = useState<{ email: string; duplicate: boolean } | null>(null);
-  const [waitEmail, setWaitEmail] = useState("");
-  const [waitErr, setWaitErr] = useState<string>();
+  // The paused-state waitlist: an optional email, checked on submit when given.
+  const waitForm = useForm({
+    resolver: zodResolver(signUpWaitlistSchema),
+    defaultValues: { email: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [waitDone, setWaitDone] = useState(false);
 
-  const submit = (google: boolean) => {
-    const r = act.auth.signUp({ email, password, adult, terms, google }) as SignUpResult;
+  const switchMode = (next: "choose" | "google") => {
+    setMode(next);
+    form.setValue("google", next === "google");
+    form.clearErrors();
+  };
+
+  const submit = form.handleSubmit((values) => {
+    const r = authService.signUp(values) as SignUpResult;
     if (!r.ok) {
-      setErrs(r.errs ?? {});
+      for (const [name, message] of Object.entries(r.errs ?? {}))
+        form.setError(name as keyof SignUpInput, { message });
       return;
     }
-    if (google) {
+    if (values.google) {
       router.push("/onboarding/1");
       return;
     }
-    setCheck({ email: email.trim(), duplicate: !!r.duplicate });
-  };
+    setCheck({ email: values.email.trim(), duplicate: !!r.duplicate });
+  });
 
   if (!hydrated) return <div className="min-h-dvh bg-ground" />;
 
@@ -68,7 +92,7 @@ export default function SignupPage() {
           <Button onClick={() => router.push(check.duplicate ? "/login" : "/onboarding/1")}>
             Continue
           </Button>
-          <Button variant="ghost" onClick={() => act.auth.resendLink()}>
+          <Button variant="ghost" onClick={() => authService.resendLink()}>
             Resend link
           </Button>
         </div>
@@ -105,32 +129,28 @@ export default function SignupPage() {
     return (
       <AuthFrame title="Sign-ups are paused" step={4} lede={MSG.paused}>
         {waitDone ? (
-          // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
           <p
             role="status"
             className="rounded-[20px] border border-line bg-panel p-5 text-[15px] leading-relaxed text-ink"
           >
-            Thank you. We&apos;ll email {waitEmail} as soon as sign-ups reopen.
+            Thank you. We&apos;ll email {waitForm.getValues("email")} as soon as sign-ups reopen.
           </p>
         ) : (
           <form
             noValidate
             className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const err = waitEmail ? checks.email(waitEmail) : undefined;
-              setWaitErr(err);
-              if (!err && waitEmail) setWaitDone(true);
-            }}
+            onSubmit={waitForm.handleSubmit(({ email }) => {
+              if (email) setWaitDone(true);
+            })}
           >
-            <Field label="Your email" optional error={waitErr}>
-              <Input
-                type="email"
-                autoComplete="email"
-                value={waitEmail}
-                onChange={(e) => setWaitEmail(e.target.value)}
-              />
-            </Field>
+            <FormField
+              form={waitForm}
+              name="email"
+              label="Your email"
+              optional
+              kind="email"
+              autoComplete="email"
+            />
             <Button type="submit">Let me know</Button>
           </form>
         )}
@@ -156,114 +176,128 @@ export default function SignupPage() {
       }
     >
       {mode === "google" ? (
-        <form
-          noValidate
-          className="space-y-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(true);
-          }}
-        >
+        <form noValidate className="space-y-5" onSubmit={submit}>
           <p className="rounded-[14px] bg-panel px-4 py-3 text-[15px] text-ink-soft">
             Signing up with Google. Your email is confirmed automatically.
           </p>
-          <Toggle
-            checked={adult}
-            onChange={setAdult}
-            label="I am 18 or older"
-            description="Fertility Grove is for adults only."
-            error={errs.adult}
+          <Controller
+            control={form.control}
+            name="adult"
+            render={({ field, fieldState }) => (
+              <Toggle
+                checked={field.value}
+                onChange={field.onChange}
+                label="I am 18 or older"
+                description="Fertility Grove is for adults only."
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Toggle
-            checked={terms}
-            onChange={setTerms}
-            label="I agree to the Terms and Privacy Policy"
-            description={
-              <>
-                Read the{" "}
-                <Link href="/terms" className="underline">
-                  Terms
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="underline">
-                  Privacy Policy
-                </Link>
-                .
-              </>
-            }
-            error={errs.terms}
+          <Controller
+            control={form.control}
+            name="terms"
+            render={({ field, fieldState }) => (
+              <Toggle
+                checked={field.value}
+                onChange={field.onChange}
+                label="I agree to the Terms and Privacy Policy"
+                description={
+                  <>
+                    Read the{" "}
+                    <Link href="/terms" className="underline">
+                      Terms
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="underline">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </>
+                }
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <div className="flex flex-wrap gap-2">
             <Button type="submit">Continue</Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setMode("choose");
-                setErrs({});
-              }}
-            >
+            <Button variant="ghost" onClick={() => switchMode("choose")}>
               Use email instead
             </Button>
           </div>
         </form>
       ) : (
         <>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => {
-              setMode("google");
-              setErrs({});
-            }}
-          >
+          <Button variant="secondary" className="w-full" onClick={() => switchMode("google")}>
             <GoogleMark /> Continue with Google
           </Button>
           <div className="my-6 flex items-center gap-3 text-[13px] text-muted" aria-hidden>
             <span className="h-px flex-1 bg-line-strong" /> or with email{" "}
             <span className="h-px flex-1 bg-line-strong" />
           </div>
-          <form
-            noValidate
-            className="space-y-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submit(false);
-            }}
-          >
-            <Field label="Email" error={errs.email}>
-              <Input
-                type="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => email && setErrs((x) => ({ ...x, email: checks.email(email) ?? "" }))}
-              />
-            </Field>
-            <Field
+          <form noValidate className="space-y-5" onSubmit={submit}>
+            {/* Controller, not FormField: leaving a filled email re-checks it on the spot. */}
+            <Controller
+              control={form.control}
+              name="email"
+              render={({ field, fieldState }) => (
+                <Field label="Email" error={fieldState.error?.message}>
+                  <Input
+                    ref={field.ref}
+                    name={field.name}
+                    type="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={() => {
+                      field.onBlur();
+                      if (field.value) void form.trigger("email");
+                    }}
+                  />
+                </Field>
+              )}
+            />
+            <FormField
+              form={form}
+              name="password"
               label="Password"
               hint="8 to 64 characters. Avoid one you've used elsewhere."
-              error={errs.password}
-            >
-              <PasswordInput
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Field>
-            <Checkbox checked={adult} onChange={setAdult} error={errs.adult}>
-              I am 18 or older
-            </Checkbox>
-            <Checkbox checked={terms} onChange={setTerms} error={errs.terms}>
-              I agree to the{" "}
-              <Link href="/terms" className="font-semibold underline">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="font-semibold underline">
-                Privacy Policy
-              </Link>
-            </Checkbox>
+              kind="password"
+              autoComplete="new-password"
+            />
+            <Controller
+              control={form.control}
+              name="adult"
+              render={({ field, fieldState }) => (
+                <Checkbox
+                  checked={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                >
+                  I am 18 or older
+                </Checkbox>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="terms"
+              render={({ field, fieldState }) => (
+                <Checkbox
+                  checked={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                >
+                  I agree to the{" "}
+                  <Link href="/terms" className="font-semibold underline">
+                    Terms
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="font-semibold underline">
+                    Privacy Policy
+                  </Link>
+                </Checkbox>
+              )}
+            />
             <Button type="submit" className="w-full">
               Create account
             </Button>

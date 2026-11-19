@@ -1,15 +1,16 @@
-import { GROUPS } from "@/lib/data/groups";
-import { groupOpenToGuests } from "@/lib/rules/guests";
 import type { Metadata } from "next";
+import { listedGroup } from "@/features/groups/server";
 
 /* A public group page may be listed while the group is visible to guests
-   (PRD v1.2 §10). TODO(api): ask the public group endpoint. */
+   (PRD v1.2 §10). */
 export async function generateMetadata({
   params,
-}: { params: Promise<{ id: string }> }): Promise<Metadata> {
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const group = GROUPS.find((g) => g.id === id);
-  if (group && groupOpenToGuests(group)) {
+  const group = listedGroup(id);
+  if (group) {
     return {
       title: `${group.name} · Fertility Grove`,
       description: group.description,

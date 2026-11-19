@@ -2,18 +2,30 @@
 
 /* The only screen a suspended member can reach (PRD §19). */
 
-import { AuthFrame } from "@/components/common/AuthFrame";
-import { Button, Counter, Dialog, Field, Textarea, Toaster, toast } from "@/components/shared";
-import { act, useHydrated, useStore } from "@/lib/store";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { AuthFrame } from "@/components/common/AuthFrame";
+import { FormField } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Toaster, toast } from "@/components/ui/toast";
+import { appealSchema } from "@/features/auth";
+import { settingsService } from "@/features/settings";
+import { useHydrated, useStore } from "@/lib/mock-server";
 
 export default function SuspendedPage() {
   const router = useRouter();
   const hydrated = useHydrated();
   const { suspension, dataExport, deletion } = useStore();
-  const [appeal, setAppeal] = useState("");
-  const [err, setErr] = useState<string>();
+  // Checked on submit only; the message stays until the next submit, and focus stays put.
+  const form = useForm({
+    resolver: zodResolver(appealSchema),
+    defaultValues: { appeal: "" },
+    reValidateMode: "onSubmit",
+    shouldFocusError: false,
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -43,7 +55,6 @@ export default function SuspendedPage() {
           Appeal
         </h2>
         {suspension.appealed ? (
-          // biome-ignore lint/a11y/useSemanticElements: role="status" makes this confirmation a polite live region; <output> is a form-associated inline element and would change layout and semantics
           <p role="status" className="mt-2 text-[15px] leading-relaxed text-ink-soft">
             We have your appeal. A person on our team will review it, and we&apos;ll tell you the
             decision here and by email.
@@ -52,25 +63,18 @@ export default function SuspendedPage() {
           <form
             noValidate
             className="mt-3 space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!appeal.trim()) return setErr("Tell us why this should be reviewed again.");
-              act.settings.appeal();
-            }}
+            onSubmit={form.handleSubmit(() => settingsService.appeal())}
           >
-            <Field
+            <FormField
+              form={form}
+              name="appeal"
               label="Why this should be reviewed again"
-              error={err}
-              counter={<Counter value={appeal} max={500} />}
-            >
-              <Textarea
-                value={appeal}
-                onChange={(e) => setAppeal(e.target.value)}
-                max={500}
-                hardStop
-                rows={4}
-              />
-            </Field>
+              kind="textarea"
+              counterMax={500}
+              max={500}
+              hardStop
+              rows={4}
+            />
             <p className="text-[13px] text-muted">One appeal per decision, within 14 days.</p>
             <Button type="submit">Send appeal</Button>
           </form>
@@ -85,7 +89,7 @@ export default function SuspendedPage() {
             if (dataExport === "ready")
               toast("Your data file is ready. The link works for 7 days.");
             else {
-              act.settings.requestExport();
+              settingsService.requestExport();
               toast("Preparing your data. We'll email you when it's ready.");
             }
           }}
@@ -97,7 +101,7 @@ export default function SuspendedPage() {
               : "Download my data"}
         </Button>
         {deletion ? (
-          <Button variant="secondary" onClick={() => act.settings.restoreAccount()}>
+          <Button variant="secondary" onClick={() => settingsService.restoreAccount()}>
             Restore my account
           </Button>
         ) : (
@@ -117,7 +121,7 @@ export default function SuspendedPage() {
           <Button
             variant="danger"
             onClick={() => {
-              act.settings.deleteAccount(true);
+              settingsService.deleteAccount(true);
               setConfirmDelete(false);
             }}
           >
