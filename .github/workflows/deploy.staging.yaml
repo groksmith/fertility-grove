@@ -38,6 +38,12 @@ jobs:
       - name: Copy runserver.sh to .next/standalone directory
         run: cp runserver.sh .next/standalone
 
+      # `next build` leaves public/ out of the standalone output. CloudFront serves /assets/* from
+      # S3, but the image optimizer (/_next/image) runs in the Lambda and reads the source file
+      # from its own public/ folder: without this copy every next/image answers 400.
+      - name: Copy public/ to .next/standalone directory
+        run: cp -R public .next/standalone/public
+
       - name: Zip standalone directory to deploy to aws lambda
         run: cd .next/standalone && zip -r "$OLDPWD/build.zip" . && cd ../../
 
