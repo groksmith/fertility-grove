@@ -146,7 +146,25 @@ yarn test        # Vitest: PRD rules + architecture
 yarn test:e2e    # Playwright: every route renders cleanly
 ```
 
-CI runs all four on every pull request. Conventions (folder layout, dependency
+CI runs all four on every pull request and on pushes to `development` and `main`.
+
+## Deployment
+
+Same pipeline as `pharos-web`: AWS Lambda for the server, S3 + CloudFront for static files.
+
+| Branch | Workflow | Environment |
+|---|---|---|
+| `development` | `.github/workflows/deploy.staging.yaml` | Staging |
+| `main` | `.github/workflows/deploy.production.yaml` | Production |
+
+Each deploy writes `.env` from a secret, builds the Next `standalone` output, zips it with
+`runserver.sh`, uploads it to S3, points the Lambda at it, syncs `.next/static` and `public/assets`
+to the bucket and clears the CloudFront cache. Secrets: `DOTENV_DEVELOPMENT` / `DOTENV_PRODUCTION`
+(optional while there is no backend), `AWS_ACCESS_KEY_ID_DEV` / `AWS_SECRET_ACCESS_KEY_DEV`,
+`AWS_ACCESS_KEY_ID_PROD` / `AWS_SECRET_ACCESS_KEY_PROD`. Bucket, Lambda and CloudFront IDs are
+written in the workflow files.
+
+Conventions (folder layout, dependency
 flow, naming, imports) match `pharos-web` and are written up in
 `.claude/CLAUDE.md`.
 

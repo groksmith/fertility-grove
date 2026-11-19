@@ -51,6 +51,11 @@ yarn test:e2e:ui     # Playwright UI mode
 Before calling work done: `yarn typecheck && yarn lint && yarn test`, plus `yarn test:e2e` for
 anything a page renders. CI (`.github/workflows/ci.yaml`) runs the same gates on every PR.
 
+**Deploys** (as pharos-web): push to `development` → `deploy.staging.yaml`, push to `main` →
+`deploy.production.yaml`. `output: "standalone"` in `next.config.ts` + `runserver.sh` are what the
+Lambda runs; don't remove either. AWS resource names are in the workflow files, keys in repo secrets
+(see README "Deployment").
+
 Biome config: 2-space indent, `lineWidth: 100`, double quotes, semicolons, trailing commas,
 `import type` for type-only imports, organised imports. Identical to Pharos's `biome.json`.
 

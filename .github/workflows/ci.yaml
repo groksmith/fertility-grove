@@ -1,12 +1,13 @@
 name: CI
 
-# Fast quality gate on every PR and on pushes to main. The prototype has no backend and no secrets,
-# so every job runs against the app alone.
+# Fast quality gate on every PR and on pushes to the deploy branches (development, main). Kept
+# separate from the deploy workflows so a red test never blocks on (or triggers) a deploy. The
+# prototype has no backend and no secrets, so every job runs against the app alone.
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [development, main]
 
 concurrency:
   group: ci-${{ github.ref }}

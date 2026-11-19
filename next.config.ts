@@ -39,6 +39,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The deploys (`.github/workflows/deploy.*.yaml`) zip `.next/standalone` with `runserver.sh` for
+  // AWS Lambda, and sync `.next/static` + `public/assets` to S3 behind CloudFront — as pharos-web.
+  output: "standalone",
   // ⚠️ **`next build` and `next dev` share `.next/` by default, and the build wins.** A verification
   // build while a dev server is up overwrites the manifests that server holds open: every route
   // answers 500 and the CSS 404s. `yarn build:check` sets NEXT_DIST_DIR=.next-check to build
