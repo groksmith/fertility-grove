@@ -52,7 +52,10 @@ jobs:
           # Images keep stable names: a day, then revalidated in the background.
           aws s3 cp ./.next/static s3://fertility-grove-landing-frontend-production/_next/static --recursive --cache-control "public, max-age=31536000, immutable"
           aws s3 cp ./public/assets s3://fertility-grove-landing-frontend-production/assets --recursive --exclude "video/*" --cache-control "public, max-age=86400, stale-while-revalidate=604800"
-          aws s3 cp ./public/assets/video s3://fertility-grove-landing-frontend-production/assets/video --recursive --cache-control "public, max-age=31536000, immutable"
+          # The video folder is optional: aws s3 cp fails on a missing path.
+          if [ -d ./public/assets/video ]; then
+            aws s3 cp ./public/assets/video s3://fertility-grove-landing-frontend-production/assets/video --recursive --cache-control "public, max-age=31536000, immutable"
+          fi
           aws s3 cp build.zip s3://fertility-grove-landing-frontend-production 
 
       - name: Deploy build.zip from S3 bucket to aws lambda
