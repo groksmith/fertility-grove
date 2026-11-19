@@ -5,6 +5,12 @@ on:
     branches:
       - development
 
+env:
+  # Names come from the MainFrontend stack in fertility-grove-infrastructure.
+  STACK_NAME: MainFrontend
+  BUCKET: fertility-grove-main-frontend-staging
+  FUNCTION_NAME: MainFrontendSsrHandler
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -50,13 +56,22 @@ jobs:
           # and would leave them without the header.
           # Build chunks and the video carry a version in their names: a year.
           # Images keep stable names: a day, then revalidated in the background.
-          aws s3 cp ./.next/static s3://fertility-grove-landing-frontend-staging/_next/static --recursive --cache-control "public, max-age=31536000, immutable"
-          aws s3 cp ./public/assets s3://fertility-grove-landing-frontend-staging/assets --recursive --exclude "video/*" --cache-control "public, max-age=86400, stale-while-revalidate=604800"
-          aws s3 cp ./public/assets/video s3://fertility-grove-landing-frontend-staging/assets/video --recursive --cache-control "public, max-age=31536000, immutable"
-          aws s3 cp build.zip s3://fertility-grove-landing-frontend-staging 
+          aws s3 cp ./.next/static s3://$BUCKET/_next/static --recursive --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp ./public/assets s3://$BUCKET/assets --recursive --exclude "video/*" --cache-control "public, max-age=86400, stale-while-revalidate=604800"
+          aws s3 cp ./public/assets/video s3://$BUCKET/assets/video --recursive --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp build.zip s3://$BUCKET
 
       - name: Deploy build.zip from S3 bucket to aws lambda
-        run: aws lambda update-function-code --function-name LandingFrontendSsrHandler --s3-bucket fertility-grove-landing-frontend-staging --s3-key build.zip --no-cli-pager
+        run: aws lambda update-function-code --function-name $FUNCTION_NAME --s3-bucket $BUCKET --s3-key build.zip --no-cli-pager
 
       - name: Clear cloudfront cache
-        run: aws cloudfront create-invalidation --distribution-id E3RZHX9M0E2740 --paths "/*"
+        run: |
+          # The distribution id is read from the stack output, so a replaced
+          # distribution needs no workflow change.
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" --output text)
+          if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
+            echo "No DistributionId output on stack $STACK_NAME" >&2
+            exit 1
+          fi
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*" --no-cli-pager
