@@ -1,0 +1,62 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+
+      - name: Install dotenv
+        shell: bash
+        env:
+          DOTENV_DEVELOPMENT: ${{ secrets.DOTENV_DEVELOPMENT }}
+        run: |
+          echo "$DOTENV_DEVELOPMENT" > .env
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build application
+        run: yarn build
+
+      - name: Copy runserver.sh to .next/standalone directory
+        run: cp runserver.sh .next/standalone
+
+      - name: Zip standalone directory to deploy to aws lambda
+        run: cd .next/standalone && zip -r "$OLDPWD/build.zip" . && cd ../../
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: us-east-1
+
+      - name: Deploy static content and build.zip to S3 bucket
+        run: |
+          # Cache-Control is set on upload: S3 serves objects with none, so
+          # browsers re-checked every script and image on each visit. `cp
+          # --recursive` rather than `sync`, because sync skips unchanged files
+          # and would leave them without the header.
+          # Build chunks and the video carry a version in their names: a year.
+          # Images keep stable names: a day, then revalidated in the background.
+          aws s3 cp ./.next/static s3://fertility-grove-landing-frontend-staging/_next/static --recursive --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp ./public/assets s3://fertility-grove-landing-frontend-staging/assets --recursive --exclude "video/*" --cache-control "public, max-age=86400, stale-while-revalidate=604800"
+          aws s3 cp ./public/assets/video s3://fertility-grove-landing-frontend-staging/assets/video --recursive --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp build.zip s3://fertility-grove-landing-frontend-staging 
+
+      - name: Deploy build.zip from S3 bucket to aws lambda
+        run: aws lambda update-function-code --function-name LandingFrontendSsrHandler --s3-bucket fertility-grove-landing-frontend-staging --s3-key build.zip --no-cli-pager
+
+      - name: Clear cloudfront cache
+        run: aws cloudfront create-invalidation --distribution-id E3RZHX9M0E2740 --paths "/*"
